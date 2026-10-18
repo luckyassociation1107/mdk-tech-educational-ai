@@ -1,0 +1,13 @@
+allprojects { repositories { google(); mavenCentral() } }
+rootProject.buildDir = "../build"
+subprojects { project.buildDir = "${rootProject.buildDir}/${project.name}" }
+subprojects { project.evaluationDependsOn(":app") }
+tasks.register("clean", Delete) { delete rootProject.buildDir }
+
+// Sandbox builds run in ~2GB RAM: Android Lint (incl. per-plugin
+// lintVital) exhausts Metaspace and is not needed to ship the APK.
+gradle.projectsEvaluated {
+    allprojects {
+        tasks.matching { it.name.toLowerCase().startsWith("lint") }.configureEach { enabled = false }
+    }
+}

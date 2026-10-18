@@ -1,0 +1,25 @@
+# Flutter / Gradle build outputs
+app/build/
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/android/.gradle/
+app/android/local.properties
+**/.gradle/
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Session data, workspaces and generated media (large + user data)
+data/
+data-*/
+*.mp4
+*.srt
+AI_Textbook_Classroom.apk
+
+# Local toolchain (installed outside the repo in CI)
+.toolchain/
+
+.DS_Store
