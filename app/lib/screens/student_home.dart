@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../auth_models.dart';
 import '../auth_store.dart';
@@ -26,6 +28,8 @@ class StudentHomeScreen extends StatefulWidget {
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   List<PublishedBook> _books = [];
+  List<SharedPdf> _sharedPdfs = [];
+  Set<String> _openedPdfIds = {};
   String _schoolName = '';
   bool _loading = true;
 
@@ -37,13 +41,37 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   Future<void> _load() async {
     final books = await AuthStore.visibleTo(widget.student);
+    final pdfs = await AuthStore.visibleSharedPdfs(widget.student);
     final schools = await AuthStore.schools();
+    final prefs = await SharedPreferences.getInstance();
+    final opened = (prefs.getStringList('sharedpdf_opened_${widget.student.id}') ?? const []).toSet();
     if (!mounted) return;
     setState(() {
       _books = books;
+      _sharedPdfs = pdfs;
+      _openedPdfIds = opened;
       _schoolName = schools.where((s) => s.id == widget.student.schoolId).firstOrNull?.name ?? '';
       _loading = false;
     });
+  }
+
+  Future<void> _openPdf(SharedPdf pdf) async {
+    final prefs = await SharedPreferences.getInstance();
+    final opened = {..._openedPdfIds, pdf.id};
+    await prefs.setStringList('sharedpdf_opened_${widget.student.id}', opened.toList());
+    if (!mounted) return;
+    setState(() => _openedPdfIds = opened);
+    final uri = Uri.parse(pdf.downloadPage);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the download link.')));
+    }
+  }
+
+  String _size(int bytes) {
+    if (bytes >= 1 << 20) return '${(bytes / (1 << 20)).toStringAsFixed(1)} MB';
+    if (bytes >= 1 << 10) return '${(bytes / (1 << 10)).toStringAsFixed(0)} KB';
+    return '$bytes B';
   }
 
   @override
@@ -117,6 +145,54 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
               ),
             ]),
+            const SectionTitle('PDFs shared by your teachers'),
+            if (!_loading && _sharedPdfs.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 6),
+                child: Text('No PDFs shared yet. When a teacher shares one, download it here and keep it in your phone.',
+                    style: TextStyle(color: AppColors.muted, fontSize: 13, height: 1.5)),
+              )
+            else
+              ..._sharedPdfs.map((pdf) {
+                final opened = _openedPdfIds.contains(pdf.id);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 11),
+                  child: GradientCard(
+                    onTap: () => _openPdf(pdf),
+                    padding: const EdgeInsets.all(15),
+                    child: Row(children: [
+                      Container(
+                        padding: const EdgeInsets.all(11),
+                        decoration: BoxDecoration(color: AppColors.red.withOpacity(0.14), borderRadius: BorderRadius.circular(12)),
+                        child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.red),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(pdf.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 14)),
+                          const SizedBox(height: 3),
+                          Text('${_size(pdf.sizeBytes)} • by ${pdf.uploadedByName}${pdf.className.isNotEmpty ? ' • ${pdf.className}' : ''}',
+                              style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                        ]),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: (opened ? AppColors.green : AppColors.teal).withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(opened ? Icons.download_done_rounded : Icons.download_rounded, size: 14, color: opened ? AppColors.green : AppColors.teal),
+                          const SizedBox(width: 5),
+                          Text(opened ? 'Opened' : 'Download', style: TextStyle(color: opened ? AppColors.green : AppColors.teal, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                );
+              }),
             const SectionTitle('Published by your teachers'),
             if (_loading)
               const Padding(padding: EdgeInsets.all(28), child: Center(child: CircularProgressIndicator()))

@@ -9,6 +9,7 @@ import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
 import 'settings_screen.dart';
+import 'share_pdf_screen.dart';
 import 'textbook_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -199,6 +200,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ]),
+              if (widget.user != null && widget.user!.role.canUpload) ...[
+                const SizedBox(height: 12),
+                GradientCard(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => SharePdfScreen(user: widget.user!),
+                  )),
+                  padding: const EdgeInsets.all(16),
+                  child: Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(color: AppColors.red.withOpacity(0.14), borderRadius: BorderRadius.circular(13)),
+                      child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.red),
+                    ),
+                    const SizedBox(width: 13),
+                    const Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Share PDFs with students', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
+                        SizedBox(height: 3),
+                        Text('Free Gofile shelf — students download & keep PDFs. Videos come from the engine, never uploads.',
+                            style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.45)),
+                      ]),
+                    ),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 15, color: AppColors.muted),
+                  ]),
+                ),
+              ],
               const SectionTitle('My textbooks'),
               if (_loading)
                 const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))

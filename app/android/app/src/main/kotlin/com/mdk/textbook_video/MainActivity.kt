@@ -53,6 +53,25 @@ class MainActivity : FlutterActivity() {
                         call.arguments?.let { if (it is Map<*, *>) it.forEach { (k, v) -> args.put(k.toString(), v) } }
                         io.execute {
                             try {
+                                if (call.method == "createSession") {
+                                    // Android has no PyMuPDF: render page pictures with
+                                    // PdfRenderer so the Python engine (pypdf for text)
+                                    // can still show/highlight real pages.
+                                    try {
+                                        val pdfPath = call.argument<String>("pdfPath")
+                                        if (pdfPath != null) {
+                                            val dir = java.io.File(filesDir, "textbook_video_data/page_png/" +
+                                                Integer.toHexString(pdfPath.hashCode()).replace("-", "x"))
+                                            dir.mkdirs()
+                                            renderPdfPages(java.io.File(pdfPath), dir)
+                                            args.put("pagePngDir", dir.absolutePath)
+                                        }
+                                    } catch (e: Exception) {
+                                        // Text-only indexing still works; the engine
+                                        // reports a clear message if a page picture
+                                        // is ever requested but missing.
+                                    }
+                                }
                                 val py = Python.getInstance().getModule("android_bridge")
                                 val out = py.callAttr("handle", call.method, args.toString(), filesDir.absolutePath).toString()
                                 val parsed: Any = when {
@@ -75,6 +94,32 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         tts?.shutdown()
         super.onDestroy()
+    }
+}
+
+private fun renderPdfPages(pdf: java.io.File, outDir: java.io.File) {
+    val pfd = android.os.ParcelFileDescriptor.open(pdf, android.os.ParcelFileDescriptor.MODE_READ_ONLY)
+    val renderer = android.graphics.pdf.PdfRenderer(pfd)
+    try {
+        for (i in 0 until renderer.pageCount) {
+            val page = renderer.openPage(i)
+            try {
+                val scale = 2
+                val bmp = android.graphics.Bitmap.createBitmap(
+                    page.width * scale, page.height * scale, android.graphics.Bitmap.Config.ARGB_8888)
+                bmp.eraseColor(android.graphics.Color.WHITE)
+                page.render(bmp, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                java.io.FileOutputStream(java.io.File(outDir, "page_${i + 1}.png")).use {
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, it)
+                }
+                bmp.recycle()
+            } finally {
+                page.close()
+        }
+        }
+    } finally {
+        renderer.close()
+        pfd.close()
     }
 }
 

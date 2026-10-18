@@ -28,7 +28,11 @@ def _service(data_dir: str, brain_name: str, brain_server_url: str = ""):
 
 
 def handle(method: str, args_json: str, data_dir: str) -> str:
+    import os
     args = json.loads(args_json or "{}")
+    page_dir = args.get("pagePngDir") or ""
+    if page_dir:
+        os.environ["TEXTBOOK_PAGE_PNG_DIR"] = page_dir
     svc = _service(data_dir, args.get("brain", "playwright"), args.get("brainServerUrl", ""))
     if method == "createSession":
         s = svc.create_session(args["pdfPath"], args.get("language", "en-IN"), args.get("grade"))

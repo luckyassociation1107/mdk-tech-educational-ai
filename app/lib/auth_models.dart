@@ -92,8 +92,7 @@ class AppUser {
 
 /// A textbook/lesson series a teacher (or principal) published to a class.
 /// Empty className means the whole school can read it.
-class PublishedBook {
-  final String sessionId;
+class PublishedBook {  final String sessionId;
   final String title;
   final String schoolId;
   final String className;
@@ -125,5 +124,86 @@ class PublishedBook {
         className: (j['className'] ?? '').toString(),
         publishedBy: (j['publishedBy'] ?? '').toString(),
         when: DateTime.tryParse((j['when'] ?? '').toString()) ?? DateTime.now(),
+      );
+}
+
+/// A PDF a teacher shared through Gofile, published to a class/school.
+/// Free Gofile links survive on real downloads and may retire after
+/// ~10 days of inactivity, so [uploadedAtMillis] drives an honest
+/// countdown plus one-tap refresh (a genuine re-upload by the teacher).
+class SharedPdf {
+  final String id;
+  final String title;
+  final String fileId;
+  final String downloadPage;
+  final int sizeBytes;
+  final String schoolId;
+  final String className;
+  final String uploadedById;
+  final String uploadedByName;
+  final int uploadedAtMillis;
+  final String localPath; // teacher device only; '' for everyone else
+
+  const SharedPdf({
+    required this.id,
+    required this.title,
+    required this.fileId,
+    required this.downloadPage,
+    required this.sizeBytes,
+    required this.schoolId,
+    required this.className,
+    required this.uploadedById,
+    required this.uploadedByName,
+    required this.uploadedAtMillis,
+    this.localPath = '',
+  });
+
+  /// Rough free-shelf lifetime left, based on the last upload/refresh.
+  int get approxDaysLeft {
+    final ageMs = DateTime.now().millisecondsSinceEpoch - uploadedAtMillis;
+    final left = 10 - (ageMs ~/ Duration.millisecondsPerDay);
+    return left < 0 ? 0 : left;
+  }
+
+  SharedPdf refreshed({required String fileId, required String downloadPage, required int sizeBytes}) => SharedPdf(
+        id: id,
+        title: title,
+        fileId: fileId,
+        downloadPage: downloadPage,
+        sizeBytes: sizeBytes,
+        schoolId: schoolId,
+        className: className,
+        uploadedById: uploadedById,
+        uploadedByName: uploadedByName,
+        uploadedAtMillis: DateTime.now().millisecondsSinceEpoch,
+        localPath: localPath,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'fileId': fileId,
+        'downloadPage': downloadPage,
+        'sizeBytes': sizeBytes,
+        'schoolId': schoolId,
+        'className': className,
+        'uploadedById': uploadedById,
+        'uploadedByName': uploadedByName,
+        'uploadedAtMillis': uploadedAtMillis,
+        'localPath': localPath,
+      };
+
+  factory SharedPdf.fromJson(Map<String, dynamic> j) => SharedPdf(
+        id: (j['id'] ?? '').toString(),
+        title: (j['title'] ?? 'PDF').toString(),
+        fileId: (j['fileId'] ?? '').toString(),
+        downloadPage: (j['downloadPage'] ?? '').toString(),
+        sizeBytes: (j['sizeBytes'] as num?)?.toInt() ?? 0,
+        schoolId: (j['schoolId'] ?? '').toString(),
+        className: (j['className'] ?? '').toString(),
+        uploadedById: (j['uploadedById'] ?? '').toString(),
+        uploadedByName: (j['uploadedByName'] ?? '').toString(),
+        uploadedAtMillis: (j['uploadedAtMillis'] as num?)?.toInt() ?? 0,
+        localPath: (j['localPath'] ?? '').toString(),
       );
 }

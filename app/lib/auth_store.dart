@@ -219,4 +219,49 @@ class AuthStore {
     final all = await published();
     return all.where((b) => b.schoolId == student.schoolId && (b.className.isEmpty || b.className == student.className)).toList();
   }
+
+  // ---------- shared PDFs (Gofile shelf) ----------
+  static const _sharedKey = 'inst_shared_pdfs_v1';
+
+  static Future<List<SharedPdf>> sharedPdfs() async {
+    final p = await SharedPreferences.getInstance();
+    final raw = p.getString(_sharedKey);
+    if (raw == null) return [];
+    try {
+      final list = (jsonDecode(raw) as List).whereType<Map>().map((e) => SharedPdf.fromJson(e.map((k, v) => MapEntry(k.toString(), v)))).toList();
+      list.sort((a, b) => b.uploadedAtMillis.compareTo(a.uploadedAtMillis));
+      return list;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> _saveShared(List<SharedPdf> all) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_sharedKey, jsonEncode(all.map((e) => e.toJson()).toList()));
+  }
+
+  static Future<void> addSharedPdf(SharedPdf pdf) async {
+    final all = await sharedPdfs();
+    all.add(pdf);
+    await _saveShared(all);
+  }
+
+  static Future<void> updateSharedPdf(SharedPdf pdf) async {
+    final all = await sharedPdfs();
+    final i = all.indexWhere((e) => e.id == pdf.id);
+    if (i >= 0) all[i] = pdf;
+    await _saveShared(all);
+  }
+
+  static Future<void> removeSharedPdf(String id) async {
+    final all = await sharedPdfs();
+    all.removeWhere((e) => e.id == id);
+    await _saveShared(all);
+  }
+
+  static Future<List<SharedPdf>> visibleSharedPdfs(AppUser student) async {
+    final all = await sharedPdfs();
+    return all.where((b) => b.schoolId == student.schoolId && (b.className.isEmpty || b.className == student.className)).toList();
+  }
 }

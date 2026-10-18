@@ -41,7 +41,7 @@ android {
             // Android wheels: on device, PDF extraction runs in Kotlin
             // (PDFBox-Android) producing the same PdfIndex JSON, and the
             // engine schema layer is pydantic-free (see schemas.py).
-            pip { install "Pillow==11.0.0" }
+            pip { install "Pillow==11.0.0"; install "pypdf==4.3.1" }
         }
     }
     buildTypes { release { signingConfig signingConfigs.debug } }
