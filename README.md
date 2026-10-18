@@ -179,3 +179,19 @@ still needs the Kotlin PDFBox/PDFRenderer layer described in
 reports a clear engine error in the UI instead of crashing. The online
 brain mode additionally needs a reachable brain-server URL (Settings).
 (3) The release APK is debug-signed; use your own keystore for Play.
+
+## Academics: tests, doubts, marks & ranks (v0.2)
+
+- **Exams & Tests hub** (Home -> Academics): pick any textbook + part and
+  start an auto-graded test. Question types: MCQ, fill-in-the-blank and
+  short answers; optional timed exam (auto-submit) and -0.25 negative
+  marking for wrong MCQs. Questions are generated on-device from the
+  part's own key points (real textbook content, works fully offline).
+- **Part unlocking by merit**: scoring 40%+ in a part test marks the part
+  complete and unlocks the next class, same as finishing the video.
+- **Doubt clearing**: every textbook card links straight into Ask PDF chat.
+- **Report Card**: per-textbook marks table (tests, average, best, grade),
+  recent attempts, XP levels, rank bands (Rank 1 Gold Scholar down to
+  Rank 6 Learner, computed from the student's own averages on this
+  device - openly labelled in-app) and a weak-parts revision list that
+  jumps back into the textbook. All history is stored on the phone only.

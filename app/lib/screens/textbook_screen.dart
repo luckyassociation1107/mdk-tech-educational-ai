@@ -5,6 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
 import 'chat_screen.dart';
+import 'exam_setup_screen.dart';
 import 'generate_sheet.dart';
 import 'notes_screen.dart';
 import 'player_screen.dart';
@@ -284,6 +285,27 @@ class _TextbookScreenState extends State<TextbookScreen> {
                               ),
                             ),
                           ]),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: unlocked
+                                  ? () async {
+                                      await Navigator.of(context).push(MaterialPageRoute(
+                                        builder: (_) => ExamSetupScreen(
+                                            gateway: widget.gateway, settings: widget.settings, book: widget.book, part: p),
+                                      ));
+                                      _load();
+                                    }
+                                  : null,
+                              icon: const Icon(Icons.quiz_rounded, size: 18),
+                              label: const Text('Take test — 40% unlocks the next part'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.teal,
+                                side: const BorderSide(color: AppColors.teal),
+                              ),
+                            ),
+                          ),
                           if (!unlocked)
                             const Padding(
                               padding: EdgeInsets.only(top: 10),

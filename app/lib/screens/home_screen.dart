@@ -5,6 +5,8 @@ import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
+import 'exams_hub_screen.dart';
+import 'report_screen.dart';
 import 'settings_screen.dart';
 import 'textbook_screen.dart';
 
@@ -154,6 +156,40 @@ class _HomeScreenState extends State<HomeScreen> {
                   ]),
                 ]),
               ),
+              const SectionTitle('Academics'),
+              Row(children: [
+                Expanded(
+                  child: GradientCard(
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => ExamsHubScreen(gateway: widget.gateway, settings: widget.settings),
+                    )),
+                    padding: const EdgeInsets.all(16),
+                    child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(Icons.quiz_rounded, color: AppColors.teal, size: 26),
+                      SizedBox(height: 10),
+                      Text('Exams & Tests', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
+                      SizedBox(height: 3),
+                      Text('MCQ • Fill • Short\nTimed exams, doubt clearing', style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.45)),
+                    ]),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GradientCard(
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => ReportScreen(gateway: widget.gateway, settings: widget.settings),
+                    )),
+                    padding: const EdgeInsets.all(16),
+                    child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Icon(Icons.emoji_events_rounded, color: AppColors.amber, size: 26),
+                      SizedBox(height: 10),
+                      Text('Report Card', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
+                      SizedBox(height: 3),
+                      Text('Marks • Grades • Rank & level\nWeak-part revision plan', style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.45)),
+                    ]),
+                  ),
+                ),
+              ]),
               const SectionTitle('My textbooks'),
               if (_loading)
                 const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))
