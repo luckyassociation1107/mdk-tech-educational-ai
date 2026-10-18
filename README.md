@@ -195,3 +195,24 @@ brain mode additionally needs a reachable brain-server URL (Settings).
   Rank 6 Learner, computed from the student's own averages on this
   device - openly labelled in-app) and a weak-parts revision list that
   jumps back into the textbook. All history is stored on the phone only.
+
+## Institution mode: Admin, Principal, Teachers, Students (v0.3)
+
+The app now works like an institutional application with role logins
+(all accounts stored on-device; no server needed):
+
+- **Admin = founder/creator.** First launch creates the founder account.
+  The admin creates schools and appoints exactly one Principal per school
+  (appointing a new one deactivates the old), can deactivate schools and
+  reset principal passwords.
+- **Principal (one per school).** Controls the whole staff of their
+  school: adds/deactivates teachers and students, resets passwords, sees
+  school test counts and averages per student, and can also open the
+  teaching tools to upload/publish.
+- **Teachers.** Upload textbooks, generate classes, create tests and
+  **publish** a textbook to the whole school or one class
+  (Textbook -> Publish to students).
+- **Students (read-only).** See only published textbooks for their
+  school/class: read, watch, Ask PDF doubts and take tests. There is no
+  upload or generate control in the student experience, and exam history
+  is stored per student account, so marks stay private per login.

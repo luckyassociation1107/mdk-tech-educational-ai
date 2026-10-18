@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../auth_models.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
@@ -13,7 +14,9 @@ import 'textbook_screen.dart';
 class HomeScreen extends StatefulWidget {
   final EngineGateway gateway;
   final AppSettings settings;
-  const HomeScreen({super.key, required this.gateway, required this.settings});
+  final AppUser? user;
+  final VoidCallback? onSignOut;
+  const HomeScreen({super.key, required this.gateway, required this.settings, this.user, this.onSignOut});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -137,6 +140,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   icon: const Icon(Icons.settings_rounded, color: AppColors.muted),
                 ),
+                if (widget.onSignOut != null)
+                  IconButton(
+                    tooltip: 'Sign out (${widget.user?.name ?? ''})',
+                    onPressed: widget.onSignOut,
+                    icon: const Icon(Icons.logout_rounded, color: AppColors.muted),
+                  ),
               ]),
               const SizedBox(height: 20),
               GradientCard(
@@ -207,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: GradientCard(
                         onTap: () async {
                           await Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: b),
+                            builder: (_) => TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: b, viewer: widget.user),
                           ));
                           _load();
                         },

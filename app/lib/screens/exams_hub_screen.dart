@@ -13,7 +13,11 @@ import 'report_screen.dart';
 class ExamsHubScreen extends StatefulWidget {
   final EngineGateway gateway;
   final AppSettings settings;
-  const ExamsHubScreen({super.key, required this.gateway, required this.settings});
+
+  /// When set (student mode), only these textbook sessions are listed —
+  /// students only ever test what was published to them.
+  final Set<String>? onlySessionIds;
+  const ExamsHubScreen({super.key, required this.gateway, required this.settings, this.onlySessionIds});
 
   @override
   State<ExamsHubScreen> createState() => _ExamsHubScreenState();
@@ -38,7 +42,10 @@ class _ExamsHubScreenState extends State<ExamsHubScreen> {
     });
     try {
       final raw = await widget.gateway.listSessions(brain: widget.settings.brain, brainServerUrl: widget.settings.brainServerUrl);
-      final books = raw.whereType<Map>().map(TextbookItem.fromMap).where((b) => b.sessionId.isNotEmpty).toList();
+      var books = raw.whereType<Map>().map(TextbookItem.fromMap).where((b) => b.sessionId.isNotEmpty).toList();
+      if (widget.onlySessionIds != null) {
+        books = books.where((b) => widget.onlySessionIds!.contains(b.sessionId)).toList();
+      }
       for (final b in books) {
         try {
           final s = await widget.gateway.chapterSeries(b.sessionId,

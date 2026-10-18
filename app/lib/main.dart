@@ -1,12 +1,54 @@
 import 'package:flutter/material.dart';
 
+import 'auth_models.dart';
+import 'auth_store.dart';
 import 'engine_gateway.dart';
+import 'exam_store.dart';
+import 'screens/admin_home.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/principal_home.dart';
+import 'screens/student_home.dart';
 import 'store.dart';
 import 'widgets.dart';
 
 void main() {
   runApp(const TextbookClassroomApp());
+}
+
+/// Routes to the right home for the signed-in role:
+/// Admin (founder) → school/principal console; Principal → own school
+/// staff console; Teacher → full classroom tools; Student → read-only.
+Future<void> routeAfterAuth(BuildContext context, {required EngineGateway gateway, required AppSettings settings}) async {
+  final user = await AuthStore.currentUser();
+  if (!context.mounted) return;
+  Future<void> signOut() async {
+    await AuthStore.signOut();
+    ExamStore.scopeUserId = 'guest';
+    if (context.mounted) {
+      await routeAfterAuth(context, gateway: gateway, settings: settings);
+    }
+  }
+
+  final Widget dest;
+  if (user == null) {
+    dest = LoginScreen(onSignedIn: (u) async {
+      ExamStore.scopeUserId = u.id;
+      if (context.mounted) {
+        await routeAfterAuth(context, gateway: gateway, settings: settings);
+      }
+    });
+  } else {
+    ExamStore.scopeUserId = user.id;
+    dest = switch (user.role) {
+      UserRole.admin => AdminHomeScreen(admin: user, onSignOut: signOut),
+      UserRole.principal => PrincipalHomeScreen(principal: user, gateway: gateway, settings: settings, onSignOut: signOut),
+      UserRole.teacher => HomeScreen(gateway: gateway, settings: settings, user: user, onSignOut: signOut),
+      UserRole.student => StudentHomeScreen(student: user, gateway: gateway, settings: settings, onSignOut: signOut),
+    };
+  }
+  if (!context.mounted) return;
+  Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => dest), (_) => false);
 }
 
 class TextbookClassroomApp extends StatelessWidget {
@@ -94,9 +136,7 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
     final settings = await AppSettings.load();
     await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => HomeScreen(gateway: EngineGateway(), settings: settings),
-    ));
+    await routeAfterAuth(context, gateway: EngineGateway(), settings: settings);
   }
 
   @override

@@ -6,11 +6,18 @@ import 'academic_models.dart';
 
 /// All exam history lives on this device (student chose fully-local mode).
 class ExamStore {
-  static const _key = 'exam_results_v1';
+  /// Whose marks these are. Set at login so every student has a private
+  /// report card on the shared device; teachers/principals read other
+  /// scopes through [loadAllFor] without touching them.
+  static String scopeUserId = 'guest';
 
-  static Future<List<ExamResult>> loadAll() async {
+  static String _keyFor(String userId) => 'exam_results_$userId';
+
+  static Future<List<ExamResult>> loadAll() => loadAllFor(scopeUserId);
+
+  static Future<List<ExamResult>> loadAllFor(String userId) async {
     final p = await SharedPreferences.getInstance();
-    final raw = p.getString(_key);
+    final raw = p.getString(_keyFor(userId));
     if (raw == null || raw.isEmpty) return [];
     try {
       final list = (jsonDecode(raw) as List).whereType<Map>().map((e) => ExamResult.fromJson(e.map((k, v) => MapEntry(k.toString(), v)))).toList();
@@ -25,12 +32,12 @@ class ExamStore {
     final all = await loadAll();
     all.add(r);
     final p = await SharedPreferences.getInstance();
-    await p.setString(_key, jsonEncode(all.map((e) => e.toJson()).toList()));
+    await p.setString(_keyFor(scopeUserId), jsonEncode(all.map((e) => e.toJson()).toList()));
   }
 
   static Future<void> clearAll() async {
     final p = await SharedPreferences.getInstance();
-    await p.remove(_key);
+    await p.remove(_keyFor(scopeUserId));
   }
 }
 
