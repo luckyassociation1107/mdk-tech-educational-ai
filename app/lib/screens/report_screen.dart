@@ -96,7 +96,8 @@ class _ReportScreenState extends State<ReportScreen> {
           : d == null || d.tests == 0
               ? const EmptyState(
                   icon: Icons.emoji_events_rounded,
-                  title: 'No tests yet', 'Your ranks, marks and level will appear here. Open Exams & Tests and take your first textbook test.',
+                  title: 'No tests yet',
+                  message: 'Your ranks, marks and level will appear here. Open Exams & Tests and take your first textbook test.',
                 )
               : ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 30), children: [
                   GradientCard(

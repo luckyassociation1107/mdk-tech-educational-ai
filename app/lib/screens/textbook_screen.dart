@@ -37,7 +37,7 @@ class _TextbookScreenState extends State<TextbookScreen> {
   final _publishClass = TextEditingController();
 
   bool get _readOnly => widget.viewer?.role == UserRole.student;
-  bool get _canPublish => widget.viewer?.canPublish ?? false;
+  bool get _canPublish => widget.viewer?.role.canPublish ?? false;
 
   @override
   void dispose() {
