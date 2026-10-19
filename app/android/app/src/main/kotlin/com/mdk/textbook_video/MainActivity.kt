@@ -1,6 +1,7 @@
 package com.mdk.textbook_video
 
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -20,13 +21,27 @@ class MainActivity : FlutterActivity() {
     private val channelName = "com.mdk.textbook_video/engine"
     private val io = Executors.newSingleThreadExecutor()
     private var tts: TextToSpeech? = null
+    private var channel: MethodChannel? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         tts = TextToSpeech(this) { /* readiness is reported per checkTts call */ }
+        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {
+                runOnUiThread { channel?.invokeMethod("ttsDone", null) }
+            }
+            @Deprecated("deprecated in API level 21")
+            override fun onError(utteranceId: String?) {
+                runOnUiThread { channel?.invokeMethod("ttsError", null) }
+            }
+            override fun onError(utteranceId: String?, errorCode: Int) {
+                runOnUiThread { channel?.invokeMethod("ttsError", null) }
+            }
+        })
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
-            .setMethodCallHandler { call, result ->
+        channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
+        channel?.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "checkTts" -> {
                         val lang = call.argument<String>("language") ?: "en-IN"
@@ -37,6 +52,27 @@ class MainActivity : FlutterActivity() {
                         } catch (e: Exception) { TextToSpeech.LANG_NOT_SUPPORTED }
                         val ok = avail == TextToSpeech.LANG_AVAILABLE || avail == TextToSpeech.LANG_COUNTRY_AVAILABLE || avail == TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE
                         result.success(mapOf("available" to ok, "code" to avail))
+                    }
+                    "speak" -> {
+                        val text = call.argument<String>("text") ?: ""
+                        val lang = call.argument<String>("language") ?: "en-IN"
+                        val rate = call.argument<Double>("rate") ?: 0.9
+                        val parts = lang.split("-")
+                        val locale = if (parts.size > 1) Locale(parts[0], parts[1]) else Locale(parts[0])
+                        try {
+                            tts?.language = locale
+                            tts?.setSpeechRate(rate.toFloat())
+                            val params = android.os.Bundle()
+                            params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "scene")
+                            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "scene")
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("tts_failed", e.message, null)
+                        }
+                    }
+                    "stopTts" -> {
+                        try { tts?.stop() } catch (e: Exception) { /* ignore */ }
+                        result.success(true)
                     }
                     "renderPages" -> {
                         val pdfPath = call.argument<String>("pdfPath")

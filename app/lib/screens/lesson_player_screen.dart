@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/services.dart';
 
 import '../dart_engine.dart';
 import '../store.dart';
@@ -51,7 +51,8 @@ class LessonPlayerScreen extends StatefulWidget {
 }
 
 class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
-  final FlutterTts _tts = FlutterTts();
+  // Device voice via MainActivity's Android TextToSpeech (no plugin needed).
+  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
   DartPdfIndex? _index;
   String _pageDir = '';
   List<_Scene> _scenes = [];
@@ -71,15 +72,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   Future<void> _init() async {
     final index = await DartEngine.loadIndex(widget.sessionId);
     final dir = await DartEngine.pageDirOf(widget.sessionId);
-    try {
-      await _tts.setLanguage(widget.settings.language == 'te-IN' ? 'te-IN' : 'en-IN');
-      await _tts.setSpeechRate(0.48);
-    } catch (_) {}
-    _tts.setCompletionHandler(() {
-      _ttsDone = true;
-    });
-    _tts.setErrorHandler((_) {
-      _ttsDone = true;
+    _ttsCh.setMethodCallHandler((call) async {
+      if (call.method == 'ttsDone' || call.method == 'ttsError') _ttsDone = true;
     });
     if (!mounted) return;
     setState(() {
@@ -145,11 +139,13 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       _ttsDone = false;
     });
     final scene = _scenes[i];
-    try {
-      _tts.speak(scene.narration);
-    } catch (_) {
+    _ttsCh.invokeMethod('speak', {
+      'text': scene.narration,
+      'language': widget.settings.language == 'te-IN' ? 'te-IN' : 'en-IN',
+      'rate': 0.9,
+    }).catchError((_) {
       _ttsDone = true;
-    }
+    });
     final est = _estSeconds(scene.narration);
     var elapsed = 0.0;
     _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
@@ -188,7 +184,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     if (_playing) {
       _timer?.cancel();
       try {
-        await _tts.stop();
+        await _ttsCh.invokeMethod('stopTts');
       } catch (_) {}
       setState(() => _playing = false);
     } else {
@@ -198,16 +194,14 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
 
   void _finish() {
     _timer?.cancel();
-    try {
-      _tts.stop();
-    } catch (_) {}
+    _ttsCh.invokeMethod('stopTts').catchError((_) {});
     Navigator.of(context).pop(true);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _tts.stop();
+    _ttsCh.invokeMethod('stopTts').catchError((_) {});
     super.dispose();
   }
 

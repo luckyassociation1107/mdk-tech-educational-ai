@@ -14,7 +14,6 @@ dependencies:
   path_provider: ^2.1.0
   shared_preferences: ^2.2.0
   crypto: ^3.0.3
-  flutter_tts: ^4.2.0
   syncfusion_flutter_pdf: ^27.2.5
   http: ^1.2.2
   url_launcher: ^6.3.0
