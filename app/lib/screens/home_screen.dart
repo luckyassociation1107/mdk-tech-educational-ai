@@ -1,29 +1,19 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
-import '../auth_models.dart';
-import '../auth_store.dart';
-import '../catalog_codec.dart';
-import '../catalog_service.dart';
 import '../engine_gateway.dart';
-import '../gofile_service.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
 import 'settings_screen.dart';
-import 'share_pdf_screen.dart';
 import 'textbook_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final EngineGateway gateway;
   final AppSettings settings;
-  final AppUser? user;
-  final VoidCallback? onSignOut;
-  const HomeScreen({super.key, required this.gateway, required this.settings, this.user, this.onSignOut});
+  const HomeScreen({super.key, required this.gateway, required this.settings});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -97,12 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
         state: 'active',
         brain: (s['brain'] ?? '').toString(),
       );
-      // Teachers/principals: the new textbook is automatically shared -
-      // uploaded to Gofile and registered in the cloud link catalog.
-      final u = widget.user;
-      if (u != null && u.role.canUpload) {
-        _autoShare(path, book.title);
-      }
       if (!mounted) return;
       setState(() => _adding = false);
       await Navigator.of(context).push(MaterialPageRoute(
@@ -113,40 +97,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       setState(() => _adding = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
-    }
-  }
-
-  /// Fire-and-forget: upload the just-added textbook to Gofile, record it
-  /// for the school, and register the link in the cloud catalog. Sharing
-  /// must never block or break studying, so failures stay quiet.
-  Future<void> _autoShare(String pdfPath, String title) async {
-    final u = widget.user;
-    if (u == null) return;
-    try {
-      final up = await GofileService.uploadPdf(file: File(pdfPath), userId: u.id);
-      final now = DateTime.now().millisecondsSinceEpoch;
-      await AuthStore.addSharedPdf(SharedPdf(
-        id: 'pdf_$now',
-        title: title.isEmpty ? up.name : title,
-        fileId: up.fileId,
-        downloadPage: up.downloadPage,
-        sizeBytes: up.size,
-        schoolId: u.schoolId,
-        className: '',
-        uploadedById: u.id,
-        uploadedByName: u.name,
-        uploadedAtMillis: now,
-        localPath: pdfPath,
-      ));
-      final posted = await CatalogService.post(
-        widget.settings,
-        CatalogEntry(t: title.isEmpty ? up.name : title, u: up.downloadPage, by: u.name, cls: '', ts: now),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(posted ? 'Textbook shared to Gofile + cloud catalog' : 'Textbook shared to Gofile')));
-    } catch (_) {
-      // Offline or Gofile hiccup: the textbook still works on this device.
     }
   }
 
@@ -187,12 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   icon: const Icon(Icons.settings_rounded, color: AppColors.muted),
                 ),
-                if (widget.onSignOut != null)
-                  IconButton(
-                    tooltip: 'Sign out (${widget.user?.name ?? ''})',
-                    onPressed: widget.onSignOut,
-                    icon: const Icon(Icons.logout_rounded, color: AppColors.muted),
-                  ),
               ]),
               const SizedBox(height: 20),
               GradientCard(
@@ -246,32 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ]),
-              if (widget.user != null && widget.user!.role.canUpload) ...[
-                const SizedBox(height: 12),
-                GradientCard(
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => SharePdfScreen(user: widget.user!, settings: widget.settings),
-                  )),
-                  padding: const EdgeInsets.all(16),
-                  child: Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(color: AppColors.red.withOpacity(0.14), borderRadius: BorderRadius.circular(13)),
-                      child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.red),
-                    ),
-                    const SizedBox(width: 13),
-                    const Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Share PDFs with students', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
-                        SizedBox(height: 3),
-                        Text('Free Gofile shelf — students download & keep PDFs. Videos come from the engine, never uploads.',
-                            style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.45)),
-                      ]),
-                    ),
-                    const Icon(Icons.arrow_forward_ios_rounded, size: 15, color: AppColors.muted),
-                  ]),
-                ),
-              ],
               const SectionTitle('My textbooks'),
               if (_loading)
                 const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))
@@ -289,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: GradientCard(
                         onTap: () async {
                           await Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: b, viewer: widget.user),
+                            builder: (_) => TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: b),
                           ));
                           _load();
                         },

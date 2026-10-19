@@ -47,8 +47,8 @@ jobs:
             echo "sdk.dir=$ANDROID_HOME"
             echo "flutter.sdk=$FLUTTER_SDK"
             echo "flutter.buildMode=release"
-            echo "flutter.versionName=0.11.0"
-            echo "flutter.versionCode=11"
+            echo "flutter.versionName=0.12.0"
+            echo "flutter.versionCode=12"
           } > app/android/local.properties
           cat app/android/local.properties
 

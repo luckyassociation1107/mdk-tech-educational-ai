@@ -5,6 +5,12 @@ video for every question. **The cloud AI only plans the lesson; the local
 Python engine renders the actual MP4.** No image-generation AI, no
 video-generation AI, no API key.
 
+## v0.12.0 — student-only
+Founder/principal/teacher/staff roles are removed. One learner adds a
+textbook PDF and learns: PDF-based interactive lessons ("video
+classes"), Ask-PDF chat, optional per-device website brain, tests,
+report card — everything on the student's own device.
+
 ## v0.7.0 — auto Gofile + cloud link catalog
 
 When a teacher/principal adds a textbook PDF it is now **automatically

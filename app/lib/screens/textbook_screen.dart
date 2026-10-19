@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../auth_models.dart';
-import '../auth_store.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
@@ -19,10 +17,7 @@ class TextbookScreen extends StatefulWidget {
   final AppSettings settings;
   final TextbookItem book;
 
-  /// Who is looking: students get a strictly read-only view (no generate,
-  /// no upload); teachers/principals additionally get Publish controls.
-  final AppUser? viewer;
-  const TextbookScreen({super.key, required this.gateway, required this.settings, required this.book, this.viewer});
+  const TextbookScreen({super.key, required this.gateway, required this.settings, required this.book});
 
   @override
   State<TextbookScreen> createState() => _TextbookScreenState();
@@ -35,18 +30,6 @@ class _TextbookScreenState extends State<TextbookScreen> {
   bool _loading = true;
   String? _error;
   bool _generating = false;
-  List<PublishedBook> _published = [];
-  final _publishClass = TextEditingController();
-
-  bool get _readOnly => widget.viewer?.role == UserRole.student;
-  bool get _canPublish => widget.viewer?.role.canPublish ?? false;
-
-  @override
-  void dispose() {
-    _publishClass.dispose();
-    super.dispose();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -66,17 +49,11 @@ class _TextbookScreenState extends State<TextbookScreen> {
       final vids = await widget.gateway.sessionVideos(widget.book.sessionId,
           brain: widget.settings.brain, brainServerUrl: widget.settings.brainServerUrl);
       final done = await ProgressStore.completedParts(widget.book.sessionId);
-      final published = _canPublish
-          ? (await AuthStore.published())
-              .where((b) => b.sessionId == widget.book.sessionId && b.schoolId == widget.viewer!.schoolId)
-              .toList()
-          : <PublishedBook>[];
       if (!mounted) return;
       setState(() {
         _parts = parts;
         _videos = vids.whereType<Map>().map(VideoItem.fromMap).toList();
         _localDone = done;
-        _published = published;
         _loading = false;
       });
     } catch (e) {
@@ -259,74 +236,6 @@ class _TextbookScreenState extends State<TextbookScreen> {
                   ProgressRing(value: _progress, size: 64),
                 ]),
               ),
-              if (_readOnly)
-                Container(
-                  margin: const EdgeInsets.only(top: 14),
-                  padding: const EdgeInsets.all(13),
-                  decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.teal.withOpacity(0.4))),
-                  child: const Row(children: [
-                    Icon(Icons.lock_rounded, size: 17, color: AppColors.teal),
-                    SizedBox(width: 9),
-                    Expanded(
-                      child: Text('Student view: read, watch, ask doubts and take tests. Only teachers can create or change classes.',
-                          style: TextStyle(color: AppColors.text, fontSize: 12.5, height: 1.45)),
-                    ),
-                  ]),
-                ),
-              if (_canPublish) ...[
-                const SectionTitle('Publish to students'),
-                GradientCard(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Students in your school will see this textbook in read-only mode.',
-                        style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.45)),
-                    const SizedBox(height: 10),
-                    if (_published.isEmpty)
-                      const Text('Not published yet.', style: TextStyle(color: AppColors.muted, fontSize: 12.5, fontWeight: FontWeight.w700))
-                    else
-                      Wrap(spacing: 8, runSpacing: 8, children: [
-                        ..._published.map((b) => Chip(
-                              avatar: const Icon(Icons.public_rounded, size: 15, color: AppColors.teal),
-                              label: Text(b.className.isEmpty ? 'Whole school' : b.className),
-                              deleteIcon: const Icon(Icons.close_rounded, size: 15),
-                              onDeleted: () async {
-                                await AuthStore.unpublish(b.sessionId, b.schoolId, b.className);
-                                _load();
-                              },
-                            )),
-                      ]),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _publishClass,
-                          style: const TextStyle(color: AppColors.text),
-                          decoration: const InputDecoration(labelText: 'Class (blank = whole school)', hintText: 'e.g. Class 10-A'),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      FilledButton.icon(
-                        onPressed: () async {
-                          await AuthStore.publish(
-                            sessionId: widget.book.sessionId,
-                            title: widget.book.title,
-                            schoolId: widget.viewer!.schoolId,
-                            className: _publishClass.text,
-                            publishedBy: widget.viewer!.name,
-                          );
-                          _publishClass.clear();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Published — students can now read this textbook.')));
-                          }
-                          _load();
-                        },
-                        icon: const Icon(Icons.publish_rounded, size: 18),
-                        label: const Text('Publish'),
-                      ),
-                    ]),
-                  ]),
-                ),
-              ],
               const SectionTitle('Chapter series'),
               if (_loading)
                 const Padding(padding: EdgeInsets.all(28), child: Center(child: CircularProgressIndicator()))
@@ -375,7 +284,7 @@ class _TextbookScreenState extends State<TextbookScreen> {
                           ],
                           const SizedBox(height: 12),
                           Row(children: [
-                            if (!_readOnly) ...[
+                            ...[
                               Expanded(
                                 child: FilledButton.icon(
                                   onPressed: unlocked && !_generating ? () => _generate(p) : null,
