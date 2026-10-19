@@ -55,7 +55,7 @@ jobs:
       - name: Build release APK (arm64)
         working-directory: app/android
         run: >
-          ./gradlew assembleRelease
+          bash ./gradlew assembleRelease
           -Ptarget-platform=android-arm64
           -Ptarget=lib/main.dart
           -Pbase-application-name=android.app.Application
