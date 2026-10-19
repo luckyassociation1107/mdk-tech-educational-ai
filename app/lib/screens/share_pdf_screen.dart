@@ -41,9 +41,35 @@ class _SharePdfScreenState extends State<SharePdfScreen> {
 
   Future<void> _load() async {
     final all = await AuthStore.sharedPdfs();
+    final mine = all.where((e) => e.schoolId == widget.user.schoolId).toList();
+    final s = widget.settings;
+    if (s != null) {
+      final cloud = await CatalogService.fetch(s);
+      if (cloud.isNotEmpty) {
+        final have = mine.map((p) => p.downloadPage).toSet();
+        var i = 0;
+        for (final e in cloud) {
+          if (e.u.isEmpty || have.contains(e.u)) continue;
+          have.add(e.u);
+          mine.add(SharedPdf(
+            id: 'cloud_${e.ts}_${i++}',
+            title: e.t,
+            fileId: '',
+            downloadPage: e.u,
+            sizeBytes: 0,
+            schoolId: widget.user.schoolId,
+            className: e.cls,
+            uploadedById: '',
+            uploadedByName: e.by,
+            uploadedAtMillis: e.ts,
+          ));
+        }
+        mine.sort((a, b) => b.uploadedAtMillis.compareTo(a.uploadedAtMillis));
+      }
+    }
     if (!mounted) return;
     setState(() {
-      _items = all.where((e) => e.schoolId == widget.user.schoolId).toList();
+      _items = mine;
       _loading = false;
     });
   }
@@ -78,8 +104,21 @@ class _SharePdfScreenState extends State<SharePdfScreen> {
         localPath: path,
       );
       await AuthStore.addSharedPdf(pdf);
+      var posted = false;
+      final s = widget.settings;
+      if (s != null) {
+        posted = await CatalogService.post(
+          s,
+          CatalogEntry(
+              t: up.name,
+              u: up.downloadPage,
+              by: widget.user.name,
+              cls: _classCtrl.text.trim(),
+              ts: DateTime.now().millisecondsSinceEpoch),
+        );
+      }
       _classCtrl.clear();
-      _snack('PDF shared. Students can download it now.');
+      _snack(posted ? 'PDF shared + added to the cloud catalog.' : 'PDF shared. Students can download it now.');
       _load();
     } catch (e) {
       _snack('Upload failed: $e');
@@ -228,11 +267,18 @@ class _SharePdfScreenState extends State<SharePdfScreen> {
                         ]),
                       ),
                       const Spacer(),
-                      IconButton(tooltip: 'Refresh link (re-upload)', onPressed: _uploading ? null : () => _refresh(pdf), icon: const Icon(Icons.refresh_rounded, color: AppColors.teal)),
-                      IconButton(tooltip: 'Stop sharing', onPressed: () => _remove(pdf), icon: const Icon(Icons.delete_outline_rounded, color: AppColors.red)),
+                      if (pdf.id.startsWith('cloud_'))
+                        const Text('CLOUD CATALOG', style: TextStyle(color: AppColors.teal, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.6))
+                      else ...[
+                        IconButton(tooltip: 'Refresh link (re-upload)', onPressed: _uploading ? null : () => _refresh(pdf), icon: const Icon(Icons.refresh_rounded, color: AppColors.teal)),
+                        IconButton(tooltip: 'Stop sharing', onPressed: () => _remove(pdf), icon: const Icon(Icons.delete_outline_rounded, color: AppColors.red)),
+                      ],
                     ]),
-                    const Text('Real student downloads also keep the link alive. Refresh re-uploads from this device.',
-                        style: TextStyle(color: AppColors.muted, fontSize: 11, height: 1.4)),
+                    Text(
+                        pdf.id.startsWith('cloud_')
+                            ? 'Added by another device through the cloud catalog. Manage it from the device that uploaded it.'
+                            : 'Real student downloads also keep the link alive. Refresh re-uploads from this device.',
+                        style: const TextStyle(color: AppColors.muted, fontSize: 11, height: 1.4)),
                   ]),
                 ),
               );

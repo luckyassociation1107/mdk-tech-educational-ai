@@ -91,6 +91,12 @@ class _HomeScreenState extends State<HomeScreen> {
         state: 'active',
         brain: (s['brain'] ?? '').toString(),
       );
+      // Teachers/principals: the new textbook is automatically shared -
+      // uploaded to Gofile and registered in the cloud link catalog.
+      final u = widget.user;
+      if (u != null && u.role.canUpload) {
+        _autoShare(path, book.title);
+      }
       if (!mounted) return;
       setState(() => _adding = false);
       await Navigator.of(context).push(MaterialPageRoute(
@@ -101,6 +107,39 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       setState(() => _adding = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
+    }
+  }
+
+  /// Fire-and-forget: upload the just-added textbook to Gofile, record it
+  /// for the school, and register the link in the cloud catalog. Sharing
+  /// must never block or break studying, so failures stay quiet.
+  Future<void> _autoShare(String pdfPath, String title) async {
+    final u = widget.user;
+    if (u == null) return;
+    try {
+      final up = await GofileService.uploadPdf(file: File(pdfPath), userId: u.id);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await AuthStore.addSharedPdf(SharedPdf(
+        id: 'pdf_$now',
+        title: title.isEmpty ? up.name : title,
+        fileName: up.name,
+        downloadPage: up.downloadPage,
+        uploadedById: u.id,
+        uploadedByName: u.name,
+        schoolId: u.schoolId,
+        className: '',
+        localPath: pdfPath,
+        createdAt: now,
+      ));
+      final posted = await CatalogService.post(
+        widget.settings,
+        CatalogEntry(t: title.isEmpty ? up.name : title, u: up.downloadPage, by: u.name, cls: '', ts: now),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(posted ? 'Textbook shared to Gofile + cloud catalog' : 'Textbook shared to Gofile')));
+    } catch (_) {
+      // Offline or Gofile hiccup: the textbook still works on this device.
     }
   }
 
@@ -204,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
                 GradientCard(
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => SharePdfScreen(user: widget.user!),
+                    builder: (_) => SharePdfScreen(user: widget.user!, settings: widget.settings),
                   )),
                   padding: const EdgeInsets.all(16),
                   child: Row(children: [

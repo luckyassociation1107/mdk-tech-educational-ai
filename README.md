@@ -5,6 +5,14 @@ video for every question. **The cloud AI only plans the lesson; the local
 Python engine renders the actual MP4.** No image-generation AI, no
 video-generation AI, no API key.
 
+## v0.7.0 — auto Gofile + cloud link catalog
+
+When a teacher/principal adds a textbook PDF it is now **automatically
+uploaded to Gofile** and its link is registered in a **shared cloud
+catalog** (Google Form → Google Sheet, entries stored encoded, nothing
+readable on any public page). Student devices read the catalog, so new
+links appear everywhere. One-time setup: see `CATALOG-SETUP.md`.
+
 ## The "brain" is Playwright (as requested)
 
 Instead of an AI API key, the brain is the PDF Summarizer website we

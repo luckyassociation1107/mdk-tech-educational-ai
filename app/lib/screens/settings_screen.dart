@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../catalog_service.dart';
 import '../engine_gateway.dart';
 import '../store.dart';
 import '../widgets.dart';
@@ -101,6 +102,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 8),
                 const Text('The online brain is the PDF-teacher website service. Your PDF is sent there for teaching content; videos are still rendered on this phone.',
                     style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.45)),
+              ],
+            ]),
+          ),
+          const SectionTitle('Cloud link catalog'),
+          GradientCard(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text(
+                  'When a teacher adds a textbook PDF it is automatically uploaded to Gofile, and its link is stored in one shared catalog (a Google Form feeding a Google Sheet). Student devices read the catalog, so every shared link appears everywhere. Entries are stored encoded — nothing readable shows on any public page. Full setup: CATALOG-SETUP.md in the project.',
+                  style: TextStyle(color: AppColors.muted, height: 1.45)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _catalogForm,
+                style: const TextStyle(color: AppColors.text),
+                decoration: const InputDecoration(labelText: 'Catalog Form link (viewform URL)', hintText: 'https://docs.google.com/forms/d/e/…/viewform', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _catalogEntry,
+                style: const TextStyle(color: AppColors.text),
+                decoration: const InputDecoration(labelText: 'Form entry id', hintText: 'entry.123456789', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _catalogSheet,
+                style: const TextStyle(color: AppColors.text),
+                decoration: const InputDecoration(labelText: 'Catalog Sheet link', hintText: 'https://docs.google.com/spreadsheets/d/…', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(onPressed: _testCatalog, icon: const Icon(Icons.cloud_done_rounded), label: const Text('Test catalog read')),
+              if (_catalogInfo != null) ...[
+                const SizedBox(height: 10),
+                Text(_catalogInfo!, style: const TextStyle(color: AppColors.teal, height: 1.45)),
               ],
             ]),
           ),

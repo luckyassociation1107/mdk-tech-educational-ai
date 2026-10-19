@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../auth_models.dart';
 import '../auth_store.dart';
+import '../catalog_service.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';

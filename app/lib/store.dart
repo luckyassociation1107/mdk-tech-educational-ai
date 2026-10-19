@@ -8,6 +8,10 @@ class AppSettings {
   String theme; // board theme: auto | green_board | ...
   String resolution; // 1280x720 | 854x480
   int pagesPerPart;
+  // Cloud link catalog (Google Form write + Sheet read). See catalog_service.dart.
+  String catalogFormUrl;
+  String catalogEntryId;
+  String catalogSheetUrl;
 
   AppSettings({
     this.language = 'en-IN',
@@ -16,6 +20,9 @@ class AppSettings {
     this.theme = 'auto',
     this.resolution = '854x480',
     this.pagesPerPart = 6,
+    this.catalogFormUrl = '',
+    this.catalogEntryId = '',
+    this.catalogSheetUrl = '',
   });
 
   static Future<AppSettings> load() async {
@@ -27,6 +34,9 @@ class AppSettings {
       theme: p.getString('set_theme') ?? 'auto',
       resolution: p.getString('set_resolution') ?? '854x480',
       pagesPerPart: p.getInt('set_pages_per_part') ?? 6,
+      catalogFormUrl: p.getString('set_catalog_form') ?? '',
+      catalogEntryId: p.getString('set_catalog_entry') ?? '',
+      catalogSheetUrl: p.getString('set_catalog_sheet') ?? '',
     );
   }
 
@@ -38,6 +48,9 @@ class AppSettings {
     await p.setString('set_theme', theme);
     await p.setString('set_resolution', resolution);
     await p.setInt('set_pages_per_part', pagesPerPart);
+    await p.setString('set_catalog_form', catalogFormUrl);
+    await p.setString('set_catalog_entry', catalogEntryId);
+    await p.setString('set_catalog_sheet', catalogSheetUrl);
   }
 }
 
