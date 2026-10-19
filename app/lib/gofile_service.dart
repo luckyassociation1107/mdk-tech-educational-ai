@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,11 +22,24 @@ class GofileUpload {
 /// shows a countdown and the teacher refreshes with one tap. No fake
 /// downloads are ever generated to game that clock.
 class GofileService {
+  static const _secure = FlutterSecureStorage();
   static String _tokenKey(String userId) => 'gofile_token_$userId';
 
+  /// The guest-account token can delete this teacher's files, so it is
+  /// kept in secure storage (migrated from SharedPreferences if found).
   static Future<String?> tokenFor(String userId) async {
-    final p = await SharedPreferences.getInstance();
-    return p.getString(_tokenKey(userId));
+    try {
+      final v = await _secure.read(key: _tokenKey(userId));
+      if (v != null && v.isNotEmpty) return v;
+      final p = await SharedPreferences.getInstance();
+      final legacy = p.getString(_tokenKey(userId));
+      if (legacy != null && legacy.isNotEmpty) {
+        await _secure.write(key: _tokenKey(userId), value: legacy);
+        await p.remove(_tokenKey(userId));
+        return legacy;
+      }
+    } catch (_) {}
+    return null;
   }
 
   static Future<GofileUpload> uploadPdf({required File file, required String userId}) async {
@@ -44,8 +58,9 @@ class GofileService {
     final data = (json['data'] as Map).map((k, v) => MapEntry(k.toString(), v));
     final guest = data['guestToken']?.toString();
     if (guest != null && guest.isNotEmpty) {
-      final p = await SharedPreferences.getInstance();
-      await p.setString(_tokenKey(userId), guest);
+      try {
+        await _secure.write(key: _tokenKey(userId), value: guest);
+      } catch (_) {}
     }
     return GofileUpload(
       fileId: (data['id'] ?? '').toString(),

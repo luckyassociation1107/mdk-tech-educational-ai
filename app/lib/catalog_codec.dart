@@ -7,6 +7,9 @@ import 'package:pointycastle/api.dart';
 import 'package:pointycastle/block/aes.dart';
 import 'package:pointycastle/block/modes/gcm.dart';
 import 'package:pointycastle/digests/sha256.dart';
+import 'package:pointycastle/key_derivators/api.dart';
+import 'package:pointycastle/key_derivators/pbkdf2.dart';
+import 'package:pointycastle/macs/hmac.dart';
 
 /// One shared-PDF link in the cloud catalog.
 class CatalogEntry {
@@ -31,7 +34,9 @@ class CatalogEntry {
 
 /// Entries travel as ONE token string in the catalog:
 ///
-///   MDKENC1.<base64(iv + AES-256-GCM ciphertext)>   (school secret set)
+///   MDKENC2.<base64(iv + AES-256-GCM ciphertext)>   (school secret set;
+///                                                    key via PBKDF2 200k)
+///   MDKENC1.…                                       (legacy key, read-only)
 ///   MDKCAT1.<base64(gzip(json))>                    (encoded, no secret)
 ///   MDKRAW1.<base64(json)>                          (encoded, no secret)
 ///
@@ -45,11 +50,30 @@ class CatalogCodec {
   static const _gzPrefix = 'MDKCAT1.';
   static const _rawPrefix = 'MDKRAW1.';
   static const _encPrefix = 'MDKENC1.';
-  static final _tokenRe = RegExp(r'MDK(?:CAT|RAW|ENC)1\.[A-Za-z0-9+/=]+');
+  static const _enc2Prefix = 'MDKENC2.';
+  static final _tokenRe = RegExp(r'MDK(?:CAT1|RAW1|ENC1|ENC2)\.[A-Za-z0-9+/=]+');
 
-  static Uint8List _keyBytes(String secret) {
+  /// Legacy v1 key (single SHA-256) — decrypt-only, for old entries.
+  static Uint8List _keyBytesV1(String secret) {
     final d = SHA256Digest();
     return d.process(Uint8List.fromList(utf8.encode('MDK-CATALOG-v1::$secret')));
+  }
+
+  static String? _cachedSecret;
+  static Uint8List? _cachedKeyV2;
+
+  /// Current key: PBKDF2-HMAC-SHA256, 200k iterations. Ciphertext sits on
+  /// public relays forever, so deriving the key must be expensive; the
+  /// cost is paid once per app run thanks to this cache.
+  static Uint8List _keyBytesV2(String secret) {
+    final s = secret.trim();
+    if (_cachedKeyV2 != null && _cachedSecret == s) return _cachedKeyV2!;
+    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));
+    derivator.init(Pbkdf2Parameters(Uint8List.fromList(utf8.encode('MDK-CATALOG-SALT-v2')), 200000, 32));
+    final key = derivator.process(Uint8List.fromList(utf8.encode(s)));
+    _cachedSecret = s;
+    _cachedKeyV2 = key;
+    return key;
   }
 
   static Uint8List _aes(bool forEncryption, Uint8List key, Uint8List iv, Uint8List data) {
@@ -61,8 +85,8 @@ class CatalogCodec {
   static String encodeEncrypted(CatalogEntry e, String secret) {
     final plain = Uint8List.fromList(utf8.encode(jsonEncode(e.toJson())));
     final iv = Uint8List.fromList(List<int>.generate(12, (_) => Random.secure().nextInt(256)));
-    final ct = _aes(true, _keyBytes(secret.trim()), iv, plain);
-    return '$_encPrefix${base64.encode([...iv, ...ct])}';
+    final ct = _aes(true, _keyBytesV2(secret), iv, plain);
+    return '$_enc2Prefix${base64.encode([...iv, ...ct])}';
   }
 
   static String encode(CatalogEntry e, {String catalogSecret = ''}) {
@@ -84,12 +108,13 @@ class CatalogCodec {
       final payload = token.substring(token.indexOf('.') + 1);
       final raw = base64.decode(payload);
       final List<int> jsonBytes;
-      if (token.startsWith(_encPrefix)) {
+      if (token.startsWith(_enc2Prefix) || token.startsWith(_encPrefix)) {
         final secret = catalogSecret.trim();
         if (secret.isEmpty || raw.length <= 12) return null;
         final iv = Uint8List.fromList(raw.sublist(0, 12));
         final ct = Uint8List.fromList(raw.sublist(12));
-        jsonBytes = _aes(false, _keyBytes(secret), iv, ct);
+        final key = token.startsWith(_enc2Prefix) ? _keyBytesV2(secret) : _keyBytesV1(secret);
+        jsonBytes = _aes(false, key, iv, ct);
       } else if (token.startsWith(_gzPrefix)) {
         jsonBytes = gzip.decode(raw);
       } else {

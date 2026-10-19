@@ -47,14 +47,25 @@ jobs:
             echo "sdk.dir=$ANDROID_HOME"
             echo "flutter.sdk=$FLUTTER_SDK"
             echo "flutter.buildMode=release"
-            echo "flutter.versionName=0.9.0"
-            echo "flutter.versionCode=6"
+            echo "flutter.versionName=0.10.0"
+            echo "flutter.versionCode=10"
           } > app/android/local.properties
           cat app/android/local.properties
 
       - name: Build release APK (arm64)
         working-directory: app/android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_FILE: ${{ runner.temp }}/release-key.p12
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: >
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE" &&
+          echo "Release signing: keystore configured";
+          else echo "Release signing: no keystore secret set (debug fallback)";
+          fi &&
           bash ./gradlew assembleRelease
           -Ptarget-platform=android-arm64
           -Ptarget=lib/main.dart

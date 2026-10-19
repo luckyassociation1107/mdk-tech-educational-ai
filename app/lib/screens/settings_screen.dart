@@ -149,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(color: AppColors.text),
                   decoration: const InputDecoration(
                     labelText: 'Brain server URL',
-                    hintText: 'http://192.168.1.5:3000',
+                    hintText: 'https://your-brain-server (https required; http only on LAN)',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -178,9 +178,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 10),
               TextField(
                 controller: _nostrNpub,
+                maxLines: 3,
                 style: const TextStyle(color: AppColors.text),
-                decoration: const InputDecoration(labelText: 'Catalog public key — npub (share with every device)', hintText: 'auto-filled from the private key', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Catalog publisher key(s) — npub, one per line', hintText: 'founder key + each approved teacher key', border: OutlineInputBorder()),
               ),
+              const SizedBox(height: 6),
+              const Text('Each teacher can use their OWN key: they tap Create, keep their private key on their phone only, and give you just their npub to add here. Removing a line revokes that publisher on this device.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45)),
               const SizedBox(height: 10),
               TextField(
                 controller: _catalogSecret,

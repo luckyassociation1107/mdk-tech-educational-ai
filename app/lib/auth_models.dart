@@ -1,6 +1,12 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:pointycastle/api.dart';
+import 'package:pointycastle/digests/sha256.dart';
+import 'package:pointycastle/key_derivators/api.dart';
+import 'package:pointycastle/key_derivators/pbkdf2.dart';
+import 'package:pointycastle/macs/hmac.dart';
 
 /// Institutional roles. Hierarchy: Admin (founder/creator) creates schools
 /// and one Principal per school; the Principal controls the whole staff
@@ -60,10 +66,50 @@ class AppUser {
     this.active = true,
   });
 
-  bool checkPassword(String password) => hashPassword(password, salt) == passwordHash;
+  bool checkPassword(String password) => verifyPassword(password, salt, passwordHash);
 
-  static String hashPassword(String password, String salt) =>
-      sha256.convert(utf8.encode('$salt::$password')).toString();
+  static bool isLegacyHash(String stored) => !stored.startsWith('pbkdf2\$');
+
+  /// Current scheme: PBKDF2-HMAC-SHA256, 100k iterations, stored as
+  /// `pbkdf2$<iterations>$<hex>`. Slow on purpose — offline cracking of a
+  /// stolen data file must be expensive.
+  static String hashPassword(String password, String salt) {
+    const iterations = 100000;
+    return 'pbkdf2\$$iterations\$${_toHex(_pbkdf2(password, salt, iterations))}';
+  }
+
+  static bool verifyPassword(String password, String salt, String stored) {
+    try {
+      if (stored.startsWith('pbkdf2\$')) {
+        final parts = stored.split('\$');
+        if (parts.length != 3) return false;
+        final iterations = int.tryParse(parts[1]) ?? 100000;
+        return _toHex(_pbkdf2(password, salt, iterations)) == parts[2];
+      }
+      // Legacy (<= v0.9): single-round salted SHA-256. Accepted once at
+      // login, then the account is migrated to PBKDF2.
+      return sha256.convert(utf8.encode('$salt::$password')).toString() == stored;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Uint8List _pbkdf2(String password, String saltHex, int iterations) {
+    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));
+    derivator.init(Pbkdf2Parameters(_fromHex(saltHex), iterations, 32));
+    return derivator.process(Uint8List.fromList(utf8.encode(password)));
+  }
+
+  static Uint8List _fromHex(String hex) {
+    final h = hex.length.isOdd ? '0$hex' : hex;
+    final out = Uint8List(h.length ~/ 2);
+    for (var i = 0; i < out.length; i++) {
+      out[i] = int.parse(h.substring(i * 2, i * 2 + 2), radix: 16);
+    }
+    return out;
+  }
+
+  static String _toHex(List<int> b) => b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
   Map<String, dynamic> toJson() => {
         'id': id,

@@ -116,6 +116,31 @@ class NostrCrypto {
     }
   }
 
+  /// Full client-side validation of a relay-returned event: the id
+  /// must be the real hash of the content AND the Schnorr signature
+  /// must verify. Relays are untrusted transport — never skip this.
+  static bool verifyEvent(Map<String, dynamic> ev) {
+    try {
+      final pubkey = (ev['pubkey'] ?? '').toString();
+      final id = (ev['id'] ?? '').toString();
+      final sig = (ev['sig'] ?? '').toString();
+      final createdAt = (ev['created_at'] as num?)?.toInt() ?? 0;
+      final kind = (ev['kind'] as num?)?.toInt() ?? 0;
+      final rawTags = ev['tags'];
+      final tags = <List<String>>[];
+      if (rawTags is List) {
+        for (final t in rawTags) {
+          if (t is List) tags.add(t.map((x) => x.toString()).toList());
+        }
+      }
+      final content = (ev['content'] ?? '').toString();
+      if (eventId(pubkey: pubkey, createdAt: createdAt, kind: kind, tags: tags, content: content) != id) return false;
+      return verifyBip340(pubkey, hexDecode(id), sig);
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// NIP-01 event id: sha256 of the canonical serialization.
   static String eventId({required String pubkey, required int createdAt, required int kind, required List<List<String>> tags, required String content}) {
     final serialized = jsonEncode([0, pubkey, createdAt, kind, tags, content]);

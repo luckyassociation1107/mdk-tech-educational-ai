@@ -1,7 +1,40 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// App settings + learning progress, stored on the device.
 class AppSettings {
+  /// Long-lived secrets (catalog private key + catalog secret) live in
+  /// platform secure storage (Android Keystore / Windows DPAPI), never
+  /// in plain SharedPreferences. Older installs migrate on first load.
+  static const _secure = FlutterSecureStorage();
+  static const _nsecKey = 'sec_catalog_nsec';
+  static const _secretKey = 'sec_catalog_secret';
+
+  static Future<String> _secureRead(String key, SharedPreferences p, String legacyPref) async {
+    try {
+      final v = await _secure.read(key: key);
+      if (v != null && v.isNotEmpty) return v;
+      final legacy = p.getString(legacyPref) ?? '';
+      if (legacy.isNotEmpty) {
+        await _secure.write(key: key, value: legacy);
+        await p.remove(legacyPref);
+        return legacy;
+      }
+    } catch (_) {}
+    return '';
+  }
+
+  static Future<void> _secureWrite(String key, String value, SharedPreferences p, String legacyPref) async {
+    try {
+      if (value.isEmpty) {
+        await _secure.delete(key: key);
+      } else {
+        await _secure.write(key: key, value: value);
+      }
+    } catch (_) {}
+    await p.remove(legacyPref);
+  }
+
   String language; // en-IN | te-IN
   String brain; // offline | playwright
   String brainServerUrl;
@@ -45,9 +78,9 @@ class AppSettings {
       catalogFormUrl: p.getString('set_catalog_form') ?? '',
       catalogEntryId: p.getString('set_catalog_entry') ?? '',
       catalogSheetUrl: p.getString('set_catalog_sheet') ?? '',
-      catalogNsec: p.getString('set_catalog_nsec') ?? '',
+      catalogNsec: await _secureRead(_nsecKey, p, 'set_catalog_nsec'),
       catalogNpub: p.getString('set_catalog_npub') ?? '',
-      catalogSecret: p.getString('set_catalog_secret') ?? '',
+      catalogSecret: await _secureRead(_secretKey, p, 'set_catalog_secret'),
     );
   }
 
@@ -62,9 +95,9 @@ class AppSettings {
     await p.setString('set_catalog_form', catalogFormUrl);
     await p.setString('set_catalog_entry', catalogEntryId);
     await p.setString('set_catalog_sheet', catalogSheetUrl);
-    await p.setString('set_catalog_nsec', catalogNsec);
     await p.setString('set_catalog_npub', catalogNpub);
-    await p.setString('set_catalog_secret', catalogSecret);
+    await _secureWrite(_nsecKey, catalogNsec, p, 'set_catalog_nsec');
+    await _secureWrite(_secretKey, catalogSecret, p, 'set_catalog_secret');
   }
 }
 

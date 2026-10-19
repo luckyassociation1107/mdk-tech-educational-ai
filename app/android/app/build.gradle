@@ -22,7 +22,18 @@ android {
         versionName flutterVersionName
         ndk { abiFilters "arm64-v8a" }
     }
-    buildTypes { release { signingConfig signingConfigs.debug } }
+    signingConfigs {
+        if (System.getenv("KEYSTORE_FILE")) {
+            release {
+                storeFile file(System.getenv("KEYSTORE_FILE"))
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+                storeType "PKCS12"
+            }
+        }
+    }
+    buildTypes { release { signingConfig System.getenv("KEYSTORE_FILE") ? signingConfigs.release : signingConfigs.debug } }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }

@@ -7,14 +7,35 @@ import 'dart_engine.dart';
 /// lesson content is composed locally from the extracted textbook, and
 /// page pictures come from Android PdfRenderer.)
 class EngineGateway {
+  /// The online brain receives the student's actual PDF, so it must
+  /// never be a plaintext endpoint out on the internet. Plain HTTP is
+  /// tolerated only for localhost / LAN addresses.
+  static void guardBrainUrl(String brain, String brainServerUrl) {
+    if (brain != 'playwright') return;
+    final url = brainServerUrl.trim();
+    if (url.isEmpty) return;
+    final uri = Uri.tryParse(url);
+    final host = (uri?.host ?? '').toLowerCase();
+    final isLan = host == 'localhost' ||
+        host.endsWith('.local') ||
+        host.startsWith('192.168.') ||
+        host.startsWith('10.') ||
+        RegExp(r'^172\.(1[6-9]|2\d|3[01])\.').hasMatch(host);
+    if (uri == null || (uri.scheme != 'https' && !(uri.scheme == 'http' && isLan))) {
+      throw StateError('The online brain needs an HTTPS server URL (plain HTTP is allowed only on your local network).');
+    }
+  }
+
   Future<Map<String, dynamic>> createSession({
     required String pdfPath,
     required String language,
     int? grade,
     String brain = 'offline',
     String brainServerUrl = '',
-  }) =>
-      DartEngine.createSession(pdfPath: pdfPath, language: language, grade: grade, brain: brain, brainServerUrl: brainServerUrl);
+  }) {
+    guardBrainUrl(brain, brainServerUrl);
+    return DartEngine.createSession(pdfPath: pdfPath, language: language, grade: grade, brain: brain, brainServerUrl: brainServerUrl);
+  }
 
   Future<Map<String, dynamic>> generateVideo({
     required String sessionId,

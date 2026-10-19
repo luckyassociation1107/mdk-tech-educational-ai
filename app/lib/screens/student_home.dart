@@ -86,7 +86,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     await prefs.setStringList('sharedpdf_opened_${widget.student.id}', opened.toList());
     if (!mounted) return;
     setState(() => _openedPdfIds = opened);
-    final uri = Uri.parse(pdf.downloadPage);
+    // Catalog links must only ever send students to Gofile. Anything
+    // else (poisoned entry, bad paste) is refused, never launched.
+    final uri = Uri.tryParse(pdf.downloadPage);
+    final host = uri?.host.toLowerCase() ?? '';
+    if (uri == null || uri.scheme != 'https' || !(host == 'gofile.io' || host.endsWith('.gofile.io'))) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This catalog link was blocked: it is not a Gofile link.')));
+      return;
+    }
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open the download link.')));

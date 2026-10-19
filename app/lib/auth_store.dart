@@ -18,7 +18,10 @@ class AuthStore {
 
   static String _id(String prefix) =>
       '$prefix${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}${Random().nextInt(9999)}';
-  static String _salt() => Random.secure().nextInt(1 << 32).toRadixString(16);
+  static String _salt() {
+    final r = Random.secure();
+    return List<int>.generate(16, (_) => r.nextInt(256)).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
 
   // ---------- schools ----------
   static Future<List<School>> schools() async {
@@ -120,14 +123,15 @@ class AuthStore {
     final all = await users();
     for (final u in all) {
       if (u.id == id) {
-        // salt is kept; hash is replaced with the new password's hash
+        // fresh 128-bit salt + PBKDF2 hash for the new password
+        final newSalt = _salt();
         final updated = AppUser(
           id: u.id,
           role: u.role,
           name: u.name,
           username: u.username,
-          passwordHash: AppUser.hashPassword(newPassword, u.salt),
-          salt: u.salt,
+          passwordHash: AppUser.hashPassword(newPassword, newSalt),
+          salt: newSalt,
           schoolId: u.schoolId,
           className: u.className,
           active: u.active,
@@ -138,11 +142,49 @@ class AuthStore {
     await _saveUsers(all);
   }
 
+  static const _failsKey = 'login_fail_count';
+  static const _lockUntilKey = 'login_lock_until_ms';
+  static const _lockStepsMs = [30000, 60000, 300000, 900000, 3600000];
+
   static Future<AppUser?> authenticate(String username, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final lockUntil = prefs.getInt(_lockUntilKey) ?? 0;
+    if (now < lockUntil) {
+      throw StateError('Too many failed attempts. Try again in ${((lockUntil - now) / 1000).ceil()} seconds.');
+    }
     final un = username.trim().toLowerCase();
     final all = await users();
     for (final u in all) {
-      if (u.username == un && u.active && u.checkPassword(password)) return u;
+      if (u.username == un && u.active && u.checkPassword(password)) {
+        await prefs.remove(_failsKey);
+        await prefs.remove(_lockUntilKey);
+        if (AppUser.isLegacyHash(u.passwordHash)) {
+          // Migrate this account to PBKDF2 transparently.
+          final newSalt = _salt();
+          final updated = AppUser(
+            id: u.id,
+            role: u.role,
+            name: u.name,
+            username: u.username,
+            passwordHash: AppUser.hashPassword(password, newSalt),
+            salt: newSalt,
+            schoolId: u.schoolId,
+            className: u.className,
+            active: u.active,
+          );
+          all[all.indexOf(u)] = updated;
+          await _saveUsers(all);
+          return updated;
+        }
+        return u;
+      }
+    }
+    final fails = (prefs.getInt(_failsKey) ?? 0) + 1;
+    await prefs.setInt(_failsKey, fails);
+    if (fails >= 5) {
+      final idx = ((fails - 5) ~/ 3).clamp(0, _lockStepsMs.length - 1);
+      await prefs.setInt(_lockUntilKey, now + _lockStepsMs[idx]);
     }
     return null;
   }

@@ -23,7 +23,6 @@ class NostrCatalog {
     'wss://relay.snort.social',
   ];
 
-  static const _tag = 'mdk-textbook-catalog';
 
   static Future<bool> publish(String secretHex, CatalogEntry entry, {String catalogSecret = ''}) async {
     Map<String, dynamic> event;
@@ -31,9 +30,9 @@ class NostrCatalog {
       event = NostrCrypto.signedEvent(
         secretHex: secretHex,
         kind: 1,
-        tags: [
-          ['t', _tag]
-        ],
+        // No topic tag: a public tag would let strangers enumerate
+        // every school's catalog. Readers query by author key instead.
+        tags: const [],
         content: CatalogCodec.encode(entry, catalogSecret: catalogSecret),
         createdAt: entry.ts ~/ 1000,
       );
@@ -70,10 +69,10 @@ class NostrCatalog {
     }
   }
 
-  static Future<List<CatalogEntry>> fetch(String pubkeyHex, {String catalogSecret = ''}) async {
+  static Future<List<CatalogEntry>> fetch(List<String> pubkeyHexes, {String catalogSecret = ''}) async {
     final byUrl = <String, CatalogEntry>{};
     await Future.wait(relays.map((r) async {
-      final entries = await _fetchOne(r, pubkeyHex, catalogSecret: catalogSecret);
+      final entries = await _fetchOne(r, pubkeyHexes, catalogSecret: catalogSecret);
       for (final e in entries) {
         byUrl.putIfAbsent(e.u, () => e);
       }
@@ -82,7 +81,7 @@ class NostrCatalog {
     return out;
   }
 
-  static Future<List<CatalogEntry>> _fetchOne(String relay, String pubkeyHex, {String catalogSecret = ''}) async {
+  static Future<List<CatalogEntry>> _fetchOne(String relay, List<String> pubkeyHexes, {String catalogSecret = ''}) async {
     WebSocketChannel? ch;
     final out = <CatalogEntry>[];
     final seen = <String>{};
@@ -93,7 +92,7 @@ class NostrCatalog {
         'REQ',
         'catalog',
         {
-          'authors': [pubkeyHex],
+          'authors': pubkeyHexes,
           'kinds': [1],
           'limit': 1000
         }
@@ -103,7 +102,10 @@ class NostrCatalog {
           final msg = jsonDecode(raw.toString());
           if (msg is List && msg.length >= 3 && msg[0] == 'EVENT') {
             final ev = msg[2];
-            if (ev is Map && ev['pubkey'] == pubkeyHex && seen.add((ev['id'] ?? '').toString())) {
+            if (ev is Map && pubkeyHexes.contains(ev['pubkey']) && seen.add((ev['id'] ?? '').toString())) {
+              // Never trust the relay: verify id + signature ourselves.
+              final evm = ev.map((k, v) => MapEntry(k.toString(), v));
+              if (!NostrCrypto.verifyEvent(evm)) continue;
               final e = CatalogCodec.tryDecode(ev['content']?.toString(), catalogSecret: catalogSecret);
               if (e != null && e.u.isNotEmpty) out.add(e);
             }

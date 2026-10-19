@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'academic_models.dart';
@@ -13,6 +16,27 @@ class ExamStore {
 
   static String _keyFor(String userId) => 'exam_results_$userId';
 
+  /// Marks are sealed with a device key kept in secure storage: editing
+  /// the stored JSON by hand (rooted phone, file tools) breaks the seal
+  /// and the tampered results are discarded instead of displayed.
+  static const _secure = FlutterSecureStorage();
+
+  static Future<String> _sealKey() async {
+    try {
+      var k = await _secure.read(key: 'sec_exam_seal_key');
+      if (k == null || k.isEmpty) {
+        final r = Random.secure();
+        k = List<int>.generate(32, (_) => r.nextInt(256)).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+        await _secure.write(key: 'sec_exam_seal_key', value: k);
+      }
+      return k;
+    } catch (_) {
+      return 'fallback-seal-key';
+    }
+  }
+
+  static Future<String> _seal(String payload) async => sha256.convert(utf8.encode('${await _sealKey()}::$payload')).toString();
+
   static Future<List<ExamResult>> loadAll() => loadAllFor(scopeUserId);
 
   static Future<List<ExamResult>> loadAllFor(String userId) async {
@@ -20,7 +44,19 @@ class ExamStore {
     final raw = p.getString(_keyFor(userId));
     if (raw == null || raw.isEmpty) return [];
     try {
-      final list = (jsonDecode(raw) as List).whereType<Map>().map((e) => ExamResult.fromJson(e.map((k, v) => MapEntry(k.toString(), v)))).toList();
+      final decoded = jsonDecode(raw);
+      final List<dynamic> items;
+      if (decoded is Map && decoded['data'] is List) {
+        // Sealed format: verify before trusting a single mark.
+        final payload = jsonEncode(decoded['data']);
+        if ((decoded['seal'] ?? '').toString() != await _seal(payload)) return [];
+        items = decoded['data'] as List;
+      } else if (decoded is List) {
+        items = decoded; // legacy unsealed history
+      } else {
+        return [];
+      }
+      final list = items.whereType<Map>().map((e) => ExamResult.fromJson(e.map((k, v) => MapEntry(k.toString(), v)))).toList();
       list.sort((a, b) => b.when.compareTo(a.when));
       return list;
     } catch (_) {
@@ -32,7 +68,9 @@ class ExamStore {
     final all = await loadAll();
     all.add(r);
     final p = await SharedPreferences.getInstance();
-    await p.setString(_keyFor(scopeUserId), jsonEncode(all.map((e) => e.toJson()).toList()));
+    final data = all.map((e) => e.toJson()).toList();
+    final payload = jsonEncode(data);
+    await p.setString(_keyFor(scopeUserId), jsonEncode({'data': data, 'seal': await _seal(payload)}));
   }
 
   static Future<void> clearAll() async {

@@ -19,20 +19,31 @@ import 'store.dart';
 class CatalogService {
   static bool _validKey(String s) => NostrCrypto.isHexKey(s.trim());
 
-  /// Public key used for reading: derived from the private key when this
-  /// device publishes, otherwise the shared catalog npub from Settings.
-  static String? readPubkey(AppSettings s) {
+  /// All publisher keys this device reads from: its own key (derived
+  /// from the private key) plus every npub listed in Settings (one per
+  /// line). Each teacher can hold their OWN key — the founder approves
+  /// publishers simply by adding their npub to the list, and revokes by
+  /// removing it. No single shared key has to live on every phone.
+  static List<String> readPubkeys(AppSettings s) {
+    final out = <String>[];
+    void add(String k) {
+      final v = k.trim().toLowerCase();
+      if (_validKey(v) && !out.contains(v)) out.add(v);
+    }
+
     if (_validKey(s.catalogNsec)) {
       try {
-        return NostrCrypto.pubkeyHex(s.catalogNsec.trim());
+        add(NostrCrypto.pubkeyHex(s.catalogNsec.trim()));
       } catch (_) {}
     }
-    if (_validKey(s.catalogNpub)) return s.catalogNpub.trim().toLowerCase();
-    return null;
+    for (final part in s.catalogNpub.split(RegExp(r'[\s,;]+'))) {
+      add(part);
+    }
+    return out;
   }
 
   static bool canPost(AppSettings s) => _validKey(s.catalogNsec) || (s.catalogFormUrl.trim().isNotEmpty && s.catalogEntryId.trim().isNotEmpty);
-  static bool canRead(AppSettings s) => readPubkey(s) != null || s.catalogSheetUrl.trim().isNotEmpty;
+  static bool canRead(AppSettings s) => readPubkeys(s).isNotEmpty || s.catalogSheetUrl.trim().isNotEmpty;
 
   static Future<bool> post(AppSettings s, CatalogEntry e) async {
     if (_validKey(s.catalogNsec)) {
@@ -59,9 +70,9 @@ class CatalogService {
 
   static Future<List<CatalogEntry>> fetch(AppSettings s) async {
     final byUrl = <String, CatalogEntry>{};
-    final pub = readPubkey(s);
-    if (pub != null) {
-      for (final e in await NostrCatalog.fetch(pub, catalogSecret: s.catalogSecret)) {
+    final pubs = readPubkeys(s);
+    if (pubs.isNotEmpty) {
+      for (final e in await NostrCatalog.fetch(pubs, catalogSecret: s.catalogSecret)) {
         if (e.u.isNotEmpty) byUrl.putIfAbsent(e.u, () => e);
       }
     }
