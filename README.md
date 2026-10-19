@@ -5,6 +5,21 @@ video for every question. **The cloud AI only plans the lesson; the local
 Python engine renders the actual MP4.** No image-generation AI, no
 video-generation AI, no API key.
 
+## v0.15.0 — labs & labelled figures
+Physics/chemistry/biology experiments are taught as full labs:
+aim -> materials -> numbered steps -> observation -> result, with
+safety callouts; board colours change by phase. Figure scenes now
+show the textbook's figure label and nearby diagram labels as chips
+while zooming onto the labelled region.
+
+## v0.14.0 — subject-wise teaching engine
+The subject of any uploaded textbook is auto-detected (Maths,
+Science, Social, Language, Vocational, any language book) and classes
+teach in that style: step-by-step solving for maths/trades (+safety),
+daily-life connects for science/social, timelines for history dates,
+grammar rules + vocabulary cards + fill-in practice for language —
+every point referenced to real textbook pages/passages.
+
 ## v0.13.0 — voice-true sync + Zoom-style classes
 The lesson player is rebuilt: Android TTS reports the exact spoken
 character range, and board writing, captions and the page highlighter

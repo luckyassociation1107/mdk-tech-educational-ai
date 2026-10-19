@@ -5,6 +5,7 @@ class TextbookItem {
   final int pageCount;
   final String state;
   final String brain;
+  final String subjectLabel;
 
   const TextbookItem({
     required this.sessionId,
@@ -12,6 +13,7 @@ class TextbookItem {
     required this.pageCount,
     required this.state,
     required this.brain,
+    this.subjectLabel = '',
   });
 
   factory TextbookItem.fromMap(Map<dynamic, dynamic> m) => TextbookItem(
@@ -20,6 +22,7 @@ class TextbookItem {
         pageCount: (m['page_count'] as num?)?.toInt() ?? (m['pageCount'] as num?)?.toInt() ?? 0,
         state: (m['state'] ?? 'active').toString(),
         brain: (m['brain'] ?? '').toString(),
+        subjectLabel: (m['subject_label'] ?? '').toString(),
       );
 
   String get shortTitle {

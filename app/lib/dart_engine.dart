@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
+import 'subject_engine.dart';
+
 /// The whole classroom engine, in Dart — no Python anywhere in the app.
 ///
 /// PDF text/structure comes from Syncfusion's Dart PDF parser, page
@@ -122,6 +124,11 @@ class DartEngine {
   }
 
   static Future<String> sessionPdfPath(String sessionId) async => '${(await _sessionDir(sessionId)).path}/book.pdf';
+
+  static Future<String> subjectOf(String sessionId) async {
+    final meta = await _meta(sessionId);
+    return (meta?['subject'] ?? 'general').toString();
+  }
 
   // ---------- website-brain results (kept 100% on this device) ----------
   // The in-app WebView automation (brain_webview_screen) talks to the
@@ -247,10 +254,13 @@ class DartEngine {
       pageDir = ''; // lesson player shows text scenes if pictures are missing
     }
 
+    final subj = SubjectEngine.detect(index.title, index.pages.map((p) => p.text).toList());
     final meta = <String, dynamic>{
       'session_id': id,
       'title': index.title,
       'page_count': index.pageCount,
+      'subject': subj.id,
+      'subject_label': subj.label,
       'brain': brain,
       'language': language,
       'grade': grade,

@@ -220,6 +220,14 @@ class _TextbookScreenState extends State<TextbookScreen> {
                       const SizedBox(height: 6),
                       Text('${widget.book.pageCount} pages • ${_parts.length} parts • ${(_progress * 100).round()}% completed',
                           style: const TextStyle(color: Colors.white70)),
+                      if (widget.book.subjectLabel.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(99)),
+                          child: Text(widget.book.subjectLabel, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(99),

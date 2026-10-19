@@ -7,17 +7,22 @@ import 'package:flutter/services.dart';
 
 import '../dart_engine.dart';
 import '../store.dart';
+import '../subject_engine.dart';
 import '../widgets.dart';
 
 class _Scene {
-  final String kind; // title | board | reading | zoom | end
+  final String kind; // title | board | reading | zoom | steps | daily | vocab | practice | timeline | safety | lab | end
   final String heading;
-  final String narration;
+  final String narration; // what the voice speaks (sync source of truth)
+  final String? boardText; // what the board shows (defaults to narration)
+  final String? extra; // e.g. practice answer, revealed late in the scene
+  final List<String> labels; // figure labels shown on zoom scenes
   final int? page;
   final Rect? zone; // normalized focus region for zoom scenes
   final String boardTheme;
   final bool formula;
-  const _Scene(this.kind, this.heading, this.narration, {this.page, this.zone, this.boardTheme = 'green', this.formula = false});
+  const _Scene(this.kind, this.heading, this.narration,
+      {this.boardText, this.extra, this.labels = const [], this.page, this.zone, this.boardTheme = 'green', this.formula = false});
 }
 
 const _boards = <String, ({Color bg, Color fg, Color accent})>{
@@ -61,6 +66,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   String _pageDir = '';
   List<_Scene> _scenes = [];
   List<String> _brainPoints = const [];
+  String _subject = 'general';
   int _scene = 0;
   bool _playing = false;
   bool _loading = true;
@@ -84,6 +90,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     final index = await DartEngine.loadIndex(widget.sessionId);
     final dir = await DartEngine.pageDirOf(widget.sessionId);
     _brainPoints = await DartEngine.brainKeyPoints(widget.sessionId);
+    _subject = await DartEngine.subjectOf(widget.sessionId);
     _ttsCh.setMethodCallHandler((call) async {
       if (call.method == 'ttsRange') {
         final end = (call.arguments is Map) ? (call.arguments['end'] as num?)?.toInt() ?? 0 : 0;
@@ -154,19 +161,24 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     return zones.take(1).toList();
   }
 
-  String _captionNear(DartPage page, Rect zone) {
+  ({String caption, List<String> labels}) _captionNear(DartPage page, Rect zone) {
     DartBlock? caption;
     DartBlock? after;
+    final labels = <String>[];
     for (final b in page.blocks) {
       if (b.bbox.length != 4) continue;
-      final t = b.text.toLowerCase();
-      if (t.contains('fig') || t.contains('diagram') || t.contains('table') || t.contains('picture')) {
+      final t = b.text.trim();
+      final tl = t.toLowerCase();
+      final inside = b.bbox[1] >= zone.top - 0.05 && b.bbox[1] <= zone.bottom + 0.08;
+      if (inside && t.length >= 2 && t.length <= 42 && labels.length < 5 && !labels.contains(t)) labels.add(t);
+      if (tl.contains('fig') || tl.contains('diagram') || tl.contains('table') || tl.contains('picture')) {
         caption ??= b;
       }
       if (b.bbox[1] >= zone.bottom - 0.02) after ??= b;
     }
-    final c = (caption ?? after)?.text.trim() ?? '';
-    return c.length > 200 ? c.substring(0, 200) : c;
+    var c = (caption ?? after)?.text.trim() ?? '';
+    if (c.length > 200) c = c.substring(0, 200);
+    return (caption: c, labels: labels);
   }
 
   List<_Scene> _buildScenes(DartPdfIndex? index) {
@@ -183,26 +195,132 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     }
     var kp = 0;
     var styleIdx = 0;
+    // Subject material, mined once from the whole part.
+    final partTexts = widget.pages.map((pg) => index.pageText(pg)).toList();
+    final allSents = partTexts.expand(_sentences).where((x) => x.length > 25).toList();
+    final vocab = _subject == 'language' ? SubjectEngine.vocabWords(partTexts) : const [];
+    final rules = _subject == 'language' ? SubjectEngine.grammarRules(allSents) : const <String>[];
+    var vocabIdx = 0, ruleIdx = 0;
     for (final pg in widget.pages) {
       final page = index.pages[pg - 1];
       final sents = _sentences(index.pageText(pg)).where((s) => s.length > 30).take(2).toList();
       final narration = sents.isEmpty ? 'Read this page carefully and notice the highlighted lines.' : sents.join(' ');
       scenes.add(_Scene('reading', 'Page $pg', narration.length > 460 ? narration.substring(0, 460) : narration, page: pg));
-      // Zoom into the page's figure/diagram and explain it.
+      // Zoom into the page's figure/diagram and explain it, labels shown.
       for (final zone in _imageZones(page)) {
         final cap = _captionNear(page, zone);
-        final explain = cap.isNotEmpty
-            ? 'Look carefully at this figure. $cap'
-            : 'Look carefully at this picture on page $pg. Notice every label and part — your test may ask about it.';
-        scenes.add(_Scene('zoom', 'Figure • Page $pg', explain, page: pg, zone: zone));
+        final labelSpeech = cap.labels.isNotEmpty ? ' The labels here are: ${cap.labels.join(', ')}.' : '';
+        final explain = cap.caption.isNotEmpty
+            ? 'Look carefully at this figure. ${cap.caption}$labelSpeech'
+            : 'Look carefully at this picture on page $pg. Notice every label and part — your test may ask about it.$labelSpeech';
+        scenes.add(_Scene('zoom', 'Figure • Page $pg', explain, page: pg, zone: zone, labels: [cap.caption, ...cap.labels]));
       }
+      String? point;
       if (kp < keyPoints.length) {
-        final point = keyPoints[kp];
+        point = keyPoints[kp];
         final st = _styleFor(point, styleIdx++);
         scenes.add(_Scene('board', kp < _brainPoints.length ? 'Brain key point' : 'Key point',
             point.length > 320 ? point.substring(0, 320) : point,
             boardTheme: st.theme, formula: st.formula));
         kp++;
+      }
+      // --- subject-style teaching scene for this page ---
+      switch (_subject) {
+        case 'maths':
+        case 'vocational':
+          final steps = SubjectEngine.stepsFrom(_sentences(index.pageText(pg)), max: 3);
+          if (steps.isNotEmpty) {
+            final numbered = [for (var i = 0; i < steps.length; i++) 'Step ${i + 1}. ${steps[i]}'];
+            scenes.add(_Scene('steps', _subject == 'maths' ? 'Solve it step by step' : 'Do it step by step',
+                'Let us do this step by step. ${numbered.join(' ')}',
+                boardText: numbered.join('\n\n'),
+                boardTheme: _subject == 'maths' ? 'graph' : 'ruled', formula: _subject == 'maths'));
+          }
+          if (_subject == 'vocational') {
+            final safety = _sentences(index.pageText(pg))
+                .where((x) => RegExp(r'safety|careful|warning|danger|switch off|protect', caseSensitive: false).hasMatch(x))
+                .take(2)
+                .toList();
+            if (safety.isNotEmpty) {
+              scenes.add(_Scene('safety', 'Safety first', 'Safety first. ${safety.join(' ')}', boardTheme: 'black'));
+            }
+          }
+        case 'science':
+          final pageSents = _sentences(index.pageText(pg));
+          if (LabEngine2.looksLikeLab(pageSents)) {
+            final lab = LabEngine2.parse(pageSents);
+            final sub = LabEngine2.subSubjectOf(index.pageText(pg));
+            if (lab.aim.isNotEmpty) {
+              scenes.add(_Scene('lab', 'Experiment aim', 'Today\'s experiment. ${lab.aim}', boardTheme: 'green'));
+            }
+            if (lab.materials.isNotEmpty) {
+              scenes.add(_Scene('lab', 'Materials needed', 'Materials needed. ${lab.materials.join(' ')}',
+                  boardText: lab.materials.join('\n• '), boardTheme: 'white'));
+            }
+            for (var i = 0; i < lab.procedure.length; i++) {
+              scenes.add(_Scene('lab', 'Step ${i + 1} of ${lab.procedure.length}',
+                  'Step ${i + 1}. ${lab.procedure[i]}',
+                  boardTheme: i.isEven ? 'ruled' : 'graph', formula: sub == 'chemistry'));
+            }
+            if (lab.observation.isNotEmpty) {
+              scenes.add(_Scene('lab', 'Observation', 'Observation. ${lab.observation.join(' ')}', boardTheme: 'graph'));
+            }
+            if (lab.result.isNotEmpty) {
+              scenes.add(_Scene('lab', 'Result', 'Result. ${lab.result.join(' ')}', boardTheme: 'green'));
+            }
+            for (final sf in lab.safety) {
+              scenes.add(_Scene('safety', 'Safety first', 'Safety first. $sf', boardTheme: 'black'));
+            }
+          } else if (point != null) {
+            // Deeper explanation: the book's own sentences, then life.
+            final detail = _sentences(index.pageText(pg)).where((x) => x.length > 35).take(2).join(' ');
+            if (detail.isNotEmpty) {
+              scenes.add(_Scene('board', 'Let us understand', 'Let us understand this properly. $detail',
+                  boardTheme: _styleFor(detail, styleIdx).theme));
+            }
+            final ex = SubjectEngine.dailyLifeFor('science', point);
+            scenes.add(_Scene('daily', 'Daily-life connect', '$ex From your textbook: $point',
+                boardText: '$ex\n\nTextbook line: $point', boardTheme: 'white'));
+          }
+        case 'social':
+          final years = SubjectEngine.yearsIn(index.pageText(pg));
+          if (years.isNotEmpty) {
+            final tl = years.map((y) => '$y').join('  →  ');
+            scenes.add(_Scene('timeline', 'Timeline', 'Timeline check. The key years on this page are ${years.join(', ')}. Place them in order and remember what changed.',
+                boardText: tl, boardTheme: 'black'));
+          } else if (point != null) {
+            final ex = SubjectEngine.dailyLifeFor('social', point);
+            scenes.add(_Scene('daily', 'Daily-life connect', '$ex From your textbook: $point',
+                boardText: '$ex\n\nTextbook line: $point', boardTheme: 'white'));
+          }
+        case 'language':
+          if (ruleIdx < rules.length) {
+            final r = rules[ruleIdx++];
+            scenes.add(_Scene('board', 'Grammar rule', 'Grammar rule from your book. $r', boardText: r, boardTheme: 'green'));
+          } else if (vocabIdx < vocab.length) {
+            final v = vocab[vocabIdx++];
+            final use = v.usage.isNotEmpty ? ' From your book: ${v.usage}' : '';
+            scenes.add(_Scene('vocab', 'New word', 'New word. ${v.word}. It means ${v.meaning}. Say it aloud: ${v.word}.$use',
+                boardText: '${v.word}\n= ${v.meaning}${v.usage.isNotEmpty ? '\n\n"${v.usage}"' : ''}', boardTheme: 'white'));
+            // Practice: blank the word inside its own textbook sentence.
+            if (v.usage.length > 25) {
+              final words = v.usage.split(RegExp(r'\s+')).where((w) => w.replaceAll(RegExp(r'[^A-Za-z]'), '').length >= 5).toList();
+              if (words.isNotEmpty) {
+                final ans = words.reduce((a, b) => a.length >= b.length ? a : b).replaceAll(RegExp(r'[^A-Za-z\-]'), '');
+                if (ans.length >= 4) {
+                  scenes.add(_Scene('practice', 'Your turn',
+                      'Your turn. Complete the sentence from your book. ${v.usage.replaceAll(ans, 'dash')}. The answer is $ans.',
+                      boardText: v.usage, extra: ans, boardTheme: 'ruled'));
+                }
+              }
+            }
+          }
+        default:
+          if (point != null && (_subject == 'general')) {
+            final ex = SubjectEngine.dailyLifeFor('general', point);
+            scenes.add(_Scene('daily', 'Daily-life connect', '$ex From your textbook: $point',
+                boardText: '$ex\n\nTextbook line: $point', boardTheme: 'white'));
+          }
       }
     }
     scenes.add(const _Scene('end', 'Part complete', 'You finished this part. Take the test for this part — score forty percent or more to unlock the next part.'));
@@ -307,6 +425,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
 
   // ---------- views ----------
 
+  /// Board text for a scene: practice scenes hide the answer word
+  /// until the voice is about to say it.
+  String _boardDisplay(_Scene s) {
+    var t = s.boardText ?? s.narration;
+    if (s.kind == 'practice' && s.extra != null && _progress < 0.55) {
+      t = t.replaceAll(s.extra!, '——————');
+    } else if (s.kind == 'practice' && s.extra != null) {
+      t = t.replaceAll(s.extra!, '[ ${s.extra} ]');
+    }
+    return t;
+  }
+
   String _currentSentence(_Scene s) {
     final end = math.min(s.narration.length, _revealed + 1);
     final upto = s.narration.substring(0, end);
@@ -320,7 +450,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
   }
 
   Widget _revealedText(String text, {required Color main, required Color dim, required double size, bool mono = false, double height = 1.6}) {
-    final r = math.min(text.length, _revealed);
+    final r = (text.length * _progress).floor().clamp(0, text.length);
     return RichText(
       text: TextSpan(children: [
         TextSpan(
@@ -359,7 +489,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
             const SizedBox(height: 14),
             Expanded(
               child: SingleChildScrollView(
-                child: _revealedText(s.narration, main: c.fg, dim: c.fg.withOpacity(0.35), size: size, mono: s.formula),
+                child: _revealedText(_boardDisplay(s), main: c.fg, dim: c.fg.withOpacity(0.35), size: size, mono: s.formula),
               ),
             ),
             Row(children: [
@@ -468,9 +598,30 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           bottom: 10,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.72), borderRadius: BorderRadius.circular(12)),
-            child: Text(s.narration, maxLines: 3, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 12.5, height: 1.45)),
+            decoration: BoxDecoration(color: Colors.black.withOpacity(0.78), borderRadius: BorderRadius.circular(12)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              if (s.labels.isNotEmpty && s.labels.first.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Text(s.labels.first.trim(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.w900)),
+                ),
+              Text(s.narration, maxLines: 3, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 12.5, height: 1.45)),
+              if (s.labels.length > 1) ...[
+                const SizedBox(height: 6),
+                Wrap(spacing: 6, runSpacing: 4, children: [
+                  for (final l in s.labels.skip(1))
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
+                      child: Text(l, style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                    ),
+                ]),
+              ],
+            ]),
           ),
         ),
       ]),
@@ -511,13 +662,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                           style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12.5)),
                       const Spacer(),
                       Text(
-                          s.kind == 'reading'
-                              ? 'Reading the textbook'
-                              : s.kind == 'zoom'
-                                  ? 'Looking at the figure'
-                                  : s.kind == 'board'
-                                      ? 'On the board'
-                                      : '',
+                          switch (s.kind) {
+                            'reading' => 'Reading the textbook',
+                            'zoom' => 'Looking at the figure',
+                            'vocab' => 'New word',
+                            'practice' => 'Your turn',
+                            'steps' => 'Step by step',
+                            'daily' => 'Daily-life connect',
+                            'timeline' => 'Timeline',
+                            'lab' => 'Lab • Experiment',
+                            'safety' => 'Safety first',
+                            _ => 'On the board',
+                          },
                           style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12.5)),
                     ]),
                     const SizedBox(height: 8),
