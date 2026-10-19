@@ -56,13 +56,14 @@ jobs:
         working-directory: app/android
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_FILE: ${{ runner.temp }}/release-key.p12
+          KEYSTORE_PATH: ${{ runner.temp }}/release-key.p12
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: >
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE" &&
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH" &&
+          export KEYSTORE_FILE="$KEYSTORE_PATH" &&
           echo "Release signing: keystore configured";
           else echo "Release signing: no keystore secret set (debug fallback)";
           fi &&
