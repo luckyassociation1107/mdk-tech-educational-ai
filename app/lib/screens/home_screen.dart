@@ -1,8 +1,14 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../auth_models.dart';
+import '../auth_store.dart';
+import '../catalog_codec.dart';
+import '../catalog_service.dart';
 import '../engine_gateway.dart';
+import '../gofile_service.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
@@ -122,14 +128,15 @@ class _HomeScreenState extends State<HomeScreen> {
       await AuthStore.addSharedPdf(SharedPdf(
         id: 'pdf_$now',
         title: title.isEmpty ? up.name : title,
-        fileName: up.name,
+        fileId: up.fileId,
         downloadPage: up.downloadPage,
-        uploadedById: u.id,
-        uploadedByName: u.name,
+        sizeBytes: up.size,
         schoolId: u.schoolId,
         className: '',
+        uploadedById: u.id,
+        uploadedByName: u.name,
+        uploadedAtMillis: now,
         localPath: pdfPath,
-        createdAt: now,
       ));
       final posted = await CatalogService.post(
         widget.settings,

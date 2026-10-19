@@ -43,6 +43,30 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   Future<void> _load() async {
     final books = await AuthStore.visibleTo(widget.student);
     final pdfs = await AuthStore.visibleSharedPdfs(widget.student);
+    // Cloud catalog: links other devices added join this device's list.
+    final cloud = await CatalogService.fetch(widget.settings);
+    if (cloud.isNotEmpty) {
+      final have = pdfs.map((p) => p.downloadPage).toSet();
+      var ci = 0;
+      for (final e in cloud) {
+        if (e.u.isEmpty || have.contains(e.u)) continue;
+        if (e.cls.isNotEmpty && e.cls != widget.student.className) continue;
+        have.add(e.u);
+        pdfs.add(SharedPdf(
+          id: 'cloud_${e.ts}_${ci++}',
+          title: e.t,
+          fileId: '',
+          downloadPage: e.u,
+          sizeBytes: 0,
+          schoolId: widget.student.schoolId,
+          className: e.cls,
+          uploadedById: '',
+          uploadedByName: e.by,
+          uploadedAtMillis: e.ts,
+        ));
+      }
+      pdfs.sort((a, b) => b.uploadedAtMillis.compareTo(a.uploadedAtMillis));
+    }
     final schools = await AuthStore.schools();
     final prefs = await SharedPreferences.getInstance();
     final opened = (prefs.getStringList('sharedpdf_opened_${widget.student.id}') ?? const []).toSet();

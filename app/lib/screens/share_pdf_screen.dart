@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 
 import '../auth_models.dart';
 import '../auth_store.dart';
+import '../catalog_codec.dart';
+import '../catalog_service.dart';
 import '../gofile_service.dart';
+import '../store.dart';
 import '../widgets.dart';
 
 /// Teacher/principal PDF shelf: upload PDFs to Gofile (free), publish the
@@ -15,7 +18,8 @@ import '../widgets.dart';
 /// refresh (a genuine re-upload) keeps them alive honestly.
 class SharePdfScreen extends StatefulWidget {
   final AppUser user;
-  const SharePdfScreen({super.key, required this.user});
+  final AppSettings? settings;
+  const SharePdfScreen({super.key, required this.user, this.settings});
 
   @override
   State<SharePdfScreen> createState() => _SharePdfScreenState();

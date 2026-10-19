@@ -15,25 +15,48 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _url;
+  late final TextEditingController _catalogForm;
+  late final TextEditingController _catalogEntry;
+  late final TextEditingController _catalogSheet;
   String? _ttsInfo;
+  String? _catalogInfo;
 
   @override
   void initState() {
     super.initState();
     _url = TextEditingController(text: widget.settings.brainServerUrl);
+    _catalogForm = TextEditingController(text: widget.settings.catalogFormUrl);
+    _catalogEntry = TextEditingController(text: widget.settings.catalogEntryId);
+    _catalogSheet = TextEditingController(text: widget.settings.catalogSheetUrl);
   }
 
   @override
   void dispose() {
     _url.dispose();
+    _catalogForm.dispose();
+    _catalogEntry.dispose();
+    _catalogSheet.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     widget.settings.brainServerUrl = _url.text.trim();
+    widget.settings.catalogFormUrl = _catalogForm.text.trim();
+    widget.settings.catalogEntryId = _catalogEntry.text.trim();
+    widget.settings.catalogSheetUrl = _catalogSheet.text.trim();
     await widget.settings.save();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved')));
+  }
+
+  Future<void> _testCatalog() async {
+    await _save();
+    setState(() => _catalogInfo = 'Checking cloud catalog…');
+    final entries = await CatalogService.fetch(widget.settings);
+    if (!mounted) return;
+    setState(() => _catalogInfo = entries.isEmpty
+        ? 'No entries read yet. Check the Sheet link is shared as “Anyone with the link can view”, then try again after a teacher shares a PDF.'
+        : 'Cloud catalog OK — ${entries.length} link(s) found. Latest: ${entries.first.t}');
   }
 
   Future<void> _checkVoice() async {
