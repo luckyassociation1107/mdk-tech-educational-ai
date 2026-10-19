@@ -1,9 +1,45 @@
-# AI Textbook-to-Video Classroom Designer
+## v0.16.0 — live Zoom-style class, translator, podcast, quiz, mind map, key-points book
 
-Upload a textbook PDF → ask educational questions → get a real teaching
-video for every question. **The cloud AI only plans the lesson; the local
-Python engine renders the actual MP4.** No image-generation AI, no
-video-generation AI, no API key.
+**The class:** a live-classroom screen with a pulsing LIVE badge, teacher avatar,
+viewer count, XP counter, animated scene transitions, board writing that follows the
+voice character-by-character and textbook-page highlighting that can never drift
+out of sync (native `ttsRange`).
+
+**Translator (explanation only).** The student picks an explanation language from
+**49 languages** (all major Indian languages first: Telugu, Hindi, Tamil, Kannada,
+Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia, Assamese, Urdu, Nepali,
+Sinhala, Sanskrit, Sindhi — then Spanish, French, German, Portuguese, Italian,
+Dutch, Russian, Ukrainian, Polish, Czech, Romanian, Hungarian, Greek, Swedish,
+Danish, Norwegian, Finnish, Turkish, Arabic, Persian, Hebrew, Swahili, Amharic,
+Chinese Simplified/Traditional, Japanese, Korean, Vietnamese, Thai, Indonesian,
+Malay, Filipino).
+
+- **Only the explanation is translated.** Textbook points always stay in the book's
+  own language and main/technical words stay in English, so notes stay easy to
+  prepare from the class.
+- Textbook lines are spoken in the **book's own language** (auto-detected script).
+- Engines need **no API key** (Google gtx endpoint → MyMemory → Lingva fallback
+  chain). Results are **cached on the phone**, so a class translated once replays
+  offline. If the first run is offline the app says so honestly and plays English.
+
+**Podcast class.** The same teaching as audio: artwork with animated equalizer,
+part selector, scene scrubber, 75/100/120% speed, transcript with tap-to-jump, and
+the same explanation-language option.
+
+**Quiz with answers.** 8 instant-feedback questions (MCQ + fill) built only from
+that part's own key points. Correct answer + the textbook line appear immediately,
+with streak counter, XP (+5 correct, +25 on pass) and a full answer key at the end.
+
+**Mind map.** Radial map of the part with every key point as a branch; tap a node to
+read/hear the full textbook line, pinch to zoom.
+
+**Key Points Book.** Every part's key points (plus the website-brain summary when
+present) in one searchable booklet, read aloud with one tap and saved as a `.txt`
+file on the phone.
+
+**Exams & eligibility (unchanged, still enforced).** Part tests stay MCQ + fill +
+short + optional timing and negative marking; **40% passes the part and unlocks the
+next class**. Report card keeps marks, grades, XP levels and rank bands.
 
 ## v0.15.0 — labs & labelled figures
 Physics/chemistry/biology experiments are taught as full labs:

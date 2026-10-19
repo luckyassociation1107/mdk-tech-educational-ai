@@ -8,8 +8,12 @@ import 'brain_webview_screen.dart';
 import 'chat_screen.dart';
 import 'exam_setup_screen.dart';
 import 'generate_sheet.dart';
+import 'keypoints_screen.dart';
 import 'lesson_player_screen.dart';
+import 'mind_map_screen.dart';
 import 'notes_screen.dart';
+import 'podcast_screen.dart';
+import 'quiz_screen.dart';
 import 'player_screen.dart';
 
 class TextbookScreen extends StatefulWidget {
@@ -115,6 +119,26 @@ class _TextbookScreenState extends State<TextbookScreen> {
       setState(() => _generating = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generation failed: $e')));
     }
+  }
+
+  void _openTools(Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+
+  Widget _tool(IconData icon, String label, VoidCallback onTap) {
+    return GradientCard(
+      onTap: onTap,
+      child: Row(children: [
+        Icon(icon, color: AppColors.teal, size: 22),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
+        ),
+      ]),
+    );
   }
 
   Future<void> _openPlayer({required String path, required String title, SeriesPart? part, String? captionsPath}) async {
@@ -399,6 +423,18 @@ class _TextbookScreenState extends State<TextbookScreen> {
                     label: const Text('Notes'),
                   ),
                 ),
+              ]),
+              const SectionTitle('Study tools'),
+              Row(children: [
+                Expanded(child: _tool(Icons.podcasts_rounded, 'Podcast', () => _openTools(PodcastScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
+                const SizedBox(width: 10),
+                Expanded(child: _tool(Icons.quiz_rounded, 'Quiz', () => _openTools(QuizScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _tool(Icons.hub_rounded, 'Mind map', () => _openTools(MindMapScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
+                const SizedBox(width: 10),
+                Expanded(child: _tool(Icons.auto_stories_rounded, 'Key Points', () => _openTools(KeyPointsScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
               ]),
             ],
           ),

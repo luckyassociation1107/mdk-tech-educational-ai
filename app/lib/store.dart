@@ -3,7 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// App settings + learning progress, stored on the device.
 /// Student-only app: no accounts, no roles — one learner, their PDFs.
 class AppSettings {
-  String language; // en-IN | te-IN
+  String language; // en-IN | te-IN  (voice sample / UI language)
+  String explainLanguage; // ISO code: explanation is translated into this language
   String brain; // offline | website
   String brainServerUrl;
   String theme; // board theme: auto | green_board | ...
@@ -12,6 +13,7 @@ class AppSettings {
 
   AppSettings({
     this.language = 'en-IN',
+    this.explainLanguage = 'en',
     this.brain = 'offline',
     this.brainServerUrl = '',
     this.theme = 'auto',
@@ -23,6 +25,7 @@ class AppSettings {
     final p = await SharedPreferences.getInstance();
     return AppSettings(
       language: p.getString('set_language') ?? 'en-IN',
+      explainLanguage: p.getString('set_explain_language') ?? 'en',
       brain: p.getString('set_brain') ?? 'offline',
       brainServerUrl: p.getString('set_brain_url') ?? '',
       theme: p.getString('set_theme') ?? 'auto',
@@ -34,6 +37,7 @@ class AppSettings {
   Future<void> save() async {
     final p = await SharedPreferences.getInstance();
     await p.setString('set_language', language);
+    await p.setString('set_explain_language', explainLanguage);
     await p.setString('set_brain', brain);
     await p.setString('set_brain_url', brainServerUrl);
     await p.setString('set_theme', theme);
@@ -68,5 +72,20 @@ class ProgressStore {
   static Future<void> saveWatchPosition(String videoPath, Duration pos) async {
     final p = await SharedPreferences.getInstance();
     await p.setInt(_posKey(videoPath), pos.inMilliseconds);
+  }
+
+  // --- learning XP (fun & interactive) ---
+  static String _xpKey(String sessionId) => 'xp_$sessionId';
+
+  static Future<int> xpOf(String sessionId) async {
+    final p = await SharedPreferences.getInstance();
+    return p.getInt(_xpKey(sessionId)) ?? 0;
+  }
+
+  static Future<int> addXp(String sessionId, int amount) async {
+    final p = await SharedPreferences.getInstance();
+    final cur = (p.getInt(_xpKey(sessionId)) ?? 0) + amount;
+    await p.setInt(_xpKey(sessionId), cur);
+    return cur;
   }
 }

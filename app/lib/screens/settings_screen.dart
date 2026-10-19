@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../engine_gateway.dart';
 import '../store.dart';
+import '../translate_service.dart';
 import '../widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -44,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(children: [
               _dropdown('Narration language', s.language, const {'en-IN': 'English (India)', 'te-IN': 'Telugu (India)'},
                   (v) => setState(() => s.language = v)),
+              _languageTile(s),
               _dropdown('Pages per part', '${s.pagesPerPart}', const {'4': '4 pages', '6': '6 pages', '8': '8 pages'},
                   (v) => setState(() => s.pagesPerPart = int.parse(v))),
               _dropdown('Lesson quality', s.resolution, const {'854x480': '480p — faster on phone', '1280x720': '720p HD — slower, sharper'},
@@ -97,6 +99,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 22),
           FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save_rounded), label: const Text('Save settings')),
         ],
+      ),
+    );
+  }
+
+  Widget _languageTile(AppSettings s) {
+    final cur = xLang(s.explainLanguage);
+    return InkWell(
+      onTap: () async {
+        final picked = await pickExplainLanguage(context, s.explainLanguage);
+        if (picked == null || !mounted) return;
+        setState(() => s.explainLanguage = picked.code);
+        await _save();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(children: [
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Explanation language', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(
+                s.explainLanguage == 'en'
+                    ? 'Explanation in English. Tap to pick from ${kExplainLanguages.length} languages.'
+                    : 'Explanation in ${cur.english} • textbook points stay in the book\'s language, main words in English.',
+                style: const TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.3),
+              ),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.14), borderRadius: BorderRadius.circular(99)),
+            child: Text(cur.native, style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+        ]),
       ),
     );
   }

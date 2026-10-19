@@ -6,24 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../dart_engine.dart';
+import '../lesson_content.dart';
 import '../store.dart';
-import '../subject_engine.dart';
+import '../translate_service.dart';
 import '../widgets.dart';
-
-class _Scene {
-  final String kind; // title | board | reading | zoom | steps | daily | vocab | practice | timeline | safety | lab | end
-  final String heading;
-  final String narration; // what the voice speaks (sync source of truth)
-  final String? boardText; // what the board shows (defaults to narration)
-  final String? extra; // e.g. practice answer, revealed late in the scene
-  final List<String> labels; // figure labels shown on zoom scenes
-  final int? page;
-  final Rect? zone; // normalized focus region for zoom scenes
-  final String boardTheme;
-  final bool formula;
-  const _Scene(this.kind, this.heading, this.narration,
-      {this.boardText, this.extra, this.labels = const [], this.page, this.zone, this.boardTheme = 'green', this.formula = false});
-}
 
 const _boards = <String, ({Color bg, Color fg, Color accent})>{
   'green': (bg: Color(0xFF17573A), fg: Color(0xFFF4FFF8), accent: Color(0xFFFDE68A)),
@@ -33,7 +19,7 @@ const _boards = <String, ({Color bg, Color fg, Color accent})>{
   'graph': (bg: Color(0xFFFFFDF5), fg: Color(0xFF1F2937), accent: Color(0xFF059669)),
 };
 
-/// The classroom itself — a Zoom-style class drawn & spoken in Flutter.
+/// The classroom itself — a live Zoom-style class drawn & spoken in Flutter.
 ///
 /// SYNC: the Android voice reports the exact character range it is
 /// speaking (ttsRange). Board writing, captions and the textbook page
@@ -60,29 +46,46 @@ class LessonPlayerScreen extends StatefulWidget {
   State<LessonPlayerScreen> createState() => _LessonPlayerScreenState();
 }
 
-class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
+class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTickerProviderStateMixin {
   static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
   DartPdfIndex? _index;
   String _pageDir = '';
-  List<_Scene> _scenes = [];
+  List<LessonScene> _scenes = [];
   List<String> _brainPoints = const [];
-  String _subject = 'general';
   int _scene = 0;
   bool _playing = false;
   bool _loading = true;
 
+  // --- explanation translation ---
+  String _lang = 'en';
+  final Map<int, String> _tr = {};
+  List<String?> _voice = [];
+  bool _translating = false;
+  int _translateFailed = 0;
+
   // --- sync state for the current scene ---
   Timer? _timer;
-  int _spoken = 0; // chars the voice has actually reached
+  int _spoken = 0;
   bool _rangeSeen = false;
   bool _ttsDone = false;
   bool _advancing = false;
   DateTime _sceneStart = DateTime.now();
   int _tick = 0;
 
+  // --- interactive quick checks / xp ---
+  String? _picked;
+  bool? _pickedRight;
+  int _xp = 0;
+  int _xpGained = 0;
+  Timer? _xpTimer;
+
+  late final AnimationController _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+  final int _viewers = 24 + math.Random().nextInt(70);
+
   @override
   void initState() {
     super.initState();
+    _lang = widget.settings.explainLanguage;
     _init();
   }
 
@@ -90,7 +93,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     final index = await DartEngine.loadIndex(widget.sessionId);
     final dir = await DartEngine.pageDirOf(widget.sessionId);
     _brainPoints = await DartEngine.brainKeyPoints(widget.sessionId);
-    _subject = await DartEngine.subjectOf(widget.sessionId);
+    final subject = await DartEngine.subjectOf(widget.sessionId);
     _ttsCh.setMethodCallHandler((call) async {
       if (call.method == 'ttsRange') {
         final end = (call.arguments is Map) ? (call.arguments['end'] as num?)?.toInt() ?? 0 : 0;
@@ -103,253 +106,120 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       }
     });
     if (!mounted) return;
+    final scenes = index == null
+        ? <LessonScene>[]
+        : LessonContent.build(
+            index: index,
+            pages: widget.pages,
+            partNumber: widget.partNumber,
+            title: widget.title,
+            subject: subject,
+            brainPoints: _brainPoints,
+            themeSetting: widget.settings.theme,
+          );
+    final xp = await ProgressStore.xpOf(widget.sessionId);
+    if (!mounted) return;
     setState(() {
       _index = index;
       _pageDir = dir;
-      _scenes = _buildScenes(index);
+      _scenes = scenes;
+      _voice = List<String?>.filled(scenes.length, null);
       _loading = false;
+      _xp = xp;
     });
+    await _prepareTranslation();
+    if (!mounted) return;
     if (_scenes.isNotEmpty) _playScene(0);
   }
 
-  // ---------- scene construction ----------
-
-  static List<String> _sentences(String text) => text
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .split(RegExp(r'(?<=[.!?])\s+'))
-      .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
-      .toList();
-
-  /// Board + font follow the matter: formulas get the graph board and a
-  /// mono font, definitions the green board, examples the white board,
-  /// long explanations the ruled notebook.
-  ({String theme, bool formula}) _styleFor(String text, int i) {
-    final forced = widget.settings.theme;
-    if (forced.contains('green')) return (theme: 'green', formula: false);
-    if (forced.contains('black')) return (theme: 'black', formula: false);
-    if (forced.contains('white')) return (theme: 'white', formula: false);
-    if (forced.contains('ruled')) return (theme: 'ruled', formula: false);
-    if (forced.contains('graph')) return (theme: 'graph', formula: true);
-    final t = text.toLowerCase();
-    final mathHits = RegExp(r'[=+×÷√π%^<>]').allMatches(text).length + RegExp(r'\d').allMatches(text).length;
-    if (mathHits >= 4) return (theme: 'graph', formula: true);
-    if (t.contains('example') || t.contains('for instance')) return (theme: 'white', formula: false);
-    if (t.contains('is called') || t.contains(' is defined ') || t.contains('means ') || t.contains('definition')) {
-      return (theme: 'green', formula: false);
+  /// Translates only our own explanation lines (never the textbook text).
+  Future<void> _prepareTranslation() async {
+    if (_lang == 'en' || _scenes.isEmpty) return;
+    setState(() {
+      _translating = true;
+      _translateFailed = 0;
+    });
+    final idx = <int>[];
+    final texts = <String>[];
+    for (var i = 0; i < _scenes.length; i++) {
+      final e = _scenes[i].explain;
+      if (e != null && e.trim().isNotEmpty) {
+        idx.add(i);
+        texts.add(e);
+      }
     }
-    if (text.length > 240) return (theme: 'ruled', formula: false);
-    const cycle = ['green', 'black', 'white', 'ruled', 'graph'];
-    return (theme: cycle[i % cycle.length], formula: false);
+    final known = _brainPoints
+        .expand((k) => RegExp(r'\b[A-Z][a-zA-Z]{2,}\b').allMatches(k).map((m) => m.group(0)!))
+        .where((w) => w.length > 3)
+        .toSet()
+        .take(40)
+        .toList();
+    final out = await TranslateService.translateAll(texts, _lang, knownTerms: known);
+    if (!mounted) return;
+    setState(() {
+      for (final k in out.keys) {
+        _tr[idx[k]] = out[k]!;
+        _voice[idx[k]] = out[k];
+      }
+      _translateFailed = texts.length - out.length;
+      _translating = false;
+    });
+    if (_translateFailed > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_translateFailed == texts.length
+            ? 'Translation needs internet the first time. Playing in English — the translation will be saved once online.'
+            : 'Most explanation is in ${xLang(_lang).english}; $_translateFailed line(s) stayed in English.'),
+      ));
+    }
   }
 
-  /// Figure/diagram zones: big text-free gaps between text bands.
-  List<Rect> _imageZones(DartPage page) {
-    final bands = page.blocks.where((b) => b.bbox.length == 4).toList()..sort((a, b) => a.bbox[1].compareTo(b.bbox[1]));
-    if (bands.isEmpty) return const [];
-    final zones = <Rect>[];
-    var prevBottom = bands.first.bbox[3];
-    for (var i = 1; i < bands.length; i++) {
-      final top = bands[i].bbox[1];
-      if (top - prevBottom > 0.13) {
-        zones.add(Rect.fromLTRB(0.05, prevBottom + 0.015, 0.95, top - 0.015));
-      }
-      prevBottom = math.max(prevBottom, bands[i].bbox[3]);
-    }
-    if (prevBottom < 0.84) zones.add(Rect.fromLTRB(0.05, prevBottom + 0.015, 0.95, 0.97));
-    zones.sort((a, b) => b.height.compareTo(a.height));
-    return zones.take(1).toList();
-  }
+  String _voiceOf(int i) => _voice.length > i ? (_voice[i] ?? _scenes[i].narration) : '';
+  String? _trOf(int i) => _tr[i];
 
-  ({String caption, List<String> labels}) _captionNear(DartPage page, Rect zone) {
-    DartBlock? caption;
-    DartBlock? after;
-    final labels = <String>[];
-    for (final b in page.blocks) {
-      if (b.bbox.length != 4) continue;
-      final t = b.text.trim();
-      final tl = t.toLowerCase();
-      final inside = b.bbox[1] >= zone.top - 0.05 && b.bbox[1] <= zone.bottom + 0.08;
-      if (inside && t.length >= 2 && t.length <= 42 && labels.length < 5 && !labels.contains(t)) labels.add(t);
-      if (tl.contains('fig') || tl.contains('diagram') || tl.contains('table') || tl.contains('picture')) {
-        caption ??= b;
-      }
-      if (b.bbox[1] >= zone.bottom - 0.02) after ??= b;
-    }
-    var c = (caption ?? after)?.text.trim() ?? '';
-    if (c.length > 200) c = c.substring(0, 200);
-    return (caption: c, labels: labels);
-  }
-
-  List<_Scene> _buildScenes(DartPdfIndex? index) {
-    if (index == null) return const [];
-    final scenes = <_Scene>[
-      _Scene('title', widget.title,
-          'Part ${widget.partNumber}. Pages ${widget.pages.isEmpty ? '' : '${widget.pages.first} to ${widget.pages.last}'}. Let us learn this part step by step, page by page.'),
-    ];
-    final keyPoints = <String>[..._brainPoints];
-    for (final pg in widget.pages) {
-      for (final s in _sentences(index.pageText(pg))) {
-        if (s.length > 40 && !s.toLowerCase().contains('click here') && keyPoints.length < 10) keyPoints.add(s);
-      }
-    }
-    var kp = 0;
-    var styleIdx = 0;
-    // Subject material, mined once from the whole part.
-    final partTexts = widget.pages.map((pg) => index.pageText(pg)).toList();
-    final allSents = partTexts.expand(_sentences).where((x) => x.length > 25).toList();
-    final vocab = _subject == 'language' ? SubjectEngine.vocabWords(partTexts) : const [];
-    final rules = _subject == 'language' ? SubjectEngine.grammarRules(allSents) : const <String>[];
-    var vocabIdx = 0, ruleIdx = 0;
-    for (final pg in widget.pages) {
-      final page = index.pages[pg - 1];
-      final sents = _sentences(index.pageText(pg)).where((s) => s.length > 30).take(2).toList();
-      final narration = sents.isEmpty ? 'Read this page carefully and notice the highlighted lines.' : sents.join(' ');
-      scenes.add(_Scene('reading', 'Page $pg', narration.length > 460 ? narration.substring(0, 460) : narration, page: pg));
-      // Zoom into the page's figure/diagram and explain it, labels shown.
-      for (final zone in _imageZones(page)) {
-        final cap = _captionNear(page, zone);
-        final labelSpeech = cap.labels.isNotEmpty ? ' The labels here are: ${cap.labels.join(', ')}.' : '';
-        final explain = cap.caption.isNotEmpty
-            ? 'Look carefully at this figure. ${cap.caption}$labelSpeech'
-            : 'Look carefully at this picture on page $pg. Notice every label and part — your test may ask about it.$labelSpeech';
-        scenes.add(_Scene('zoom', 'Figure • Page $pg', explain, page: pg, zone: zone, labels: [cap.caption, ...cap.labels]));
-      }
-      String? point;
-      if (kp < keyPoints.length) {
-        point = keyPoints[kp];
-        final st = _styleFor(point, styleIdx++);
-        scenes.add(_Scene('board', kp < _brainPoints.length ? 'Brain key point' : 'Key point',
-            point.length > 320 ? point.substring(0, 320) : point,
-            boardTheme: st.theme, formula: st.formula));
-        kp++;
-      }
-      // --- subject-style teaching scene for this page ---
-      switch (_subject) {
-        case 'maths':
-        case 'vocational':
-          final steps = SubjectEngine.stepsFrom(_sentences(index.pageText(pg)), max: 3);
-          if (steps.isNotEmpty) {
-            final numbered = [for (var i = 0; i < steps.length; i++) 'Step ${i + 1}. ${steps[i]}'];
-            scenes.add(_Scene('steps', _subject == 'maths' ? 'Solve it step by step' : 'Do it step by step',
-                'Let us do this step by step. ${numbered.join(' ')}',
-                boardText: numbered.join('\n\n'),
-                boardTheme: _subject == 'maths' ? 'graph' : 'ruled', formula: _subject == 'maths'));
-          }
-          if (_subject == 'vocational') {
-            final safety = _sentences(index.pageText(pg))
-                .where((x) => RegExp(r'safety|careful|warning|danger|switch off|protect', caseSensitive: false).hasMatch(x))
-                .take(2)
-                .toList();
-            if (safety.isNotEmpty) {
-              scenes.add(_Scene('safety', 'Safety first', 'Safety first. ${safety.join(' ')}', boardTheme: 'black'));
-            }
-          }
-        case 'science':
-          final pageSents = _sentences(index.pageText(pg));
-          if (LabEngine2.looksLikeLab(pageSents)) {
-            final lab = LabEngine2.parse(pageSents);
-            final sub = LabEngine2.subSubjectOf(index.pageText(pg));
-            if (lab.aim.isNotEmpty) {
-              scenes.add(_Scene('lab', 'Experiment aim', 'Today\'s experiment. ${lab.aim}', boardTheme: 'green'));
-            }
-            if (lab.materials.isNotEmpty) {
-              scenes.add(_Scene('lab', 'Materials needed', 'Materials needed. ${lab.materials.join(' ')}',
-                  boardText: lab.materials.join('\n• '), boardTheme: 'white'));
-            }
-            for (var i = 0; i < lab.procedure.length; i++) {
-              scenes.add(_Scene('lab', 'Step ${i + 1} of ${lab.procedure.length}',
-                  'Step ${i + 1}. ${lab.procedure[i]}',
-                  boardTheme: i.isEven ? 'ruled' : 'graph', formula: sub == 'chemistry'));
-            }
-            if (lab.observation.isNotEmpty) {
-              scenes.add(_Scene('lab', 'Observation', 'Observation. ${lab.observation.join(' ')}', boardTheme: 'graph'));
-            }
-            if (lab.result.isNotEmpty) {
-              scenes.add(_Scene('lab', 'Result', 'Result. ${lab.result.join(' ')}', boardTheme: 'green'));
-            }
-            for (final sf in lab.safety) {
-              scenes.add(_Scene('safety', 'Safety first', 'Safety first. $sf', boardTheme: 'black'));
-            }
-          } else if (point != null) {
-            // Deeper explanation: the book's own sentences, then life.
-            final detail = _sentences(index.pageText(pg)).where((x) => x.length > 35).take(2).join(' ');
-            if (detail.isNotEmpty) {
-              scenes.add(_Scene('board', 'Let us understand', 'Let us understand this properly. $detail',
-                  boardTheme: _styleFor(detail, styleIdx).theme));
-            }
-            final ex = SubjectEngine.dailyLifeFor('science', point);
-            scenes.add(_Scene('daily', 'Daily-life connect', '$ex From your textbook: $point',
-                boardText: '$ex\n\nTextbook line: $point', boardTheme: 'white'));
-          }
-        case 'social':
-          final years = SubjectEngine.yearsIn(index.pageText(pg));
-          if (years.isNotEmpty) {
-            final tl = years.map((y) => '$y').join('  →  ');
-            scenes.add(_Scene('timeline', 'Timeline', 'Timeline check. The key years on this page are ${years.join(', ')}. Place them in order and remember what changed.',
-                boardText: tl, boardTheme: 'black'));
-          } else if (point != null) {
-            final ex = SubjectEngine.dailyLifeFor('social', point);
-            scenes.add(_Scene('daily', 'Daily-life connect', '$ex From your textbook: $point',
-                boardText: '$ex\n\nTextbook line: $point', boardTheme: 'white'));
-          }
-        case 'language':
-          if (ruleIdx < rules.length) {
-            final r = rules[ruleIdx++];
-            scenes.add(_Scene('board', 'Grammar rule', 'Grammar rule from your book. $r', boardText: r, boardTheme: 'green'));
-          } else if (vocabIdx < vocab.length) {
-            final v = vocab[vocabIdx++];
-            final use = v.usage.isNotEmpty ? ' From your book: ${v.usage}' : '';
-            scenes.add(_Scene('vocab', 'New word', 'New word. ${v.word}. It means ${v.meaning}. Say it aloud: ${v.word}.$use',
-                boardText: '${v.word}\n= ${v.meaning}${v.usage.isNotEmpty ? '\n\n"${v.usage}"' : ''}', boardTheme: 'white'));
-            // Practice: blank the word inside its own textbook sentence.
-            if (v.usage.length > 25) {
-              final words = v.usage.split(RegExp(r'\s+')).where((w) => w.replaceAll(RegExp(r'[^A-Za-z]'), '').length >= 5).toList();
-              if (words.isNotEmpty) {
-                final ans = words.reduce((a, b) => a.length >= b.length ? a : b).replaceAll(RegExp(r'[^A-Za-z\-]'), '');
-                if (ans.length >= 4) {
-                  scenes.add(_Scene('practice', 'Your turn',
-                      'Your turn. Complete the sentence from your book. ${v.usage.replaceAll(ans, 'dash')}. The answer is $ans.',
-                      boardText: v.usage, extra: ans, boardTheme: 'ruled'));
-                }
-              }
-            }
-          }
-        default:
-          if (point != null && (_subject == 'general')) {
-            final ex = SubjectEngine.dailyLifeFor('general', point);
-            scenes.add(_Scene('daily', 'Daily-life connect', '$ex From your textbook: $point',
-                boardText: '$ex\n\nTextbook line: $point', boardTheme: 'white'));
-          }
-      }
-    }
-    scenes.add(const _Scene('end', 'Part complete', 'You finished this part. Take the test for this part — score forty percent or more to unlock the next part.'));
-    return scenes;
+  Future<void> _changeLanguage() async {
+    final picked = await pickExplainLanguage(context, _lang);
+    if (picked == null || !mounted) return;
+    _lang = picked.code;
+    widget.settings.explainLanguage = picked.code;
+    await widget.settings.save();
+    _tr.clear();
+    _voice = List<String?>.filled(_scenes.length, null);
+    _ttsCh.invokeMethod('stopTts').catchError((_) => null);
+    _timer?.cancel();
+    await _prepareTranslation();
+    if (!mounted) return;
+    _playScene(_scene);
   }
 
   // ---------- playback engine (voice-driven) ----------
 
-  double _estSeconds(String text) => (text.length / 13.5).clamp(2.5, 50.0).toDouble();
+  double _estSeconds(String text) => (text.length / 13.5).clamp(2.5, 60.0).toDouble();
+
+  String get _voiceText {
+    if (_scenes.isEmpty) return '';
+    return _voiceOf(_scene);
+  }
 
   int get _revealed {
-    final s = _scenes.isEmpty ? null : _scenes[_scene];
-    if (s == null) return 0;
-    if (_rangeSeen) return math.min(s.narration.length, _spoken);
+    if (_scenes.isEmpty) return 0;
+    final text = _voiceText;
+    if (_rangeSeen) return math.min(text.length, _spoken);
     final elapsed = DateTime.now().difference(_sceneStart).inMilliseconds / 1000.0;
     if (elapsed < 0.8) return 0;
-    final frac = (elapsed / _estSeconds(s.narration)).clamp(0.0, 1.0);
-    return (s.narration.length * frac).floor();
+    final frac = (elapsed / _estSeconds(text)).clamp(0.0, 1.0);
+    return (text.length * frac).floor();
   }
 
   double get _progress {
-    final s = _scenes.isEmpty ? null : _scenes[_scene];
-    if (s == null) return 0;
-    return (_revealed / math.max(1, s.narration.length)).clamp(0.0, 1.0).toDouble();
+    final text = _voiceText;
+    if (text.isEmpty) return 0;
+    return (_revealed / math.max(1, text.length)).clamp(0.0, 1.0).toDouble();
   }
 
   void _playScene(int i) {
     _timer?.cancel();
     final s = _scenes[i];
+    final text = _voiceOf(i);
     setState(() {
       _scene = i;
       _playing = true;
@@ -359,10 +229,15 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       _advancing = false;
       _sceneStart = DateTime.now();
       _tick = 0;
+      if (s.kind != 'quick') {
+        _picked = null;
+        _pickedRight = null;
+      }
     });
+    final locale = _tr.containsKey(i) ? xLang(_lang).tts : bookVoiceLocale(text);
     _ttsCh.invokeMethod('speak', {
-      'text': s.narration,
-      'language': widget.settings.language == 'te-IN' ? 'te-IN' : 'en-IN',
+      'text': text,
+      'language': locale,
       'rate': 0.92,
     }).catchError((_) {
       _ttsDone = true;
@@ -375,9 +250,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       }
       setState(() => _tick++);
       final elapsed = DateTime.now().difference(_sceneStart).inSeconds;
-      final finishedVoice = _ttsDone && _revealed >= s.narration.length - 2;
-      final hardCap = elapsed > _estSeconds(s.narration) + 14;
-      if (!_advancing && elapsed >= 1 && (finishedVoice || hardCap)) {
+      final finishedVoice = _ttsDone && _revealed >= text.length - 2;
+      final hardCap = elapsed > _estSeconds(text) + 16;
+      // Quick checks wait for the student's answer instead of racing on.
+      final waitForAnswer = s.kind == 'quick' && _picked == null;
+      if (!_advancing && elapsed >= 1 && !waitForAnswer && (finishedVoice || hardCap)) {
         _advancing = true;
         Future<void>.delayed(const Duration(milliseconds: 350), () {
           if (mounted && _playing) _next(auto: true);
@@ -410,25 +287,52 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     }
   }
 
-  void _finish() {
+  void _answerQuick(String option) {
+    final s = _scenes[_scene];
+    final right = option == s.answer;
+    setState(() {
+      _picked = option;
+      _pickedRight = right;
+    });
+    if (right) {
+      _xpGained = 10;
+      ProgressStore.addXp(widget.sessionId, 10).then((v) {
+        if (mounted) setState(() => _xp = v);
+      });
+      _xpTimer?.cancel();
+      _xpTimer = Timer(const Duration(milliseconds: 1800), () {
+        if (mounted) setState(() => _xpGained = 0);
+      });
+      _advancing = true;
+      Future<void>.delayed(const Duration(milliseconds: 1200), () {
+        if (mounted && _playing) _next();
+      });
+    } else {
+      _xpGained = 0;
+    }
+  }
+
+  Future<void> _finish() async {
     _timer?.cancel();
     _ttsCh.invokeMethod('stopTts').catchError((_) => null);
+    await ProgressStore.addXp(widget.sessionId, 20);
+    if (!mounted) return;
     Navigator.of(context).pop(true);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _xpTimer?.cancel();
+    _pulse.dispose();
     _ttsCh.invokeMethod('stopTts').catchError((_) => null);
     super.dispose();
   }
 
   // ---------- views ----------
 
-  /// Board text for a scene: practice scenes hide the answer word
-  /// until the voice is about to say it.
-  String _boardDisplay(_Scene s) {
-    var t = s.boardText ?? s.narration;
+  String _boardDisplay(LessonScene s) {
+    var t = s.boardFor(_trOf(_scenes.indexOf(s)));
     if (s.kind == 'practice' && s.extra != null && _progress < 0.55) {
       t = t.replaceAll(s.extra!, '——————');
     } else if (s.kind == 'practice' && s.extra != null) {
@@ -437,16 +341,16 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     return t;
   }
 
-  String _currentSentence(_Scene s) {
-    final end = math.min(s.narration.length, _revealed + 1);
-    final upto = s.narration.substring(0, end);
-    final parts = _sentences(s.narration);
+  String _currentSentence() {
+    final text = _voiceText;
+    final end = math.min(text.length, _revealed + 1);
+    final parts = LessonContent.sentences(text);
     var acc = 0;
     for (final p in parts) {
       acc += p.length + 1;
       if (end <= acc) return p;
     }
-    return upto;
+    return text;
   }
 
   Widget _revealedText(String text, {required Color main, required Color dim, required double size, bool mono = false, double height = 1.6}) {
@@ -463,10 +367,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     );
   }
 
-  Widget _boardView(_Scene s) {
+  Widget _boardView(LessonScene s) {
     final c = _boards[s.boardTheme] ?? _boards['green']!;
-    final len = s.narration.length;
-    final size = s.formula ? (len > 160 ? 19.0 : 23.0) : (len > 260 ? 16.5 : len > 140 ? 19.0 : 22.0);
+    final len = _voiceText.length;
+    final size = s.formula ? (len > 160 ? 19.0 : 23.0) : (len > 260 ? 16.0 : len > 140 ? 18.5 : 21.5);
+    final translated = _tr.containsKey(_scenes.indexOf(s));
     return Container(
       decoration: BoxDecoration(
         color: c.bg,
@@ -477,25 +382,75 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
         if (s.boardTheme == 'ruled' || s.boardTheme == 'graph')
           Positioned.fill(child: CustomPaint(painter: _BoardLinesPainter(theme: s.boardTheme, color: c.accent))),
         Padding(
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Text(s.heading.toUpperCase(),
-                  style: TextStyle(color: c.accent, fontWeight: FontWeight.w900, letterSpacing: 1.4, fontSize: 13)),
+                  style: TextStyle(color: c.accent, fontWeight: FontWeight.w900, letterSpacing: 1.4, fontSize: 12.5)),
               const Spacer(),
-              Text(s.formula ? 'FORMULA' : s.boardTheme.replaceAll('_', ' ').toUpperCase(),
-                  style: TextStyle(color: c.accent.withOpacity(0.75), fontWeight: FontWeight.w800, letterSpacing: 1.1, fontSize: 10.5)),
+              if (s.explain != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(color: c.accent.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
+                  child: Text(translated ? 'EXPLANATION • ${xLang(_lang).code.toUpperCase()}' : 'EXPLANATION',
+                      style: TextStyle(color: c.accent, fontWeight: FontWeight.w900, fontSize: 9.5, letterSpacing: 0.8)),
+                )
+              else
+                Text(s.formula ? 'FORMULA' : s.boardTheme.toUpperCase(),
+                    style: TextStyle(color: c.accent.withOpacity(0.75), fontWeight: FontWeight.w800, letterSpacing: 1.1, fontSize: 10)),
             ]),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
                 child: _revealedText(_boardDisplay(s), main: c.fg, dim: c.fg.withOpacity(0.35), size: size, mono: s.formula),
               ),
             ),
+            if (s.kind == 'quick' && s.options.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final o in s.options)
+                  _QuickChip(
+                    label: o,
+                    state: _picked == null
+                        ? 0
+                        : (o == s.answer ? 1 : (o == _picked ? 2 : 0)),
+                    onTap: _picked == null ? () => _answerQuick(o) : null,
+                  ),
+              ]),
+              if (_picked != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(children: [
+                    Icon(_pickedRight == true ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                        size: 18, color: _pickedRight == true ? const Color(0xFF059669) : const Color(0xFFDC2626)),
+                    const SizedBox(width: 6),
+                    Text(
+                      _pickedRight == true
+                          ? 'Correct! +10 XP'
+                          : 'Not quite — the right word is ${s.answer}. Listen once more and continue.',
+                      style: TextStyle(color: _pickedRight == true ? const Color(0xFF065F46) : const Color(0xFF991B1B), fontWeight: FontWeight.w800, fontSize: 12.5),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        _advancing = true;
+                        _next();
+                      },
+                      child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.w900)),
+                    ),
+                  ]),
+                ),
+            ],
+            const SizedBox(height: 6),
             Row(children: [
-              Icon(Icons.draw_rounded, size: 16, color: c.accent),
+              Icon(Icons.draw_rounded, size: 15, color: c.accent),
               const SizedBox(width: 6),
-              Text(_ttsDone ? 'done — next…' : 'writing with the voice…', style: TextStyle(color: c.accent, fontSize: 11.5, fontWeight: FontWeight.w700)),
+              Text(
+                s.kind == 'quick' && _picked == null
+                    ? 'your turn — tap the right word'
+                    : (_ttsDone ? 'done — next…' : 'writing with the voice…'),
+                style: TextStyle(color: c.accent, fontSize: 11, fontWeight: FontWeight.w700),
+              ),
             ]),
           ]),
         ),
@@ -503,13 +458,13 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     );
   }
 
-  Widget _pageImage(_Scene s, {Rect? zone, double zoomT = 0}) {
+  Widget _pageImage(LessonScene s, {Rect? zone, double zoomT = 0}) {
     final img = File('$_pageDir/page_${s.page}.png');
     if (!img.existsSync()) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(18),
-          child: _revealedText(s.narration, main: const Color(0xFF334155), dim: const Color(0xFF94A3B8), size: 16),
+          child: _revealedText(_voiceText, main: const Color(0xFF334155), dim: const Color(0xFF94A3B8), size: 16),
         ),
       );
     }
@@ -536,7 +491,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     });
   }
 
-  Widget _readingView(_Scene s) {
+  Widget _readingView(LessonScene s) {
     final blocks = (_index != null && s.page != null) ? _index!.pages[s.page! - 1].blocks : const <DartBlock>[];
     return Container(
       decoration: BoxDecoration(color: const Color(0xFFF6F1E7), borderRadius: BorderRadius.circular(18)),
@@ -573,7 +528,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     );
   }
 
-  Widget _zoomView(_Scene s) {
+  Widget _zoomView(LessonScene s) {
     return Container(
       decoration: BoxDecoration(color: const Color(0xFF0B1220), borderRadius: BorderRadius.circular(18)),
       padding: const EdgeInsets.all(10),
@@ -603,12 +558,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
               if (s.labels.isNotEmpty && s.labels.first.trim().isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 5),
-                  child: Text(s.labels.first.trim(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  child: Text('📖 ${s.labels.first.trim()}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.w900)),
                 ),
-              Text(s.narration, maxLines: 3, overflow: TextOverflow.ellipsis,
+              Text(_trOf(_scenes.indexOf(s)) ?? s.narration, maxLines: 3, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontSize: 12.5, height: 1.45)),
               if (s.labels.length > 1) ...[
                 const SizedBox(height: 6),
@@ -628,6 +582,70 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     );
   }
 
+  Widget _liveHeader() {
+    return Row(children: [
+      AnimatedBuilder(
+        animation: _pulse,
+        builder: (context, _) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.red.withOpacity(0.15 + 0.12 * _pulse.value),
+            borderRadius: BorderRadius.circular(99),
+            border: Border.all(color: AppColors.red.withOpacity(0.4 + 0.4 * _pulse.value)),
+          ),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.circle, size: 8, color: AppColors.red),
+            SizedBox(width: 5),
+            Text('LIVE', style: TextStyle(color: AppColors.red, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+          ]),
+        ),
+      ),
+      const SizedBox(width: 8),
+      const CircleAvatar(radius: 11, backgroundColor: AppColors.indigo, child: Icon(Icons.school_rounded, size: 13, color: Colors.white)),
+      const SizedBox(width: 6),
+      const Text('Teacher', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+      const Spacer(),
+      Icon(Icons.visibility_rounded, size: 13, color: AppColors.muted.withOpacity(0.9)),
+      const SizedBox(width: 4),
+      Text('$_viewers', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+      const SizedBox(width: 10),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.14), borderRadius: BorderRadius.circular(99)),
+        child: Text('$_xp XP', style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 11.5)),
+      ),
+      if (_xpGained > 0)
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 500),
+          builder: (context, t, child) => Opacity(
+            opacity: (1 - t).clamp(0.0, 1.0),
+            child: Transform.translate(offset: Offset(0, -18 * t), child: child),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.only(left: 6),
+            child: Text('+10', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 13)),
+          ),
+        ),
+    ]);
+  }
+
+  String _kindLabel(LessonScene s) => switch (s.kind) {
+        'reading' => 'Reading the textbook',
+        'zoom' => 'Looking at the figure',
+        'vocab' => 'New word',
+        'practice' => 'Your turn',
+        'steps' => 'Step by step',
+        'daily' => 'Daily-life example',
+        'timeline' => 'Timeline',
+        'lab' => 'Lab • Experiment',
+        'safety' => 'Safety first',
+        'quick' => 'Quick check — tap to answer',
+        'end' => 'Class complete',
+        'title' => 'Class starting',
+        _ => 'On the board',
+      };
+
   @override
   Widget build(BuildContext context) {
     final s = _scenes.isEmpty ? null : _scenes[_scene];
@@ -635,8 +653,26 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15.5)),
         actions: [
+          IconButton(
+            tooltip: 'Explanation language',
+            onPressed: _changeLanguage,
+            icon: Stack(clipBehavior: Clip.none, children: [
+              const Icon(Icons.translate_rounded, color: AppColors.teal),
+              if (_lang != 'en')
+                Positioned(
+                  right: -6,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(color: AppColors.indigo, borderRadius: BorderRadius.circular(99)),
+                    child: Text(_lang.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 7.5, fontWeight: FontWeight.w900)),
+                  ),
+                ),
+            ]),
+          ),
           TextButton(onPressed: _finish, child: const Text('Finish', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800))),
         ],
       ),
@@ -645,75 +681,77 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
           : s == null
               ? const EmptyState(icon: Icons.error_outline_rounded, title: 'Lesson not available', message: 'This textbook could not be prepared on this device.')
               : Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
                   child: Column(children: [
+                    _liveHeader(),
+                    const SizedBox(height: 6),
                     Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.red.withOpacity(0.15), borderRadius: BorderRadius.circular(99)),
-                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.circle, size: 8, color: AppColors.red),
-                          SizedBox(width: 5),
-                          Text('LIVE CLASS', style: TextStyle(color: AppColors.red, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
-                        ]),
-                      ),
-                      const SizedBox(width: 10),
                       Text('Part ${widget.partNumber} • ${_scene + 1}/${_scenes.length}',
-                          style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12.5)),
+                          style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
                       const Spacer(),
-                      Text(
-                          switch (s.kind) {
-                            'reading' => 'Reading the textbook',
-                            'zoom' => 'Looking at the figure',
-                            'vocab' => 'New word',
-                            'practice' => 'Your turn',
-                            'steps' => 'Step by step',
-                            'daily' => 'Daily-life connect',
-                            'timeline' => 'Timeline',
-                            'lab' => 'Lab • Experiment',
-                            'safety' => 'Safety first',
-                            _ => 'On the board',
-                          },
-                          style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12.5)),
+                      Text(_kindLabel(s), style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12)),
                     ]),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(99),
                       child: LinearProgressIndicator(
                         value: _scenes.isEmpty ? 0 : (_scene + _progress) / _scenes.length,
-                        minHeight: 6,
+                        minHeight: 5,
                         backgroundColor: AppColors.stroke,
                         valueColor: const AlwaysStoppedAnimation(AppColors.teal),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    if (_translating)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(children: [
+                          const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          const SizedBox(width: 8),
+                          Text('Preparing ${xLang(_lang).english} explanation…',
+                              style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                        ]),
+                      ),
+                    const SizedBox(height: 10),
                     Expanded(
-                        child: s.kind == 'reading'
-                            ? _readingView(s)
-                            : s.kind == 'zoom'
-                                ? _zoomView(s)
-                                : _boardView(s)),
-                    const SizedBox(height: 12),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 420),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (child, anim) {
+                          final slide = Tween<Offset>(begin: const Offset(0.06, 0.03), end: Offset.zero).animate(anim);
+                          return FadeTransition(opacity: anim, child: SlideTransition(position: slide, child: child));
+                        },
+                        child: KeyedSubtree(
+                          key: ValueKey('$_scene-${s.kind}'),
+                          child: s.kind == 'reading'
+                              ? _readingView(s)
+                              : s.kind == 'zoom'
+                                  ? _zoomView(s)
+                                  : _boardView(s),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
                       decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.stroke)),
                       child: Row(children: [
-                        const Icon(Icons.subtitles_rounded, size: 16, color: AppColors.teal),
+                        const Icon(Icons.subtitles_rounded, size: 15, color: AppColors.teal),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(_currentSentence(s), maxLines: 2, overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: AppColors.text, height: 1.45, fontSize: 13.5, fontWeight: FontWeight.w600)),
+                          child: Text(_currentSentence(), maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: AppColors.text, height: 1.4, fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
                       ]),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                       IconButton.filledTonal(onPressed: _scene > 0 ? _prev : null, icon: const Icon(Icons.skip_previous_rounded)),
                       IconButton.filled(
                         onPressed: _toggle,
-                        icon: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 30),
-                        style: IconButton.styleFrom(backgroundColor: AppColors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.all(16)),
+                        icon: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 28),
+                        style: IconButton.styleFrom(backgroundColor: AppColors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.all(14)),
                       ),
                       IconButton.filledTonal(
                         onPressed: _scene < _scenes.length - 1 ? () => _next() : _finish,
@@ -722,6 +760,44 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
                     ]),
                   ]),
                 ),
+    );
+  }
+}
+
+class _QuickChip extends StatelessWidget {
+  final String label;
+  final int state; // 0 idle, 1 correct, 2 wrong
+  final VoidCallback? onTap;
+  const _QuickChip({required this.label, required this.state, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = switch (state) {
+      1 => const Color(0xFFD1FAE5),
+      2 => const Color(0xFFFEE2E2),
+      _ => Colors.white,
+    };
+    final fg = switch (state) {
+      1 => const Color(0xFF065F46),
+      2 => const Color(0xFF991B1B),
+      _ => const Color(0xFF1E293B),
+    };
+    final border = switch (state) {
+      1 => const Color(0xFF059669),
+      2 => const Color(0xFFDC2626),
+      _ => const Color(0xFF94A3B8),
+    };
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99), border: Border.all(color: border, width: 1.4)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(99),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          child: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 14)),
+        ),
+      ),
     );
   }
 }
