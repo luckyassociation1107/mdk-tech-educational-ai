@@ -1,7 +1,7 @@
 name: textbook_video_classroom
 description: AI Textbook-to-Video Classroom Designer — upload a textbook PDF, ask doubts, get teaching videos.
 publish_to: "none"
-version: 0.10.0+10
+version: 0.11.0+11
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -19,6 +19,8 @@ dependencies:
   pointycastle: ^3.9.1
   web_socket_channel: ^2.4.0
   flutter_secure_storage: ^9.2.2
+  webview_flutter: ^4.8.0
+  webview_flutter_android: ^3.16.3
   url_launcher: ^6.3.0
 
 dev_dependencies:

@@ -121,6 +121,77 @@ class DartEngine {
     return dir;
   }
 
+  static Future<String> sessionPdfPath(String sessionId) async => '${(await _sessionDir(sessionId)).path}/book.pdf';
+
+  // ---------- website-brain results (kept 100% on this device) ----------
+  // The in-app WebView automation (brain_webview_screen) talks to the
+  // PDF-teacher website, but everything it produces — summary, Q&A — is
+  // stored here, per session, per student. Nothing is shared or synced.
+
+  static Future<File> _brainFile(String sessionId) async => File('${(await _sessionDir(sessionId)).path}/brain.json');
+
+  static Future<Map<String, dynamic>> loadBrainData(String sessionId) async {
+    try {
+      final f = await _brainFile(sessionId);
+      if (await f.exists()) {
+        final j = jsonDecode(await f.readAsString());
+        if (j is Map) return j.map((k, v) => MapEntry(k.toString(), v));
+      }
+    } catch (_) {}
+    return {'summary': '', 'level': 1, 'qa': <dynamic>[]};
+  }
+
+  static Future<void> _saveBrainData(String sessionId, Map<String, dynamic> data) async {
+    final f = await _brainFile(sessionId);
+    await f.writeAsString(jsonEncode(data));
+    final meta = await _meta(sessionId);
+    if (meta != null) {
+      meta['brain_summary'] = (data['summary'] ?? '').toString();
+      await _putMeta(meta);
+    }
+  }
+
+  static Future<void> saveBrainSummary(String sessionId, String summary, int level) async {
+    final data = await loadBrainData(sessionId);
+    data['summary'] = summary;
+    data['level'] = level;
+    await _saveBrainData(sessionId, data);
+  }
+
+  static Future<void> addBrainQa(String sessionId, String question, String answer) async {
+    final data = await loadBrainData(sessionId);
+    final qa = ((data['qa'] as List?) ?? const []).toList();
+    qa.add({'q': question, 'a': answer, 'ts': DateTime.now().millisecondsSinceEpoch});
+    data['qa'] = qa;
+    await _saveBrainData(sessionId, data);
+  }
+
+  static Future<void> clearBrainData(String sessionId) async {
+    final f = await _brainFile(sessionId);
+    if (await f.exists()) await f.delete();
+    final meta = await _meta(sessionId);
+    if (meta != null) {
+      meta.remove('brain_summary');
+      await _putMeta(meta);
+    }
+  }
+
+  /// Brain summary sentences (if the student ran the website brain) —
+  /// lesson scenes prefer these individualized key points, then fall
+  /// back to raw textbook sentences.
+  static Future<List<String>> brainKeyPoints(String sessionId) async {
+    final meta = await _meta(sessionId);
+    final summary = (meta?['brain_summary'] ?? '').toString();
+    if (summary.isEmpty) return const [];
+    return summary
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .split(RegExp(r'(?<=[.!?])\s+'))
+        .map((s) => s.trim())
+        .where((s) => s.length > 30)
+        .take(8)
+        .toList();
+  }
+
   static Future<DartPdfIndex?> loadIndex(String sessionId) async {
     final dir = await _sessionDir(sessionId);
     final f = File('${dir.path}/index.json');

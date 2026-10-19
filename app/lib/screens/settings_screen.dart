@@ -139,9 +139,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   s.brain,
                   const {
                     'offline': 'On-device (works without a server)',
+                    'website': 'Online AI brain — website in app (per-device)',
                     'playwright': 'Online AI brain (needs brain server)',
                   },
                   (v) => setState(() => s.brain = v)),
+              if (s.brain == 'website') ...[
+                const SizedBox(height: 10),
+                const Text('Each textbook gets an “AI Brain” button: the app drives the PDF-teacher website in an in-app browser with THIS device’s PDF, then keeps the summary, chat answers, lessons and tests on this device only — so every student gets their own individual brain session. (Android app; needs internet.)',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.45)),
+              ],
               if (s.brain == 'playwright') ...[
                 const SizedBox(height: 10),
                 TextField(

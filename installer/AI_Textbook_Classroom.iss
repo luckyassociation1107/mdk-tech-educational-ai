@@ -3,7 +3,7 @@
 ; (Start Menu entry, optional desktop icon, Add/Remove Programs entry).
 
 #define AppName "AI Textbook Classroom"
-#define AppVersion "0.10.0"
+#define AppVersion "0.11.0"
 #define AppPublisher "MDK Tech Educational AI"
 #define AppExeName "AI_Textbook_Classroom.exe"
 

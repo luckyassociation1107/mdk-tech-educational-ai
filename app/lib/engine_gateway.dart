@@ -74,6 +74,12 @@ class EngineGateway {
 
   Future<Map<String, dynamic>> disconnect(String sessionId) => DartEngine.disconnect(sessionId);
 
+  // Website-brain results, stored locally per session (see DartEngine).
+  Future<String> sessionPdfPath(String sessionId) => DartEngine.sessionPdfPath(sessionId);
+  Future<Map<String, dynamic>> loadBrainData(String sessionId) => DartEngine.loadBrainData(sessionId);
+  Future<void> saveBrainSummary(String sessionId, String summary, int level) => DartEngine.saveBrainSummary(sessionId, summary, level);
+  Future<void> addBrainQa(String sessionId, String question, String answer) => DartEngine.addBrainQa(sessionId, question, answer);
+
   Future<List<dynamic>> listSessions({String brain = 'offline', String brainServerUrl = ''}) => DartEngine.listSessions();
 
   /// Check Android TTS voice availability, e.g. 'te-IN' / 'en-IN'.

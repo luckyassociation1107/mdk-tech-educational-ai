@@ -69,9 +69,12 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
     _init();
   }
 
+  List<String> _brainPoints = const [];
+
   Future<void> _init() async {
     final index = await DartEngine.loadIndex(widget.sessionId);
     final dir = await DartEngine.pageDirOf(widget.sessionId);
+    _brainPoints = await DartEngine.brainKeyPoints(widget.sessionId);
     _ttsCh.setMethodCallHandler((call) async {
       if (call.method == 'ttsDone' || call.method == 'ttsError') _ttsDone = true;
     });
@@ -98,7 +101,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> {
       return cycle[i % cycle.length];
     }
 
-    final keyPoints = <String>[];
+    // Website-brain points first (individualized for this student),
+    // then the textbook's own sentences.
+    final keyPoints = <String>[..._brainPoints];
     for (final pg in widget.pages) {
       final joined = index.pageText(pg).replaceAll(RegExp(r'\s+'), ' ').trim();
       for (final s in joined.split(RegExp(r'(?<=[.!?])\s+'))) {

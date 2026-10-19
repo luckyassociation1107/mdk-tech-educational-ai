@@ -6,6 +6,7 @@ import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
+import 'brain_webview_screen.dart';
 import 'chat_screen.dart';
 import 'exam_setup_screen.dart';
 import 'generate_sheet.dart';
@@ -207,6 +208,15 @@ class _TextbookScreenState extends State<TextbookScreen> {
         elevation: 0,
         title: Text(widget.book.shortTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
+          if (widget.settings.brain == 'website')
+            IconButton(
+              tooltip: 'AI Brain (website)',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => BrainWebViewScreen(
+                    gateway: widget.gateway, settings: widget.settings, sessionId: widget.book.sessionId, bookTitle: widget.book.shortTitle),
+              )),
+              icon: const Icon(Icons.psychology_rounded),
+            ),
           IconButton(
             tooltip: 'Ask PDF',
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(

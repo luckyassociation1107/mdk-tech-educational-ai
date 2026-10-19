@@ -4,6 +4,7 @@ import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
+import 'brain_webview_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final EngineGateway gateway;
@@ -77,6 +78,17 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
+        actions: [
+          if (widget.settings.brain == 'website')
+            IconButton(
+              tooltip: 'AI Brain (website)',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => BrainWebViewScreen(
+                    gateway: widget.gateway, settings: widget.settings, sessionId: widget.book.sessionId, bookTitle: widget.book.shortTitle),
+              )),
+              icon: const Icon(Icons.psychology_rounded),
+            ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
