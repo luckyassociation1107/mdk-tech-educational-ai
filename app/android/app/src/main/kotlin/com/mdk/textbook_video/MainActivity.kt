@@ -28,6 +28,12 @@ class MainActivity : FlutterActivity() {
         tts = TextToSpeech(this) { /* readiness is reported per checkTts call */ }
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {}
+            // Real spoken-word ranges: the Flutter player reveals text and
+            // moves the page highlighter from THESE offsets, so writing,
+            // highlighting and voice can never drift apart.
+            override fun onRangeStart(utteranceId: String?, start: Int, end: Int, frame: Int) {
+                runOnUiThread { channel?.invokeMethod("ttsRange", mapOf("start" to start, "end" to end)) }
+            }
             override fun onDone(utteranceId: String?) {
                 runOnUiThread { channel?.invokeMethod("ttsDone", null) }
             }

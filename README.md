@@ -5,6 +5,14 @@ video for every question. **The cloud AI only plans the lesson; the local
 Python engine renders the actual MP4.** No image-generation AI, no
 video-generation AI, no API key.
 
+## v0.13.0 — voice-true sync + Zoom-style classes
+The lesson player is rebuilt: Android TTS reports the exact spoken
+character range, and board writing, captions and the page highlighter
+move from those ranges — no more timer-estimate drift. Figure/diagram
+areas of each page get Zoom-style focus scenes, and boards/fonts adapt
+to the matter (formulas → graph board + mono type, definitions → green
+board, examples → white board, long matter → ruled notebook).
+
 ## v0.12.0 — student-only
 Founder/principal/teacher/staff roles are removed. One learner adds a
 textbook PDF and learns: PDF-based interactive lessons ("video
