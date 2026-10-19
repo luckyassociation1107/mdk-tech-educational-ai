@@ -9,11 +9,12 @@ import 'nostr_crypto.dart';
 /// Catalog transport over public Nostr relays.
 ///
 /// WRITE: teachers publish kind-1 events signed with the school's shared
-/// catalog key. Content is only the encoded `MDKCAT1.` token.
-/// READ: any device queries relays by the catalog public key and decodes
-/// the tokens. Relays replicate each other, are free, need no account,
-/// and have no practical storage cap for text links. Several relays are
-/// always used in parallel; success on any one is enough.
+/// catalog key. Content is only the entry token from [CatalogCodec] —
+/// AES-256-GCM ciphertext when the school catalog secret is configured.
+/// READ: any device queries relays by the catalog public key, decrypts
+/// with the catalog secret and renders the links. Relays replicate each
+/// other, are free, need no account, and have no practical storage cap
+/// for text links. Several relays are always used in parallel.
 class NostrCatalog {
   static const List<String> relays = [
     'wss://relay.damus.io',
@@ -24,7 +25,7 @@ class NostrCatalog {
 
   static const _tag = 'mdk-textbook-catalog';
 
-  static Future<bool> publish(String secretHex, CatalogEntry entry) async {
+  static Future<bool> publish(String secretHex, CatalogEntry entry, {String catalogSecret = ''}) async {
     Map<String, dynamic> event;
     try {
       event = NostrCrypto.signedEvent(
@@ -33,7 +34,7 @@ class NostrCatalog {
         tags: [
           ['t', _tag]
         ],
-        content: CatalogCodec.encode(entry),
+        content: CatalogCodec.encode(entry, catalogSecret: catalogSecret),
         createdAt: entry.ts ~/ 1000,
       );
     } catch (_) {
@@ -69,10 +70,10 @@ class NostrCatalog {
     }
   }
 
-  static Future<List<CatalogEntry>> fetch(String pubkeyHex) async {
+  static Future<List<CatalogEntry>> fetch(String pubkeyHex, {String catalogSecret = ''}) async {
     final byUrl = <String, CatalogEntry>{};
     await Future.wait(relays.map((r) async {
-      final entries = await _fetchOne(r, pubkeyHex);
+      final entries = await _fetchOne(r, pubkeyHex, catalogSecret: catalogSecret);
       for (final e in entries) {
         byUrl.putIfAbsent(e.u, () => e);
       }
@@ -81,7 +82,7 @@ class NostrCatalog {
     return out;
   }
 
-  static Future<List<CatalogEntry>> _fetchOne(String relay, String pubkeyHex) async {
+  static Future<List<CatalogEntry>> _fetchOne(String relay, String pubkeyHex, {String catalogSecret = ''}) async {
     WebSocketChannel? ch;
     final out = <CatalogEntry>[];
     final seen = <String>{};
@@ -103,7 +104,7 @@ class NostrCatalog {
           if (msg is List && msg.length >= 3 && msg[0] == 'EVENT') {
             final ev = msg[2];
             if (ev is Map && ev['pubkey'] == pubkeyHex && seen.add((ev['id'] ?? '').toString())) {
-              final e = CatalogCodec.tryDecode(ev['content']?.toString());
+              final e = CatalogCodec.tryDecode(ev['content']?.toString(), catalogSecret: catalogSecret);
               if (e != null && e.u.isNotEmpty) out.add(e);
             }
           } else if (msg is List && msg.isNotEmpty && (msg[0] == 'EOSE' || msg[0] == 'CLOSED')) {

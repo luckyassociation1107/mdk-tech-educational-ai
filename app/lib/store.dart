@@ -15,6 +15,8 @@ class AppSettings {
   // Nostr catalog: shared school keypair (hex). nsec only on publishers.
   String catalogNsec;
   String catalogNpub;
+  // School catalog secret: entries are AES-256-GCM encrypted with it.
+  String catalogSecret;
 
   AppSettings({
     this.language = 'en-IN',
@@ -28,6 +30,7 @@ class AppSettings {
     this.catalogSheetUrl = '',
     this.catalogNsec = '',
     this.catalogNpub = '',
+    this.catalogSecret = '',
   });
 
   static Future<AppSettings> load() async {
@@ -44,6 +47,7 @@ class AppSettings {
       catalogSheetUrl: p.getString('set_catalog_sheet') ?? '',
       catalogNsec: p.getString('set_catalog_nsec') ?? '',
       catalogNpub: p.getString('set_catalog_npub') ?? '',
+      catalogSecret: p.getString('set_catalog_secret') ?? '',
     );
   }
 
@@ -60,6 +64,7 @@ class AppSettings {
     await p.setString('set_catalog_sheet', catalogSheetUrl);
     await p.setString('set_catalog_nsec', catalogNsec);
     await p.setString('set_catalog_npub', catalogNpub);
+    await p.setString('set_catalog_secret', catalogSecret);
   }
 }
 

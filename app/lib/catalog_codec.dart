@@ -1,5 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:pointycastle/api.dart';
+import 'package:pointycastle/block/aes.dart';
+import 'package:pointycastle/block/modes/gcm.dart';
+import 'package:pointycastle/digests/sha256.dart';
 
 /// One shared-PDF link in the cloud catalog.
 class CatalogEntry {
@@ -22,18 +29,44 @@ class CatalogEntry {
       );
 }
 
-/// Catalog entries travel as ONE encoded string:
-///   MDKCAT1.<base64(gzip(json))>   (preferred)
-///   MDKRAW1.<base64(json)>         (fallback)
-/// They sit inside a Google Form answer -> Google Sheet cell, so nothing
-/// readable ever appears on a public page. This is obfuscation, not
-/// encryption - Gofile links are share links by design.
+/// Entries travel as ONE token string in the catalog:
+///
+///   MDKENC1.<base64(iv + AES-256-GCM ciphertext)>   (school secret set)
+///   MDKCAT1.<base64(gzip(json))>                    (encoded, no secret)
+///   MDKRAW1.<base64(json)>                          (encoded, no secret)
+///
+/// With the school's own catalog secret configured, the entry is really
+/// ENCRYPTED (AES-256-GCM, key = SHA-256 of the secret) before it ever
+/// leaves the phone. Relays/sheets then store only ciphertext, which
+/// nobody can read without the secret. Devices with the secret decrypt
+/// and render the catalog beautifully; devices without it simply skip
+/// encrypted entries. Older encoded entries stay readable for migration.
 class CatalogCodec {
   static const _gzPrefix = 'MDKCAT1.';
   static const _rawPrefix = 'MDKRAW1.';
-  static final _tokenRe = RegExp(r'MDK(?:CAT|RAW)1\.[A-Za-z0-9+/=]+');
+  static const _encPrefix = 'MDKENC1.';
+  static final _tokenRe = RegExp(r'MDK(?:CAT|RAW|ENC)1\.[A-Za-z0-9+/=]+');
 
-  static String encode(CatalogEntry e) {
+  static Uint8List _keyBytes(String secret) {
+    final d = SHA256Digest();
+    return d.process(Uint8List.fromList(utf8.encode('MDK-CATALOG-v1::$secret')));
+  }
+
+  static Uint8List _aes(bool forEncryption, Uint8List key, Uint8List iv, Uint8List data) {
+    final cipher = GCMBlockCipher(AESEngine());
+    cipher.init(forEncryption, AEADParameters(KeyParameter(key), 128, iv, Uint8List(0)));
+    return cipher.process(data);
+  }
+
+  static String encodeEncrypted(CatalogEntry e, String secret) {
+    final plain = Uint8List.fromList(utf8.encode(jsonEncode(e.toJson())));
+    final iv = Uint8List.fromList(List<int>.generate(12, (_) => Random.secure().nextInt(256)));
+    final ct = _aes(true, _keyBytes(secret.trim()), iv, plain);
+    return '$_encPrefix${base64.encode([...iv, ...ct])}';
+  }
+
+  static String encode(CatalogEntry e, {String catalogSecret = ''}) {
+    if (catalogSecret.trim().isNotEmpty) return encodeEncrypted(e, catalogSecret);
     final bytes = utf8.encode(jsonEncode(e.toJson()));
     try {
       final gz = gzip.encode(bytes);
@@ -42,7 +75,7 @@ class CatalogCodec {
     return '$_rawPrefix${base64.encode(bytes)}';
   }
 
-  static CatalogEntry? tryDecode(String? text) {
+  static CatalogEntry? tryDecode(String? text, {String catalogSecret = ''}) {
     if (text == null) return null;
     final m = _tokenRe.firstMatch(text);
     if (m == null) return null;
@@ -50,16 +83,26 @@ class CatalogCodec {
     try {
       final payload = token.substring(token.indexOf('.') + 1);
       final raw = base64.decode(payload);
-      final jsonBytes = token.startsWith(_gzPrefix) ? gzip.decode(raw) : raw;
+      final List<int> jsonBytes;
+      if (token.startsWith(_encPrefix)) {
+        final secret = catalogSecret.trim();
+        if (secret.isEmpty || raw.length <= 12) return null;
+        final iv = Uint8List.fromList(raw.sublist(0, 12));
+        final ct = Uint8List.fromList(raw.sublist(12));
+        jsonBytes = _aes(false, _keyBytes(secret), iv, ct);
+      } else if (token.startsWith(_gzPrefix)) {
+        jsonBytes = gzip.decode(raw);
+      } else {
+        jsonBytes = raw;
+      }
       final j = jsonDecode(utf8.decode(jsonBytes));
       if (j is Map) return CatalogEntry.fromJson(j.map((k, v) => MapEntry(k.toString(), v)));
     } catch (_) {}
     return null;
   }
 
-  /// Parses a Google Sheets gviz JSON response
-  /// (https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:json).
-  static List<CatalogEntry> parseSheetBody(String body) {
+  /// Parses a Google Sheets gviz JSON response body.
+  static List<CatalogEntry> parseSheetBody(String body, {String catalogSecret = ''}) {
     final start = body.indexOf('{');
     final end = body.lastIndexOf('}');
     if (start < 0 || end <= start) return const [];
@@ -72,7 +115,7 @@ class CatalogCodec {
         final cells = ((r as Map)['c'] as List?) ?? const [];
         for (final c in cells) {
           if (c is Map && c['v'] is String) {
-            final e = tryDecode(c['v'] as String);
+            final e = tryDecode(c['v'] as String, catalogSecret: catalogSecret);
             if (e != null && e.u.isNotEmpty && seen.add(e.u)) out.add(e);
           }
         }
@@ -93,8 +136,7 @@ class CatalogCodec {
     return 'https://docs.google.com/spreadsheets/d/${m.group(1)}/gviz/tq?tqx=out:json';
   }
 
-  /// Accepts a Form view URL (or a pre-filled link) and returns the
-  /// formResponse endpoint used for anonymous submissions.
+  /// Accepts a Form view URL and returns the formResponse endpoint.
   static String formToResponse(String url) {
     var u = url.trim();
     u = u.replaceAll('/viewform', '/formResponse');

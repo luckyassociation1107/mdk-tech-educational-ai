@@ -21,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _catalogSheet;
   late final TextEditingController _nostrNsec;
   late final TextEditingController _nostrNpub;
+  late final TextEditingController _catalogSecret;
   String? _ttsInfo;
   String? _catalogInfo;
 
@@ -33,6 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _catalogSheet = TextEditingController(text: widget.settings.catalogSheetUrl);
     _nostrNsec = TextEditingController(text: widget.settings.catalogNsec);
     _nostrNpub = TextEditingController(text: widget.settings.catalogNpub);
+    _catalogSecret = TextEditingController(text: widget.settings.catalogSecret);
   }
 
   @override
@@ -43,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _catalogSheet.dispose();
     _nostrNsec.dispose();
     _nostrNpub.dispose();
+    _catalogSecret.dispose();
     super.dispose();
   }
 
@@ -53,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     widget.settings.catalogSheetUrl = _catalogSheet.text.trim();
     widget.settings.catalogNsec = _nostrNsec.text.trim();
     widget.settings.catalogNpub = _nostrNpub.text.trim();
+    widget.settings.catalogSecret = _catalogSecret.text.trim();
     await widget.settings.save();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved')));
@@ -177,8 +181,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: const TextStyle(color: AppColors.text),
                 decoration: const InputDecoration(labelText: 'Catalog public key — npub (share with every device)', hintText: 'auto-filled from the private key', border: OutlineInputBorder()),
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _catalogSecret,
+                obscureText: true,
+                style: const TextStyle(color: AppColors.text),
+                decoration: const InputDecoration(labelText: 'Catalog secret (every device — students too)', hintText: 'school-only secret phrase; entries are encrypted with this', border: OutlineInputBorder()),
+              ),
               const SizedBox(height: 8),
               OutlinedButton.icon(onPressed: _generateKey, icon: const Icon(Icons.key_rounded), label: const Text('Create new catalog key (founder, once)')),
+              const SizedBox(height: 6),
+              const Text('With a catalog secret set, every entry is AES-256 encrypted on this phone before publishing — outside the app the catalog is unreadable ciphertext; only devices with this secret see the real titles and links. Share the public key (npub) + secret with all school devices; the private key (nsec) only with staff.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45)),
               const SizedBox(height: 14),
               const Text('Legacy option — Google Form/Sheet (optional):',
                   style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),

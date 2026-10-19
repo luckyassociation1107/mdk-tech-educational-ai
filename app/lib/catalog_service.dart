@@ -1,17 +1,21 @@
+import 'package:http/http.dart' as http;
+
 import 'catalog_codec.dart';
 import 'nostr_crypto.dart';
 import 'nostr_service.dart';
 import 'store.dart';
-import 'package:http/http.dart' as http;
 
 /// Cloud link catalog. Primary transport is **Nostr**: teachers publish
-/// encoded link entries to free public relays with the school's shared
-/// catalog key; every device reads them back by public key. No account,
-/// no company storage and no practical entry limit.
+/// entry tokens to free public relays with the school's shared catalog
+/// key; every device reads them back by public key. With the school's
+/// **catalog secret** set, each entry is AES-256-GCM ENCRYPTED on the
+/// phone before publishing — relays store only ciphertext, and only
+/// devices holding the secret can visualize the catalog. No account, no
+/// company storage, no practical entry limit.
 ///
-/// Legacy fallback (optional): a Google Form (anonymous write) feeding a
-/// Google Sheet (read). Everything degrades quietly to the on-device
-/// catalog when unset or offline.
+/// Legacy fallback (optional): Google Form (anonymous write) → Google
+/// Sheet (read). Everything degrades quietly to the on-device catalog
+/// when unset or offline.
 class CatalogService {
   static bool _validKey(String s) => NostrCrypto.isHexKey(s.trim());
 
@@ -32,7 +36,7 @@ class CatalogService {
 
   static Future<bool> post(AppSettings s, CatalogEntry e) async {
     if (_validKey(s.catalogNsec)) {
-      final ok = await NostrCatalog.publish(s.catalogNsec.trim(), e);
+      final ok = await NostrCatalog.publish(s.catalogNsec.trim(), e, catalogSecret: s.catalogSecret);
       if (ok) return true;
     }
     return _postForm(s, e);
@@ -45,7 +49,7 @@ class CatalogService {
       final resp = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {s.catalogEntryId.trim(): CatalogCodec.encode(e)},
+        body: {s.catalogEntryId.trim(): CatalogCodec.encode(e, catalogSecret: s.catalogSecret)},
       ).timeout(const Duration(seconds: 25));
       return resp.statusCode >= 200 && resp.statusCode < 400;
     } catch (_) {
@@ -57,7 +61,7 @@ class CatalogService {
     final byUrl = <String, CatalogEntry>{};
     final pub = readPubkey(s);
     if (pub != null) {
-      for (final e in await NostrCatalog.fetch(pub)) {
+      for (final e in await NostrCatalog.fetch(pub, catalogSecret: s.catalogSecret)) {
         if (e.u.isNotEmpty) byUrl.putIfAbsent(e.u, () => e);
       }
     }
@@ -66,7 +70,7 @@ class CatalogService {
         final url = CatalogCodec.sheetToGviz(s.catalogSheetUrl);
         final resp = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 25));
         if (resp.statusCode == 200) {
-          for (final e in CatalogCodec.parseSheetBody(resp.body)) {
+          for (final e in CatalogCodec.parseSheetBody(resp.body, catalogSecret: s.catalogSecret)) {
             if (e.u.isNotEmpty) byUrl.putIfAbsent(e.u, () => e);
           }
         }

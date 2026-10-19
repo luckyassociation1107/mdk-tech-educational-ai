@@ -13,11 +13,15 @@ sits on a public page.
 1. **Founder/principal phone:** Settings → **Cloud link catalog** → tap
    **Create new catalog key**. This creates the school's catalog keypair.
 2. Tap **Save settings**.
-3. **Teacher/principal devices:** enter the **private key (nsec)** in the
-   same Settings section (the public key fills itself). These devices can
-   publish new links.
-4. **Student devices:** enter only the **public key (npub)**. Students can
-   read the whole catalog but cannot publish.
+3. **Choose a catalog secret** (any school-only phrase) and enter it on
+   EVERY device. With it, each entry is AES-256-GCM encrypted on the
+   phone before publishing: outside the app the catalog is unreadable
+   ciphertext on public relays; only your school's devices decrypt and
+   display titles/links.
+4. **Teacher/principal devices:** also enter the **private key (nsec)**
+   (the public key fills itself). These devices can publish new links.
+5. **Student devices:** enter only the **public key (npub)** + the catalog
+   secret. Students can read the whole catalog but cannot publish.
 5. On any device tap **Test catalog read** to verify.
 
 That is all — no account, no form, no sheet, nothing to host.

@@ -1,7 +1,7 @@
 name: textbook_video_classroom
 description: AI Textbook-to-Video Classroom Designer — upload a textbook PDF, ask doubts, get teaching videos.
 publish_to: "none"
-version: 0.8.0+8
+version: 0.9.0+9
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
