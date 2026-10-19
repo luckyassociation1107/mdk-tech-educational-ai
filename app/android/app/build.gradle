@@ -1,19 +1,8 @@
-// Chaquopy is applied the legacy way: its Gradle plugin must see the
-// Android Gradle Plugin on the buildscript classpath, which the
-// settings.gradle plugins block does not guarantee.
-buildscript {
-    dependencies {
-        classpath "com.android.tools.build:gradle:8.3.0"
-        classpath "com.chaquo.python:gradle:16.1.0"
-    }
-}
-
 plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
 }
-apply plugin: "com.chaquo.python"
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")
@@ -33,24 +22,9 @@ android {
         versionName flutterVersionName
         ndk { abiFilters "arm64-v8a" }
     }
-    chaquopy {
-        defaultConfig {
-            version "3.11"
-            // Pure-Python engine deps (prebuilt wheels from Chaquopy's own
-            // repo — never source builds). PyMuPDF/pydantic-core have no
-            // Android wheels: on device, PDF extraction runs in Kotlin
-            // (PDFBox-Android) producing the same PdfIndex JSON, and the
-            // engine schema layer is pydantic-free (see schemas.py).
-            pip { install "Pillow==11.0.0"; install "pypdf==4.3.1" }
-        }
-    }
     buildTypes { release { signingConfig signingConfigs.debug } }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }
 
 flutter { source "../.." }
-
-dependencies {
-    implementation "com.tom-roush:pdfbox-android:2.0.27.0" // Android-native PDF text/image extraction fallback
-}

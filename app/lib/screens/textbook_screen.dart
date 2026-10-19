@@ -9,6 +9,7 @@ import '../widgets.dart';
 import 'chat_screen.dart';
 import 'exam_setup_screen.dart';
 import 'generate_sheet.dart';
+import 'lesson_player_screen.dart';
 import 'notes_screen.dart';
 import 'player_screen.dart';
 
@@ -139,17 +140,31 @@ class _TextbookScreenState extends State<TextbookScreen> {
   }
 
   Future<void> _openPlayer({required String path, required String title, SeriesPart? part, String? captionsPath}) async {
-    final completed = await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => PlayerScreen(
-        gateway: widget.gateway,
-        settings: widget.settings,
-        sessionId: widget.book.sessionId,
-        videoPath: path,
-        captionsPath: captionsPath ?? path.replaceAll(RegExp(r'\.mp4$', caseSensitive: false), '.srt'),
-        title: title,
-        part: part?.part,
-      ),
-    ));
+    final bool? completed;
+    if (path.startsWith('lesson://')) {
+      // Interactive Flutter lesson (board + voice + highlighted pages).
+      completed = await Navigator.of(context).push<bool>(MaterialPageRoute(
+        builder: (_) => LessonPlayerScreen(
+          settings: widget.settings,
+          sessionId: widget.book.sessionId,
+          title: title,
+          partNumber: part?.part ?? 0,
+          pages: part?.pages ?? const [],
+        ),
+      ));
+    } else {
+      completed = await Navigator.of(context).push<bool>(MaterialPageRoute(
+        builder: (_) => PlayerScreen(
+          gateway: widget.gateway,
+          settings: widget.settings,
+          sessionId: widget.book.sessionId,
+          videoPath: path,
+          captionsPath: captionsPath ?? path.replaceAll(RegExp(r'\.mp4$', caseSensitive: false), '.srt'),
+          title: title,
+          part: part?.part,
+        ),
+      ));
+    }
     if (completed == true && part != null) {
       await ProgressStore.setPartCompleted(widget.book.sessionId, part.part, true);
       try {

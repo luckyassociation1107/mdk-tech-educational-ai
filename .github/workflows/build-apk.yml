@@ -8,7 +8,6 @@ on:
     branches: [main]
     paths:
       - "app/**"
-      - "engine/**"
       - ".github/workflows/build-apk.yml"
   create:
 
@@ -37,9 +36,6 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Sync the Python engine into the Android app
-        run: bash tools/sync_engine_to_android.sh
-
       - name: Flutter pub get
         working-directory: app
         run: flutter pub get
@@ -51,8 +47,8 @@ jobs:
             echo "sdk.dir=$ANDROID_HOME"
             echo "flutter.sdk=$FLUTTER_SDK"
             echo "flutter.buildMode=release"
-            echo "flutter.versionName=0.5.0"
-            echo "flutter.versionCode=5"
+            echo "flutter.versionName=0.6.0"
+            echo "flutter.versionCode=6"
           } > app/android/local.properties
           cat app/android/local.properties
 

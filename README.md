@@ -244,3 +244,26 @@ wheel. The engine now falls back automatically:
   paragraph order) are used for highlighting until exact boxes exist.
 - Verified in a simulated no-PyMuPDF environment and by the engine
   suite: 13/13 tests still pass.
+
+## Flutter-only rewrite (v0.6.0) — Python removed from the app
+
+Per direction, the application no longer ships Python/Chaquopy at all.
+The former Python engine was re-implemented in Dart:
+
+- PDF text/structure: Syncfusion Dart PDF parser (exact page text and
+  line bounds for highlighting); page pictures: Android PdfRenderer via
+  one small platform method.
+- Chapter series, part unlocking and doubt clearing run in Dart over the
+  extracted textbook (offline, extractive, real page references only).
+- Lessons are an interactive Flutter player: board themes (green/black/
+  white/ruled/graph) with voice-synced writing (device TTS), textbook
+  page reading with passage highlighting and captions — instead of an
+  MP4 rendered by a Python pipeline. Tests/report-card stay as before.
+- The old Python engine remains available in git history (pre-v0.6
+  commits) for reference; the app APK is now smaller and starts faster.
+
+Note: Syncfusion's PDF package may ask for a (free) Community license
+key in release builds; if a license prompt ever appears, register a
+free key at syncfusion.com and add `SyncfusionLicense.registerLicense`
+in main() — no code structure changes needed. The app itself has no
+other third-party runtime services.
