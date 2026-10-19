@@ -235,7 +235,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
                     ]),
                     const SizedBox(height: 10),
                     Slider(
-                      value: (_scene + 1).toDouble().clamp(1, math.max(1, _scenes.length)),
+                      value: (_scene + 1).toDouble().clamp(1.0, math.max(1, _scenes.length).toDouble()),
                       min: 1,
                       max: math.max(1, _scenes.length).toDouble(),
                       onChanged: _scenes.isEmpty
