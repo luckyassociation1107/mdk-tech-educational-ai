@@ -1,50 +1,38 @@
-# Cloud link catalog — one-time setup (founder/principal, ~5 minutes)
+# Cloud link catalog — Nostr setup (founder, once, ~2 minutes)
 
 **What this gives you:** when a teacher/principal adds a textbook PDF in the
 app, it is **automatically uploaded to Gofile**, and the download link is
-automatically registered in **one shared catalog**. Every student/teacher
-device that has the catalog configured sees the new link — no manual link
-copying, and the links never appear on any public web page.
-
-How it works:
-
-- **Write:** the app submits one *encoded* string to a Google Form
-  (anonymous submission — the Form acts as the report/intake function).
-- **Store:** the Form's responses land in a Google Sheet (your private
-  catalog database). Entries look like `MDKCAT1.…` — not readable links.
-- **Read:** apps fetch the Sheet as JSON and decode entries back to links.
+automatically published to the school's **catalog on public Nostr relays**.
+Every device with the catalog public key sees all links — anybody with the
+key setup can add, there is no company storage and no practical entry
+limit, and entries travel encoded (`MDKCAT1.…`) so no readable link ever
+sits on a public page.
 
 ## Steps
 
-1. **Create the Form** at <https://forms.google.com>:
-   - Name it e.g. `MDK Textbook Link Catalog`.
-   - Add ONE question: **Short answer**, title it `entry`.
-   - Settings → Responses: turn **OFF** "Collect email addresses" and
-     "Limit to 1 response" (submissions must be anonymous).
-2. **Link the Sheet:** in the Form's **Responses** tab, click the green
-   Sheets icon → create the response spreadsheet.
-3. **Share the Sheet for reading:** open the Sheet → **Share** →
-   "Anyone with the link" → **Viewer**. Copy the Sheet link.
-   (Reading is public-by-link, but cells only contain encoded strings.)
-4. **Get the entry id:** Form → ⋮ → **Get pre-filled link** → type
-   anything in the `entry` box → **Get link** → copy it. In that link find
-   `entry.123456789` — that is the entry id.
-5. **In the app** (every device): Settings → **Cloud link catalog**:
-   - *Catalog Form link:* paste the Form's normal link
-     (`…/viewform`) — the app converts it automatically.
-   - *Form entry id:* `entry.123456789` from step 4.
-   - *Catalog Sheet link:* the Sheet link from step 3.
-   - Save, then tap **Test catalog read**.
+1. **Founder/principal phone:** Settings → **Cloud link catalog** → tap
+   **Create new catalog key**. This creates the school's catalog keypair.
+2. Tap **Save settings**.
+3. **Teacher/principal devices:** enter the **private key (nsec)** in the
+   same Settings section (the public key fills itself). These devices can
+   publish new links.
+4. **Student devices:** enter only the **public key (npub)**. Students can
+   read the whole catalog but cannot publish.
+5. On any device tap **Test catalog read** to verify.
 
-Student devices only need the **Sheet link** to read; teacher devices need
-all three to publish.
+That is all — no account, no form, no sheet, nothing to host.
 
 ## Notes & honest limits
 
-- Encoding is obfuscation, not encryption — treat the Sheet link like a
-  read key for your school. Gofile free links themselves retire after
-  ~10 days without downloads; the in-app Refresh re-uploads genuinely.
-- The on-device catalog always works without this setup; the cloud catalog
-  simply adds cross-device links on top.
-- Google Forms/Sheets free quotas are generous for school use; nothing here
-  costs money and no server or bot is involved.
+- Anyone holding the **nsec** can publish to (and spam) the catalog —
+  share it only with your staff. Anyone holding the **npub** can read
+  encoded entries. If a key leaks: create a new key, give everyone the new
+  public key, and re-share important PDFs.
+- Entries are obfuscated (gzip+base64), not encrypted; treat the npub like
+  a school read key. Gofile free links still retire after ~10 days without
+  downloads; the in-app Refresh re-uploads genuinely.
+- The app asks several independent relays in parallel, so one relay being
+  down does not break the catalog. Without any key setup, the app simply
+  uses its on-device catalog as before.
+- Optional legacy fallback: a Google Form → Sheet pair can also be
+  configured in the same Settings section; the app merges both sources.

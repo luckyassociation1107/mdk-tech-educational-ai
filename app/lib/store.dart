@@ -12,6 +12,9 @@ class AppSettings {
   String catalogFormUrl;
   String catalogEntryId;
   String catalogSheetUrl;
+  // Nostr catalog: shared school keypair (hex). nsec only on publishers.
+  String catalogNsec;
+  String catalogNpub;
 
   AppSettings({
     this.language = 'en-IN',
@@ -23,6 +26,8 @@ class AppSettings {
     this.catalogFormUrl = '',
     this.catalogEntryId = '',
     this.catalogSheetUrl = '',
+    this.catalogNsec = '',
+    this.catalogNpub = '',
   });
 
   static Future<AppSettings> load() async {
@@ -37,6 +42,8 @@ class AppSettings {
       catalogFormUrl: p.getString('set_catalog_form') ?? '',
       catalogEntryId: p.getString('set_catalog_entry') ?? '',
       catalogSheetUrl: p.getString('set_catalog_sheet') ?? '',
+      catalogNsec: p.getString('set_catalog_nsec') ?? '',
+      catalogNpub: p.getString('set_catalog_npub') ?? '',
     );
   }
 
@@ -51,6 +58,8 @@ class AppSettings {
     await p.setString('set_catalog_form', catalogFormUrl);
     await p.setString('set_catalog_entry', catalogEntryId);
     await p.setString('set_catalog_sheet', catalogSheetUrl);
+    await p.setString('set_catalog_nsec', catalogNsec);
+    await p.setString('set_catalog_npub', catalogNpub);
   }
 }
 

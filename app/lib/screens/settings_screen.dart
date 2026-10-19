@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../catalog_service.dart';
+import '../nostr_crypto.dart';
 import '../engine_gateway.dart';
 import '../store.dart';
 import '../widgets.dart';
@@ -18,6 +19,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _catalogForm;
   late final TextEditingController _catalogEntry;
   late final TextEditingController _catalogSheet;
+  late final TextEditingController _nostrNsec;
+  late final TextEditingController _nostrNpub;
   String? _ttsInfo;
   String? _catalogInfo;
 
@@ -28,6 +31,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _catalogForm = TextEditingController(text: widget.settings.catalogFormUrl);
     _catalogEntry = TextEditingController(text: widget.settings.catalogEntryId);
     _catalogSheet = TextEditingController(text: widget.settings.catalogSheetUrl);
+    _nostrNsec = TextEditingController(text: widget.settings.catalogNsec);
+    _nostrNpub = TextEditingController(text: widget.settings.catalogNpub);
   }
 
   @override
@@ -36,6 +41,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _catalogForm.dispose();
     _catalogEntry.dispose();
     _catalogSheet.dispose();
+    _nostrNsec.dispose();
+    _nostrNpub.dispose();
     super.dispose();
   }
 
@@ -44,9 +51,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     widget.settings.catalogFormUrl = _catalogForm.text.trim();
     widget.settings.catalogEntryId = _catalogEntry.text.trim();
     widget.settings.catalogSheetUrl = _catalogSheet.text.trim();
+    widget.settings.catalogNsec = _nostrNsec.text.trim();
+    widget.settings.catalogNpub = _nostrNpub.text.trim();
     await widget.settings.save();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved')));
+  }
+
+  void _deriveNpub() {
+    final nsec = _nostrNsec.text.trim();
+    if (NostrCrypto.isHexKey(nsec)) {
+      try {
+        setState(() => _nostrNpub.text = NostrCrypto.pubkeyHex(nsec));
+      } catch (_) {}
+    }
+  }
+
+  void _generateKey() {
+    final sk = NostrCrypto.generateSecretHex();
+    setState(() {
+      _nostrNsec.text = sk;
+      _nostrNpub.text = NostrCrypto.pubkeyHex(sk);
+      _catalogInfo = 'New catalog key created. Save, then share ONLY the public key (npub) with student devices; keep the private key (nsec) on teacher/principal devices.';
+    });
   }
 
   Future<void> _testCatalog() async {
@@ -135,6 +162,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'When a teacher adds a textbook PDF it is automatically uploaded to Gofile, and its link is stored in one shared catalog (a Google Form feeding a Google Sheet). Student devices read the catalog, so every shared link appears everywhere. Entries are stored encoded — nothing readable shows on any public page. Full setup: CATALOG-SETUP.md in the project.',
                   style: TextStyle(color: AppColors.muted, height: 1.45)),
               const SizedBox(height: 12),
+              const Text('Nostr catalog (recommended — free, unlimited, no account):',
+                  style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nostrNsec,
+                onChanged: (_) => _deriveNpub(),
+                style: const TextStyle(color: AppColors.text),
+                decoration: const InputDecoration(labelText: 'Catalog private key — nsec (teacher/principal devices only)', hintText: '64-char hex', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _nostrNpub,
+                style: const TextStyle(color: AppColors.text),
+                decoration: const InputDecoration(labelText: 'Catalog public key — npub (share with every device)', hintText: 'auto-filled from the private key', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(onPressed: _generateKey, icon: const Icon(Icons.key_rounded), label: const Text('Create new catalog key (founder, once)')),
+              const SizedBox(height: 14),
+              const Text('Legacy option — Google Form/Sheet (optional):',
+                  style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
+              const SizedBox(height: 8),
               TextField(
                 controller: _catalogForm,
                 style: const TextStyle(color: AppColors.text),
