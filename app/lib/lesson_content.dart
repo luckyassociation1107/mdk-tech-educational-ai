@@ -8,7 +8,7 @@ import 'subject_engine.dart';
 /// One scene of a class. Shared by the video-style lesson player and
 /// the audio podcast player, so both teach identically.
 class LessonScene {
-  final String kind; // title | board | reading | zoom | steps | daily | vocab | practice | timeline | safety | lab | quick | end
+  final String kind; // title | board | reading | zoom | steps | daily | vocab | practice | timeline | safety | lab | quick | diagram | end
   final String heading;
   final String narration; // what the voice speaks (sync source of truth)
   final String? boardText; // explicit board content (textbook lists)
@@ -143,6 +143,71 @@ class LessonContent {
         source: blanked, options: options, answer: answer, boardTheme: 'white');
   }
 
+
+  /// One animated diagram per part, chosen from the subject and the
+  /// book's own words. Nodes are short phrases taken from the text.
+  static LessonScene? diagramFor({
+    required String subject,
+    required String pageText,
+    required List<String> keyPoints,
+    required int pageNo,
+  }) {
+    List<String> shorten(List<String> src, int max) {
+      final out = <String>[];
+      for (final s in src) {
+        final words = s.replaceAll(RegExp(r'\s+'), ' ').trim().split(' ');
+        if (words.isEmpty || words.first.isEmpty) continue;
+        var t = words.take(4).join(' ');
+        t = t.replaceAll(RegExp(r'[.,;:]+$'), '');
+        if (t.length < 3 || t.length > 34) continue;
+        if (out.any((x) => x.toLowerCase() == t.toLowerCase())) continue;
+        out.add(t);
+        if (out.length >= max) break;
+      }
+      return out;
+    }
+
+    final sents = sentences(pageText);
+    final years = SubjectEngine.yearsIn(pageText);
+
+    if (subject == 'social' && years.length >= 2) {
+      return LessonScene('diagram', 'Timeline diagram',
+          'Here is the timeline. Follow it from left to right: ${years.join(', then ')}. Each point marks a change you must remember.',
+          boardTheme: 'black', extra: 'timeline', labels: years.take(6).map((y) => '$y').toList());
+    }
+    if (subject == 'maths') {
+      final nums = RegExp(r'\b\d+(?:\.\d+)?\b').allMatches(pageText).map((m) => m.group(0)!).toSet().take(5).toList();
+      if (nums.length >= 2) {
+        return LessonScene('diagram', 'Number line',
+            'Picture these values on a number line: ${nums.join(', ')}. Numbers grow to the right, so you can compare them by position.',
+            boardTheme: 'graph', formula: true, extra: 'numberline', labels: nums);
+      }
+    }
+    if (subject == 'science') {
+      final nodes = shorten(keyPoints.isEmpty ? sents : keyPoints, 4);
+      if (nodes.length >= 3) {
+        return LessonScene('diagram', 'Cycle diagram',
+            'This cycle links the ideas on page $pageNo: ${nodes.join(', then ')}. Follow the arrows — each stage leads to the next.',
+            boardTheme: 'green', extra: 'cycle', labels: nodes);
+      }
+    }
+    if (subject == 'vocational') {
+      final steps = shorten(SubjectEngine.stepsFrom(sents, max: 4), 4);
+      if (steps.length >= 2) {
+        return LessonScene('diagram', 'Process flow',
+            'Follow this flow while you work: ${steps.join(', then ')}. Do not skip a step.',
+            boardTheme: 'ruled', extra: 'steps', labels: steps);
+      }
+    }
+    final nodes = shorten(keyPoints.isEmpty ? sents : keyPoints, 4);
+    if (nodes.length >= 3) {
+      return LessonScene('diagram', 'Idea map',
+          'Here is how the ideas on page $pageNo connect: ${nodes.join(', then ')}.',
+          boardTheme: 'white', extra: 'steps', labels: nodes);
+    }
+    return null;
+  }
+
   static List<LessonScene> build({
     required DartPdfIndex index,
     required List<int> pages,
@@ -173,6 +238,7 @@ class LessonContent {
     final rules = subject == 'language' ? SubjectEngine.grammarRules(allSents) : const <String>[];
     var vocabIdx = 0, ruleIdx = 0;
     var contentCount = 0;
+    var diagramAdded = false;
     for (final pg in pages) {
       final page = index.pages[pg - 1];
       final sents = sentences(index.pageText(pg)).where((s) => s.length > 30).take(2).toList();
@@ -306,6 +372,15 @@ class LessonContent {
                 explain: ex, source: point, boardTheme: 'white'));
             contentCount++;
           }
+      }
+      // One animated diagram per part (on the second page, or later if needed).
+      if (!diagramAdded && (pg == pages.last || pages.indexOf(pg) >= 1)) {
+        final d = diagramFor(subject: subject, pageText: index.pageText(pg), keyPoints: keyPoints, pageNo: pg);
+        if (d != null) {
+          scenes.add(d);
+          diagramAdded = true;
+          contentCount++;
+        }
       }
       // Interactive quick check roughly every 4 content scenes.
       if (contentCount > 0 && contentCount % 4 == 0) {

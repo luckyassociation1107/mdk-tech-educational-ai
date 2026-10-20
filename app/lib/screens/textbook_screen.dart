@@ -9,8 +9,11 @@ import 'brain_webview_screen.dart';
 import 'chat_screen.dart';
 import 'exam_setup_screen.dart';
 import 'generate_sheet.dart';
+import 'certificate_screen.dart';
 import 'flashcards_screen.dart';
 import 'keypoints_screen.dart';
+import 'listening_exam_screen.dart';
+import 'my_words_screen.dart';
 import 'reader_screen.dart';
 import 'lesson_player_screen.dart';
 import 'mind_map_screen.dart';
@@ -124,8 +127,8 @@ class _TextbookScreenState extends State<TextbookScreen> {
     }
   }
 
-  void _openTools(Widget screen) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  Future<void> _openTools(Widget screen) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 
   Widget _tool(IconData icon, String label, VoidCallback onTap) {
@@ -456,6 +459,36 @@ class _TextbookScreenState extends State<TextbookScreen> {
                 const SizedBox(width: 10),
                 Expanded(child: _tool(Icons.style_rounded, 'Flashcards', () => _openTools(FlashcardsScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
               ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: _tool(Icons.headphones_rounded, 'Listening exam', () => _openTools(ListeningExamScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
+                const SizedBox(width: 10),
+                Expanded(child: _tool(Icons.spellcheck_rounded, 'My Words', () => _openTools(MyWordsScreen(settings: widget.settings, book: widget.book)))),
+              ]),
+              const SizedBox(height: 10),
+              GradientCard(
+                onTap: () async {
+                  final total = _parts.length;
+                  final done = _parts.where(_isDone).length;
+                  await _openTools(CertificateScreen(
+                    settings: widget.settings,
+                    book: widget.book,
+                    partsDone: done,
+                    partsTotal: total,
+                    averagePct: total == 0 ? 0 : (done / total) * 100,
+                  ));
+                },
+                padding: const EdgeInsets.all(14),
+                child: Row(children: [
+                  Icon(Icons.workspace_premium_rounded, color: AppColors.amber, size: 24),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Certificate of completion',
+                        style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                ]),
+              ),
             ],
           ),
         ),

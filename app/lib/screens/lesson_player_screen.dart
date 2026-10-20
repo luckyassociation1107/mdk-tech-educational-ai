@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../dart_engine.dart';
+import '../diagrams.dart';
 import '../lesson_content.dart';
 import '../store.dart';
 import '../study_stats.dart';
 import '../translate_service.dart';
+import '../word_bank.dart';
 import '../widgets.dart';
 import 'voice_studio_screen.dart';
 
@@ -498,6 +500,30 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
     });
   }
 
+  Widget _diagramView(LessonScene s) {
+    return Container(
+      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.stroke)),
+      padding: const EdgeInsets.all(12),
+      child: Column(children: [
+        Expanded(
+          child: DiagramView(
+            type: s.extra ?? 'cycle',
+            labels: s.labels,
+            progress: _progress,
+            accent: AppColors.teal,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          s.boardFor(_trOf(_scenes.indexOf(s))),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.4),
+        ),
+      ]),
+    );
+  }
+
   Widget _readingView(LessonScene s) {
     final blocks = (_index != null && s.page != null) ? _index!.pages[s.page! - 1].blocks : const <DartBlock>[];
     return Container(
@@ -647,6 +673,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
         'timeline' => 'Timeline',
         'lab' => 'Lab • Experiment',
         'safety' => 'Safety first',
+        'diagram' => 'Drawing the diagram',
         'quick' => 'Quick check — tap to answer',
         'end' => 'Class complete',
         'title' => 'Class starting',
@@ -702,6 +729,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
         pageText: pageText,
         lang: _lang,
         tts: _ttsCh,
+        sessionId: widget.sessionId,
+        page: _scenes[_scene].page?.toString() ?? '',
         onExit: () => _ttsCh.invokeMethod('stopTts').catchError((_) => null),
       ),
     );
@@ -821,7 +850,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                               ? _readingView(s)
                               : s.kind == 'zoom'
                                   ? _zoomView(s)
-                                  : _boardView(s),
+                                  : s.kind == 'diagram'
+                                      ? _diagramView(s)
+                                      : _boardView(s),
                         ),
                       ),
                     ),
@@ -942,8 +973,19 @@ class WordHelpSheet extends StatefulWidget {
   final String pageText;
   final String lang;
   final MethodChannel tts;
+  final String sessionId;
+  final String page;
   final VoidCallback onExit;
-  const WordHelpSheet({super.key, required this.words, required this.pageText, required this.lang, required this.tts, required this.onExit});
+  const WordHelpSheet({
+    super.key,
+    required this.words,
+    required this.pageText,
+    required this.lang,
+    required this.tts,
+    required this.sessionId,
+    this.page = '',
+    required this.onExit,
+  });
 
   @override
   State<WordHelpSheet> createState() => _WordHelpSheetState();
@@ -970,8 +1012,9 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
       _loading = widget.lang != 'en';
     });
     widget.tts.invokeMethod('speak', {'text': w, 'language': 'en-IN', 'rate': 0.62}).catchError((_) => null);
+    String? t;
     if (widget.lang != 'en') {
-      final t = await TranslateService.translate(w, widget.lang);
+      t = await TranslateService.translate(w, widget.lang);
       if (mounted) {
         setState(() {
           _translation = t;
@@ -979,6 +1022,13 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
         });
       }
     }
+    await WordBank.add(widget.sessionId, WordEntry(
+      word: w,
+      context: _context(w),
+      translation: t ?? '',
+      page: widget.page,
+      when: DateTime.now().millisecondsSinceEpoch,
+    ));
   }
 
   @override

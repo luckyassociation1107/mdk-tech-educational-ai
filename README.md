@@ -1,3 +1,29 @@
+## v0.20.0 — animated diagrams, listening exam, daily challenge, bookmarks, word bank, certificate
+
+**Animated diagrams inside the class.** One diagram per part is drawn live while the
+teacher speaks — a **cycle** (science idea chains), a **timeline** (social studies years),
+a **process flow** (vocational/lab steps) or a **number line** (maths values). Nodes are
+short phrases taken from the textbook itself; they appear one by one driven by the voice
+progress, with arrows, highlights and labels.
+
+**Listening exam.** The teacher reads each question and its options aloud; the student
+answers by tapping. Show-text toggle, replay counter, instant spoken correction, and a
+score screen — real exam-condition practice and a true accessibility mode.
+
+**Daily challenge.** Five mixed questions from every textbook on the phone, the same set
+for the whole day (seed = date), on Home. +60 / +30 / +10 XP with a celebration at 80%+.
+
+**Reader bookmarks.** Bookmark any page, see a list of all bookmarks, jump straight to a
+page, and see bookmark badges on pages you saved.
+
+**My Words (personal dictionary).** Every word tapped in Word help is saved with the
+textbook sentence it came from, its page number and its translation. Search, listen,
+delete, clear — a growing vocabulary bank built from real reading.
+
+**Certificate of completion.** A shareable A4-landscape PNG certificate (parts completed,
+average, level, date, "verified on device") rendered on the phone and saved to
+`classroom/certificates/`. Reached from Study tools in any textbook.
+
 ## v0.19.0 — Theme engine: 6 themes + custom themes with export/import
 
 **Every colour in the app is now theme-driven.** `AppColors` became palette getters

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dart_engine.dart';
 import '../models.dart';
@@ -31,6 +32,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool _loading = true;
   bool _speaking = false;
   bool _chrome = true;
+  Set<int> _bookmarks = {};
 
   @override
   void initState() {
@@ -38,7 +40,69 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _load();
   }
 
+  String get _bmKey => 'bookmarks_${widget.book.sessionId}';
+
+  Future<void> _loadBookmarks() async {
+    final p = await SharedPreferences.getInstance();
+    final list = (p.getStringList(_bmKey) ?? const <String>[]).map(int.tryParse).whereType<int>().toSet();
+    if (mounted) setState(() => _bookmarks = list);
+  }
+
+  Future<void> _toggleBookmark() async {
+    final p = await SharedPreferences.getInstance();
+    final set = {..._bookmarks};
+    if (!set.add(_page)) set.remove(_page);
+    await p.setStringList(_bmKey, set.map((e) => '$e').toList());
+    if (!mounted) return;
+    setState(() => _bookmarks = set);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(set.contains(_page) ? 'Page $_page bookmarked' : 'Bookmark removed'),
+      duration: const Duration(milliseconds: 1200),
+    ));
+  }
+
+  Future<void> _openBookmarks() async {
+    if (_bookmarks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No bookmarks yet — tap the bookmark icon on any page.')));
+      return;
+    }
+    final pages = _bookmarks.toList()..sort();
+    final chosen = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const SizedBox(height: 12),
+          Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(99))),
+          const Padding(
+            padding: EdgeInsets.all(14),
+            child: Text('Bookmarks', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16)),
+          ),
+          ...pages.map((pg) => ListTile(
+                leading: Icon(Icons.bookmark_rounded, color: AppColors.amber),
+                title: Text('Page $pg', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+                trailing: IconButton(
+                  icon: Icon(Icons.close_rounded, size: 18, color: AppColors.muted),
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    final p = await SharedPreferences.getInstance();
+                    final set = {..._bookmarks}..remove(pg);
+                    await p.setStringList(_bmKey, set.map((e) => '$e').toList());
+                    if (mounted) setState(() => _bookmarks = set);
+                  },
+                ),
+                onTap: () => Navigator.of(ctx).pop(pg),
+              )),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+    if (chosen != null) _goTo(chosen);
+  }
+
   Future<void> _load() async {
+    await _loadBookmarks();
     final index = await DartEngine.loadIndex(widget.book.sessionId);
     final dir = await DartEngine.pageDirOf(widget.book.sessionId);
     if (!mounted) return;
@@ -167,6 +231,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             ),
                           ),
                         ),
+                        if (_bookmarks.contains(i + 1))
+                          Positioned(
+                            left: 10,
+                            top: 10,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.95), borderRadius: BorderRadius.circular(99)),
+                              child: const Icon(Icons.bookmark_rounded, size: 13, color: Colors.black),
+                            ),
+                          ),
                         if (marked)
                           Positioned(
                             right: 10,

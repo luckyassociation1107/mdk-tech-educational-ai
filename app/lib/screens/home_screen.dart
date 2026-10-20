@@ -11,6 +11,7 @@ import '../updater.dart';
 import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
+import 'daily_challenge_screen.dart';
 import 'revision_screen.dart';
 import 'theme_studio_screen.dart';
 import 'settings_screen.dart';
@@ -457,6 +458,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ]),
+              const SectionTitle('Today'),
+              GradientCard(
+                onTap: () async {
+                  await Navigator.of(context).push(PageTransition.route(
+                    DailyChallengeScreen(gateway: widget.gateway, settings: widget.settings, books: _books),
+                  ));
+                  _load();
+                },
+                padding: const EdgeInsets.all(16),
+                child: Row(children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.16), borderRadius: BorderRadius.circular(12)),
+                    child: Icon(Icons.bolt_rounded, color: AppColors.amber, size: 26),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Daily challenge', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 14.5)),
+                      const SizedBox(height: 3),
+                      Text('5 mixed questions from your books • up to +60 XP',
+                          style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.4)),
+                    ]),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                ]),
+              ),
               const SectionTitle('Smart revision'),
               GradientCard(
                 onTap: () async {
