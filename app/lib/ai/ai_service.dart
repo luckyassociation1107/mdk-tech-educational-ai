@@ -47,10 +47,7 @@ class AiService {
         throw AiException(
             'Free website mode runs on Android only. On Windows, switch to your own API key.');
       }
-      final out = await WebAiEngine.instance.generate(
-        prompt: 'Reply with exactly this word and nothing else: READY',
-      );
-      return out.trim();
+      return WebAiEngine.instance.selfTest();
     }
     final out = await (AiClient()).generate(
       cfg,

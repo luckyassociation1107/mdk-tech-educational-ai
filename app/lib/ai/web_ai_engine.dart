@@ -214,7 +214,8 @@ class WebAiEngine {
     await _dismissDialogs();
     final before = await _state();
     if (!before.hasAsk) {
-      throw AiException('The free website changed its layout. Use your own API key instead.');
+      throw AiException(
+          'The free website is not ready for questions yet. Upload the PDF first, then ask.');
     }
 
     // Long prompts go in chunks for the same memory reason as the PDF.
@@ -363,6 +364,32 @@ class WebAiEngine {
       await Future<void>.delayed(const Duration(milliseconds: 800));
     }
     return false;
+  }
+
+  /// Settings → "Test connection" for the free mode.
+  ///
+  /// There is nothing to ask before a PDF is uploaded (the site only shows
+  /// its Ask box once a book is in), so the check is "the site is up and
+  /// waiting for a PDF".
+  Future<String> selfTest() async {
+    if (!supported) {
+      throw AiException(
+          'Free website mode runs on Android only. On Windows, switch to your own API key.');
+    }
+    busy.value = true;
+    stage.value = 'Checking the free website…';
+    try {
+      await _openSite();
+      final s = await _state();
+      if (!s.hasFile && !s.hasAsk) {
+        throw AiException(
+            'The free website opened but its upload box is missing. It may have changed — use your own API key.');
+      }
+      return 'READY';
+    } finally {
+      stage.value = '';
+      busy.value = false;
+    }
   }
 
   /// Start a fresh conversation (used when the teacher changes the book).
