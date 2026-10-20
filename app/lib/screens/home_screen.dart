@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
+import '../study_stats.dart';
 import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
+import 'revision_screen.dart';
 import 'settings_screen.dart';
 import 'textbook_screen.dart';
 
@@ -25,6 +27,12 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
   bool _adding = false;
   String? _error;
+  int _streak = 0;
+  int _xp = 0;
+  int _scenesToday = 0;
+  int _minutesToday = 0;
+  List<bool> _week = List<bool>.filled(7, false);
+  List<BadgeInfo> _badges = const [];
 
   @override
   void initState() {
@@ -53,10 +61,22 @@ class _HomeScreenState extends State<HomeScreen> {
           prog[b.sessionId] = 0;
         }
       }
+      final streak = await StudyStats.streak();
+      final xp = await StudyStats.totalXp();
+      final scenes = await StudyStats.scenesToday();
+      final mins = await StudyStats.minutesToday();
+      final week = await StudyStats.last7();
+      final badges = await StudyStats.badges();
       if (!mounted) return;
       setState(() {
         _books = books;
         _progress = prog;
+        _streak = streak;
+        _xp = xp;
+        _scenesToday = scenes;
+        _minutesToday = mins;
+        _week = week;
+        _badges = badges;
         _loading = false;
       });
     } catch (e) {
@@ -100,6 +120,150 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Widget _statsCard() {
+    final goal = widget.settings.dailyGoal < 1 ? 12 : widget.settings.dailyGoal;
+    final frac = (_scenesToday / goal).clamp(0.0, 1.0).toDouble();
+    final level = StudyStats.levelForXp(_xp);
+    final intoLevel = _xp % 250;
+    return GradientCard(
+      gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0F766E), Color(0xFF1E1B4B)]),
+      padding: const EdgeInsets.all(18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(99)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.local_fire_department_rounded, color: Color(0xFFFBBF24), size: 16),
+              const SizedBox(width: 4),
+              Text('$_streak day streak', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12)),
+            ]),
+          ),
+          const Spacer(),
+          Text('Level $level • ${StudyStats.levelName(level)}',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12.5)),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          SizedBox(
+            width: 62,
+            height: 62,
+            child: Stack(alignment: Alignment.center, children: [
+              SizedBox(
+                width: 62,
+                height: 62,
+                child: CircularProgressIndicator(
+                  value: frac,
+                  strokeWidth: 6,
+                  backgroundColor: Colors.white24,
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFF5EEAD4)),
+                ),
+              ),
+              Text('${(frac * 100).round()}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+            ]),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('$_scenesToday / $goal scenes today', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+              const SizedBox(height: 2),
+              Text('$_minutesToday min studied • $_xp XP total', style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  value: (intoLevel / 250).clamp(0.0, 1.0).toDouble(),
+                  minHeight: 5,
+                  backgroundColor: Colors.white24,
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFFA7F3D0)),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text('${250 - intoLevel} XP to level ${level + 1}', style: const TextStyle(color: Colors.white54, fontSize: 10.5)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          for (var i = 0; i < 7; i++) ...[
+            Expanded(
+              child: Column(children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 350),
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: _week[i] ? const Color(0xFF5EEAD4) : Colors.white.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: _week[i] ? const Icon(Icons.check_rounded, size: 15, color: Color(0xFF0F172A)) : null,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  i == 6 ? 'Today' : ['M', 'T', 'W', 'T', 'F', 'S', 'S'][(DateTime.now().weekday - 6 + i) % 7],
+                  style: const TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w700),
+                ),
+              ]),
+            ),
+            if (i < 6) const SizedBox(width: 4),
+          ],
+        ]),
+      ]),
+    );
+  }
+
+  Widget _badgesStrip() {
+    final unlocked = _badges.where((b) => b.unlocked).length;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Text('Achievements', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14.5)),
+        const SizedBox(width: 8),
+        Text('$unlocked/${_badges.length}', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+      ]),
+      const SizedBox(height: 8),
+      SizedBox(
+        height: 74,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: _badges.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, i) {
+            final b = _badges[i];
+            final color = b.unlocked ? AppColors.amber : AppColors.muted;
+            return Container(
+              width: 74,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+              decoration: BoxDecoration(
+                color: b.unlocked ? color.withOpacity(0.12) : AppColors.card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: b.unlocked ? color.withOpacity(0.5) : AppColors.stroke),
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(_badgeIcon(b.icon), color: b.unlocked ? color : AppColors.muted.withOpacity(0.55), size: 22),
+                const SizedBox(height: 4),
+                Text(b.title,
+                    maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
+                    style: TextStyle(color: b.unlocked ? AppColors.text : AppColors.muted, fontSize: 9.5, fontWeight: FontWeight.w800)),
+              ]),
+            );
+          },
+        ),
+      ),
+    ]);
+  }
+
+  IconData _badgeIcon(String id) => switch (id) {
+        Icons2.school => Icons.school_rounded,
+        Icons2.fire => Icons.local_fire_department_rounded,
+        Icons2.explore => Icons.explore_rounded,
+        Icons2.calendar => Icons.calendar_month_rounded,
+        Icons2.bolt => Icons.bolt_rounded,
+        Icons2.trophy => Icons.emoji_events_rounded,
+        Icons2.cards => Icons.style_rounded,
+        Icons2.brain => Icons.psychology_rounded,
+        Icons2.star => Icons.star_rounded,
+        _ => Icons.check_circle_rounded,
+      };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,7 +302,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: const Icon(Icons.settings_rounded, color: AppColors.muted),
                 ),
               ]),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
+              _statsCard(),
+              const SizedBox(height: 14),
+              _badgesStrip(),
+              const SizedBox(height: 16),
               GradientCard(
                 gradient: AppColors.heroGradient,
                 padding: const EdgeInsets.all(22),
@@ -190,6 +358,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ]),
+              const SectionTitle('Smart revision'),
+              GradientCard(
+                onTap: () async {
+                  await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => RevisionScreen(gateway: widget.gateway, settings: widget.settings),
+                  ));
+                  _load();
+                },
+                padding: const EdgeInsets.all(16),
+                child: Row(children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(color: AppColors.red.withOpacity(0.14), borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.auto_fix_high_rounded, color: AppColors.red, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Revise weak topics', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 14.5)),
+                      SizedBox(height: 3),
+                      Text('Parts under 60% get a re-watch + flashcard plan from your own marks',
+                          style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.4)),
+                    ]),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                ]),
+              ),
               const SectionTitle('My textbooks'),
               if (_loading)
                 const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))

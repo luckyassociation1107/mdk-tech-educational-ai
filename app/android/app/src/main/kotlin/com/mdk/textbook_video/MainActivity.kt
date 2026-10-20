@@ -63,11 +63,18 @@ class MainActivity : FlutterActivity() {
                         val text = call.argument<String>("text") ?: ""
                         val lang = call.argument<String>("language") ?: "en-IN"
                         val rate = call.argument<Double>("rate") ?: 0.9
+                        val pitch = call.argument<Double>("pitch") ?: 1.0
+                        val voiceName = call.argument<String>("voice") ?: ""
                         val parts = lang.split("-")
                         val locale = if (parts.size > 1) Locale(parts[0], parts[1]) else Locale(parts[0])
                         try {
                             tts?.language = locale
+                            if (voiceName.isNotEmpty()) {
+                                val v = tts?.voices?.firstOrNull { it.name == voiceName }
+                                if (v != null) tts?.voice = v
+                            }
                             tts?.setSpeechRate(rate.toFloat())
+                            tts?.setPitch(pitch.toFloat())
                             val params = android.os.Bundle()
                             params.putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "scene")
                             tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "scene")
@@ -75,6 +82,31 @@ class MainActivity : FlutterActivity() {
                         } catch (e: Exception) {
                             result.error("tts_failed", e.message, null)
                         }
+                    }
+                    "listVoices" -> {
+                        val lang = call.argument<String>("language") ?: "en-IN"
+                        val out = ArrayList<Map<String, Any>>()
+                        try {
+                            val all = tts?.voices ?: emptySet()
+                            for (v in all) {
+                                val loc = v.locale
+                                val tag = if (loc.country.isNullOrEmpty()) loc.language else loc.language + "-" + loc.country
+                                val base = lang.split("-").firstOrNull() ?: "en"
+                                if (tag.equals(lang, true) || tag.equals(localizedTag(lang), true) ||
+                                    loc.language.equals(base, true)) {
+                                    out.add(mapOf(
+                                        "name" to v.name,
+                                        "locale" to tag,
+                                        "quality" to v.quality,
+                                        "latency" to v.latency,
+                                        "network" to v.isNetworkConnectionRequired,
+                                        "notInstalled" to v.features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)
+                                    ))
+                                }
+                            }
+                        } catch (e: Exception) { /* empty list */ }
+                        out.sortByDescending { (it["quality"] as Int) }
+                        result.success(out)
                     }
                     "stopTts" -> {
                         try { tts?.stop() } catch (e: Exception) { /* ignore */ }
@@ -134,5 +166,14 @@ private fun renderPdfPages(pdf: File, outDir: File) {
     } finally {
         renderer.close()
         pfd.close()
+    }
+}
+
+private fun localizedTag(lang: String): String {
+    if (!lang.contains("-")) return lang
+    return try {
+        android.icu.util.ULocale.forLanguageTag(lang).toLanguageTag()
+    } catch (e: Exception) {
+        lang
     }
 }

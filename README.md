@@ -1,3 +1,35 @@
+## v0.17.0 — voice studio, streaks & badges, flashcards, reader, revision hub
+
+**Voice Studio (Settings → Voice, or the "Voice" key inside a class).** Lists the real
+voices installed on the phone, with quality / "needs internet" labels; speed 50–150%
+and pitch 0.7–1.3 with instant preview, saved and used everywhere (class, podcast,
+quiz, reader). Native `listVoices` + per-utterance voice/pitch on Android.
+
+**Streak & badges on Home.** Consecutive-day streak, last-7-days strip, daily scene goal
+ring (6/12/20/30, choose in Settings), total study minutes, XP level (250 XP per level,
+Starter → Legend) and 10 achievements that unlock from real activity only.
+
+**Flashcards (spaced repetition).** Cards are built from the part's own key points
+(cloze: one word blanked) and, for language books, glossary words. Leitner boxes
+0–5 with 1/2/4/8/16-day intervals; wrong cards return the same day; flip animation,
+one-tap pronunciation, XP for every review, "all caught up" scheduling.
+
+**Textbook Reader.** Page-by-page reading with deep pinch-zoom, whole-book search
+(every hit shows its page + snippet and jumps there), "read this page to me" using the
+chosen voice, and a PART PAGE marker.
+
+**Revision hub.** Reads the student's own test history; every part under 60% becomes
+a card with Re-watch and Flashcards actions — the plan is derived, never invented.
+
+**Class upgrades.** Theatre mode (full-screen class), Repeat, Slow replay (0.62×) of the
+whole scene, and **Word help**: tap any hard word from the board to hear it slowly, see
+the exact textbook sentence containing it, and get its translation in the chosen
+explanation language.
+
+**Backup.** Settings → Progress backup → Export writes a JSON of all progress (marks,
+XP, streaks, completed parts, flashcard schedule, settings) to the phone; Restore lists
+the newest backups and imports them.
+
 ## v0.16.0 — live Zoom-style class, translator, podcast, quiz, mind map, key-points book
 
 **The class:** a live-classroom screen with a pulsing LIVE badge, teacher avatar,

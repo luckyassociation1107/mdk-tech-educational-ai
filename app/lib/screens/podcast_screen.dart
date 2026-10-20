@@ -7,6 +7,7 @@ import '../dart_engine.dart';
 import '../lesson_content.dart';
 import '../models.dart';
 import '../store.dart';
+import '../study_stats.dart';
 import '../translate_service.dart';
 import '../widgets.dart';
 
@@ -141,6 +142,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
       _stopVoice();
       setState(() => _playing = false);
       ProgressStore.addXp(widget.book.sessionId, 15);
+      StudyStats.recordClassFinished();
       return;
     }
     _playFrom(_scene + 1);

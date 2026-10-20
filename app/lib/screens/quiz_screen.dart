@@ -9,6 +9,7 @@ import '../dart_engine.dart';
 import '../models.dart';
 import '../question_bank.dart';
 import '../store.dart';
+import '../study_stats.dart';
 import '../widgets.dart';
 
 /// Fun, instant-feedback quiz built ONLY from the part's own key points.
@@ -130,6 +131,10 @@ class _QuizScreenState extends State<QuizScreen> {
     if (pct >= 40) {
       await ProgressStore.addXp(widget.book.sessionId, 25);
     }
+    if (_qs.isNotEmpty && _right == _qs.length) {
+      await StudyStats.bumpPerfectQuiz();
+    }
+    await StudyStats.recordActivity(scenes: 1);
     if (mounted) setState(() => _done = true);
   }
 

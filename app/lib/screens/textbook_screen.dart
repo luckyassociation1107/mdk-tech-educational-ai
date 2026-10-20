@@ -8,7 +8,9 @@ import 'brain_webview_screen.dart';
 import 'chat_screen.dart';
 import 'exam_setup_screen.dart';
 import 'generate_sheet.dart';
+import 'flashcards_screen.dart';
 import 'keypoints_screen.dart';
+import 'reader_screen.dart';
 import 'lesson_player_screen.dart';
 import 'mind_map_screen.dart';
 import 'notes_screen.dart';
@@ -435,6 +437,23 @@ class _TextbookScreenState extends State<TextbookScreen> {
                 Expanded(child: _tool(Icons.hub_rounded, 'Mind map', () => _openTools(MindMapScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
                 const SizedBox(width: 10),
                 Expanded(child: _tool(Icons.auto_stories_rounded, 'Key Points', () => _openTools(KeyPointsScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(
+                  child: _tool(
+                    Icons.menu_book_rounded,
+                    'Read book',
+                    () => _openTools(ReaderScreen(
+                      settings: widget.settings,
+                      book: widget.book,
+                      startPage: _parts.isEmpty || _parts.first.pages.isEmpty ? 1 : _parts.first.pages.first,
+                      highlightPages: _parts.isEmpty ? null : _parts.first.pages,
+                    )),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: _tool(Icons.style_rounded, 'Flashcards', () => _openTools(FlashcardsScreen(settings: widget.settings, book: widget.book, parts: _parts)))),
               ]),
             ],
           ),
