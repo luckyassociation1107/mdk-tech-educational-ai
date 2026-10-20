@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'widgets.dart';
+import '../widgets.dart';
 
 /// ─────────────────────────────────────────────────────────────────────
 ///  High-end UI kit: aurora background, glass surfaces, animated numbers,
