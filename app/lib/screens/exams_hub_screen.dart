@@ -75,7 +75,7 @@ class _ExamsHubScreenState extends State<ExamsHubScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Exams & Academics', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
+        title:  Text('Exams & Academics', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
       ),
       body: RefreshIndicator(
         onRefresh: _load,
@@ -126,12 +126,12 @@ class _ExamsHubScreenState extends State<ExamsHubScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(b.shortTitle, maxLines: 2, overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.text, fontSize: 15)),
+                            style:  TextStyle(fontWeight: FontWeight.w800, color: AppColors.text, fontSize: 15)),
                       ),
                     ]),
                     const SizedBox(height: 13),
                     if (parts.isEmpty)
-                      const Text('Parts are still being prepared for this book.', style: TextStyle(color: AppColors.muted, fontSize: 12.5))
+                       Text('Parts are still being prepared for this book.', style: TextStyle(color: AppColors.muted, fontSize: 12.5))
                     else
                       Wrap(spacing: 8, runSpacing: 8, children: [
                         ...parts.map((p) => ActionChip(
@@ -139,8 +139,8 @@ class _ExamsHubScreenState extends State<ExamsHubScreen> {
                                   size: 16, color: p.completed ? AppColors.green : AppColors.teal),
                               label: Text('Part ${p.part} test'),
                               backgroundColor: AppColors.cardLight,
-                              side: const BorderSide(color: AppColors.stroke),
-                              labelStyle: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 12.5),
+                              side:  BorderSide(color: AppColors.stroke),
+                              labelStyle:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 12.5),
                               onPressed: () async {
                                 await Navigator.of(context).push(MaterialPageRoute(
                                   builder: (_) => ExamSetupScreen(gateway: widget.gateway, settings: widget.settings, book: b, part: p),

@@ -296,19 +296,19 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
           GradientCard(
             padding: const EdgeInsets.all(16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(widget.bookTitle, style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15.5)),
+              Text(widget.bookTitle, style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15.5)),
               const SizedBox(height: 6),
-              const Text(
+               Text(
                   'Your textbook is uploaded to the PDF-teacher website by automation inside this app, but the summary, answers, lessons and tests are stored and used only on THIS device — your own private brain session.',
                   style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.45)),
               if (!_supported) ...[
                 const SizedBox(height: 10),
-                const Text('The website brain runs in the Android app. On Windows, keep using the on-device brain.',
+                 Text('The website brain runs in the Android app. On Windows, keep using the on-device brain.',
                     style: TextStyle(color: AppColors.amber, fontSize: 12.5, height: 1.45)),
               ],
               if (!_pdfReady) ...[
                 const SizedBox(height: 10),
-                const Text('This textbook PDF is not on this device, so there is nothing to upload. Add/download the textbook here first.',
+                 Text('This textbook PDF is not on this device, so there is nothing to upload. Add/download the textbook here first.',
                     style: TextStyle(color: AppColors.amber, fontSize: 12.5, height: 1.45)),
               ],
             ]),
@@ -324,7 +324,7 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('You can watch the automation work. If it stalls, tap through manually — then use the Capture buttons.',
+             Text('You can watch the automation work. If it stalls, tap through manually — then use the Capture buttons.',
                 style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45)),
           ],
           const SectionTitle('Summarize'),
@@ -334,7 +334,7 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
               DropdownButtonFormField<int>(
                 value: _level,
                 dropdownColor: AppColors.card,
-                style: const TextStyle(color: AppColors.text),
+                style:  TextStyle(color: AppColors.text),
                 decoration: const InputDecoration(labelText: 'Summary detail', border: OutlineInputBorder()),
                 items: const [
                   DropdownMenuItem(value: 0, child: Text('Brief')),
@@ -365,7 +365,7 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
               padding: const EdgeInsets.all(16),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 260),
-                child: SingleChildScrollView(child: Text(_summary, style: const TextStyle(color: AppColors.text, height: 1.55, fontSize: 13.5))),
+                child: SingleChildScrollView(child: Text(_summary, style:  TextStyle(color: AppColors.text, height: 1.55, fontSize: 13.5))),
               ),
             ),
           ],
@@ -375,7 +375,7 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               TextField(
                 controller: _questionCtrl,
-                style: const TextStyle(color: AppColors.text),
+                style:  TextStyle(color: AppColors.text),
                 maxLines: 2,
                 decoration: const InputDecoration(labelText: 'Your question about this PDF', hintText: 'e.g. Explain quadratic equations with an example', border: OutlineInputBorder()),
               ),
@@ -398,9 +398,9 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
                 ..._qa.reversed.map((e) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Q: ${(e['q'] ?? '').toString()}', style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 13)),
+                        Text('Q: ${(e['q'] ?? '').toString()}', style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 13)),
                         const SizedBox(height: 4),
-                        Text((e['a'] ?? '').toString(), style: const TextStyle(color: AppColors.text, height: 1.5, fontSize: 13)),
+                        Text((e['a'] ?? '').toString(), style:  TextStyle(color: AppColors.text, height: 1.5, fontSize: 13)),
                       ]),
                     )),
               ],
@@ -412,8 +412,8 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: _log.isEmpty
-                  ? [const Text('Ready.', style: TextStyle(color: AppColors.muted, fontSize: 12.5))]
-                  : _log.take(8).map((l) => Padding(padding: const EdgeInsets.only(bottom: 5), child: Text(l, style: const TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)))).toList(),
+                  ? [ Text('Ready.', style: TextStyle(color: AppColors.muted, fontSize: 12.5))]
+                  : _log.take(8).map((l) => Padding(padding: const EdgeInsets.only(bottom: 5), child: Text(l, style:  TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)))).toList(),
             ),
           ),
         ],

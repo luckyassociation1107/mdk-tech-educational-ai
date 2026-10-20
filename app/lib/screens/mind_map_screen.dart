@@ -79,13 +79,13 @@ class _MindMapScreenState extends State<MindMapScreen> {
             Expanded(child: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 15))),
             IconButton(
               onPressed: () => _ttsCh.invokeMethod('speak', {'text': body, 'language': 'en-IN', 'rate': 0.9}).catchError((_) => null),
-              icon: const Icon(Icons.volume_up_rounded, color: AppColors.teal),
+              icon:  Icon(Icons.volume_up_rounded, color: AppColors.teal),
             ),
           ]),
           const SizedBox(height: 4),
-          Text(body, style: const TextStyle(color: AppColors.text, fontSize: 14, height: 1.5)),
+          Text(body, style:  TextStyle(color: AppColors.text, fontSize: 14, height: 1.5)),
           const SizedBox(height: 10),
-          const Text('Textbook line — read it in your book for the full context.',
+           Text('Textbook line — read it in your book for the full context.',
               style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
         ]),
       ),
@@ -106,7 +106,7 @@ class _MindMapScreenState extends State<MindMapScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Mind map', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title:  Text('Mind map', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -120,7 +120,7 @@ class _MindMapScreenState extends State<MindMapScreen> {
                       isExpanded: true,
                       dropdownColor: AppColors.card,
                       underline: Container(height: 1, color: AppColors.stroke),
-                      style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13),
+                      style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13),
                       items: [
                         for (var i = 0; i < widget.parts.length; i++)
                           DropdownMenuItem(value: i, child: Text('Part ${widget.parts[i].part} — ${widget.parts[i].pageLabel}')),
@@ -166,7 +166,7 @@ class _MindMapScreenState extends State<MindMapScreen> {
                     padding: const EdgeInsets.fromLTRB(18, 4, 18, 14),
                     child: Text(
                       '${_points.length} key-point branches • tap a node to hear it • pinch to zoom',
-                      style: const TextStyle(color: AppColors.muted, fontSize: 11.5),
+                      style:  TextStyle(color: AppColors.muted, fontSize: 11.5),
                     ),
                   ),
                 ]),
@@ -178,7 +178,7 @@ class _MindMapScreenState extends State<MindMapScreen> {
     final angle = (2 * math.pi * i / math.max(1, total)) - math.pi / 2;
     final x = cx + r * math.cos(angle) - 88;
     final y = cy + r * math.sin(angle) - 32;
-    const colors = [AppColors.teal, AppColors.violet, AppColors.amber, AppColors.green, Color(0xFF60A5FA), Color(0xFFF472B6), Color(0xFFA3E635), Color(0xFFFB923C)];
+    final colors = [AppColors.teal, AppColors.violet, AppColors.amber, AppColors.green, const Color(0xFF60A5FA), const Color(0xFFF472B6), const Color(0xFFA3E635), const Color(0xFFFB923C)];
     final c = colors[i % colors.length];
     return _node(
       center: false,
@@ -232,7 +232,7 @@ class _MapPainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8;
-    const colors = [AppColors.teal, AppColors.violet, AppColors.amber, AppColors.green, Color(0xFF60A5FA), Color(0xFFF472B6), Color(0xFFA3E635), Color(0xFFFB923C)];
+    final colors = [AppColors.teal, AppColors.violet, AppColors.amber, AppColors.green, const Color(0xFF60A5FA), const Color(0xFFF472B6), const Color(0xFFA3E635), const Color(0xFFFB923C)];
     for (var i = 0; i < count; i++) {
       final angle = (2 * math.pi * i / math.max(1, count)) - math.pi / 2;
       final x = cx + r * math.cos(angle);

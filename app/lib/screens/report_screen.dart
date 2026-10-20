@@ -64,19 +64,19 @@ class _ReportScreenState extends State<ReportScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Report Card', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
+        title:  Text('Report Card', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
         actions: [
           if (d != null && d.tests > 0)
             IconButton(
               tooltip: 'Clear test history',
-              icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.muted),
+              icon:  Icon(Icons.delete_sweep_rounded, color: AppColors.muted),
               onPressed: () async {
                 final go = await showDialog<bool>(
                   context: context,
                   builder: (_) => AlertDialog(
                     backgroundColor: AppColors.card,
-                    title: const Text('Clear all test history?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
-                    content: const Text('Marks, ranks and levels will reset. This cannot be undone.', style: TextStyle(color: AppColors.muted)),
+                    title:  Text('Clear all test history?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
+                    content:  Text('Marks, ranks and levels will reset. This cannot be undone.', style: TextStyle(color: AppColors.muted)),
                     actions: [
                       TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep')),
                       FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Clear')),
@@ -152,7 +152,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text('Level ${lv.level} • ${_fmt(d.xp)} XP', style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900)),
+                              Text('Level ${lv.level} • ${_fmt(d.xp)} XP', style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900)),
                               const SizedBox(height: 5),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(99),
@@ -160,12 +160,12 @@ class _ReportScreenState extends State<ReportScreen> {
                                   value: lv.progress,
                                   minHeight: 7,
                                   backgroundColor: AppColors.stroke,
-                                  valueColor: const AlwaysStoppedAnimation(AppColors.amber),
+                                  valueColor:  AlwaysStoppedAnimation(AppColors.amber),
                                 ),
                               ),
                               const SizedBox(height: 5),
                               Text('Next level at ${lv.nextAt} XP — every mark you earn counts.',
-                                  style: const TextStyle(color: AppColors.muted, fontSize: 11.5)),
+                                  style:  TextStyle(color: AppColors.muted, fontSize: 11.5)),
                             ]),
                           ),
                         ]),
@@ -181,9 +181,9 @@ class _ReportScreenState extends State<ReportScreen> {
                             Expanded(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Text(b.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
+                                    style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
                                 const SizedBox(height: 3),
-                                Text('${b.tests} test(s) • best ${_fmt(b.best)}%', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                Text('${b.tests} test(s) • best ${_fmt(b.best)}%', style:  TextStyle(color: AppColors.muted, fontSize: 12)),
                               ]),
                             ),
                             ProgressRing(value: b.avg / 100, size: 46),
@@ -191,7 +191,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.14), borderRadius: BorderRadius.circular(99)),
-                              child: Text(_grade(b.avg), style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
+                              child: Text(_grade(b.avg), style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
                             ),
                           ]),
                         ),
@@ -203,14 +203,14 @@ class _ReportScreenState extends State<ReportScreen> {
                           child: GradientCard(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             child: Row(children: [
-                              const Icon(Icons.warning_amber_rounded, color: AppColors.amber),
+                               Icon(Icons.warning_amber_rounded, color: AppColors.amber),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                   Text('${w.title} • Part ${w.part}', maxLines: 1, overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13.5)),
+                                      style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13.5)),
                                   Text('Average ${_fmt(w.avg)}% across ${w.tests} test(s) — rewatch this class, then retake.',
-                                      style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                      style:  TextStyle(color: AppColors.muted, fontSize: 12)),
                                 ]),
                               ),
                               TextButton(
@@ -221,7 +221,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                     book: TextbookItem(sessionId: w.sessionId, title: w.title, pageCount: 0, state: 'active', brain: ''),
                                   ),
                                 )),
-                                child: const Text('Revise', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800)),
+                                child:  Text('Revise', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800)),
                               ),
                             ]),
                           ),
@@ -239,19 +239,19 @@ class _ReportScreenState extends State<ReportScreen> {
                             Expanded(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 Text('${r.bookTitle} • ${r.partLabel}', maxLines: 1, overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13.5)),
+                                    style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13.5)),
                                 Text('${_date(r.when)} • ${_fmt(r.earned)}/${r.total} marks',
-                                    style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                    style:  TextStyle(color: AppColors.muted, fontSize: 12)),
                               ]),
                             ),
-                            Text('${_fmt(r.percentage)}%', style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900)),
+                            Text('${_fmt(r.percentage)}%', style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900)),
                             const SizedBox(width: 8),
                             Text(r.grade, style: TextStyle(color: r.passed ? AppColors.teal : AppColors.red, fontWeight: FontWeight.w900)),
                           ]),
                         ),
                       )),
                   const SizedBox(height: 8),
-                  const Text('Ranks and levels are calculated from tests taken on this phone only — your own progress, honestly measured.',
+                   Text('Ranks and levels are calculated from tests taken on this phone only — your own progress, honestly measured.',
                       textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.5)),
                 ]),
     );

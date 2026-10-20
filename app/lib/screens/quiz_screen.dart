@@ -155,7 +155,7 @@ class _QuizScreenState extends State<QuizScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Quiz — answers shown', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title:  Text('Quiz — answers shown', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 14),
@@ -163,7 +163,7 @@ class _QuizScreenState extends State<QuizScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.15), borderRadius: BorderRadius.circular(99)),
-                child: Text('$_xp XP', style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
+                child: Text('$_xp XP', style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
               ),
             ),
           ),
@@ -195,7 +195,7 @@ class _QuizScreenState extends State<QuizScreen> {
               isExpanded: true,
               dropdownColor: AppColors.card,
               underline: Container(height: 1, color: AppColors.stroke),
-              style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13),
+              style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13),
               items: [
                 for (var i = 0; i < widget.parts.length; i++)
                   DropdownMenuItem(value: i, child: Text('Part ${widget.parts[i].part} — ${widget.parts[i].pageLabel}')),
@@ -208,13 +208,13 @@ class _QuizScreenState extends State<QuizScreen> {
         ]),
         const SizedBox(height: 10),
         Row(children: [
-          Text('Question ${_i + 1} of ${_qs.length}', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12.5)),
+          Text('Question ${_i + 1} of ${_qs.length}', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12.5)),
           const Spacer(),
           if (_streak >= 2)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-              child: Text('🔥 $_streak streak', style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 11.5)),
+              child: Text('🔥 $_streak streak', style:  TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 11.5)),
             ),
         ]),
         const SizedBox(height: 6),
@@ -224,7 +224,7 @@ class _QuizScreenState extends State<QuizScreen> {
             value: (_i + (_revealed ? 1 : 0)) / _qs.length,
             minHeight: 5,
             backgroundColor: AppColors.stroke,
-            valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+            valueColor:  AlwaysStoppedAnimation(AppColors.teal),
           ),
         ),
         const SizedBox(height: 14),
@@ -234,17 +234,17 @@ class _QuizScreenState extends State<QuizScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(color: AppColors.indigo.withOpacity(0.18), borderRadius: BorderRadius.circular(99)),
-                child: Text(q.type.label, style: const TextStyle(color: AppColors.teal, fontSize: 10.5, fontWeight: FontWeight.w900)),
+                child: Text(q.type.label, style:  TextStyle(color: AppColors.teal, fontSize: 10.5, fontWeight: FontWeight.w900)),
               ),
               const Spacer(),
               IconButton(
                 visualDensity: VisualDensity.compact,
                 onPressed: () => _speak(q.prompt),
-                icon: const Icon(Icons.volume_up_rounded, size: 18, color: AppColors.teal),
+                icon:  Icon(Icons.volume_up_rounded, size: 18, color: AppColors.teal),
               ),
             ]),
             const SizedBox(height: 8),
-            Text(q.prompt, style: const TextStyle(color: AppColors.text, fontSize: 16, height: 1.45, fontWeight: FontWeight.w700)),
+            Text(q.prompt, style:  TextStyle(color: AppColors.text, fontSize: 16, height: 1.45, fontWeight: FontWeight.w700)),
             const SizedBox(height: 14),
             if (isMcq)
               ...q.options.map((o) {
@@ -270,9 +270,9 @@ class _QuizScreenState extends State<QuizScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: border)),
                       child: Row(children: [
-                        Expanded(child: Text(o, style: const TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.w600))),
-                        if (_revealed && isAnswer) const Icon(Icons.check_circle_rounded, color: AppColors.green, size: 19),
-                        if (_revealed && chosen && !isAnswer) const Icon(Icons.cancel_rounded, color: AppColors.red, size: 19),
+                        Expanded(child: Text(o, style:  TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.w600))),
+                        if (_revealed && isAnswer)  Icon(Icons.check_circle_rounded, color: AppColors.green, size: 19),
+                        if (_revealed && chosen && !isAnswer)  Icon(Icons.cancel_rounded, color: AppColors.red, size: 19),
                       ]),
                     ),
                   ),
@@ -282,14 +282,14 @@ class _QuizScreenState extends State<QuizScreen> {
               TextField(
                 controller: _ctrl,
                 enabled: !_revealed,
-                style: const TextStyle(color: AppColors.text),
+                style:  TextStyle(color: AppColors.text),
                 decoration: InputDecoration(
                   hintText: 'Type the missing word',
-                  hintStyle: const TextStyle(color: AppColors.muted),
+                  hintStyle:  TextStyle(color: AppColors.muted),
                   filled: true,
                   fillColor: AppColors.cardLight,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.stroke)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.stroke)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide:  BorderSide(color: AppColors.stroke)),
                 ),
                 onSubmitted: _check,
               ),
@@ -322,7 +322,7 @@ class _QuizScreenState extends State<QuizScreen> {
                             fontSize: 13)),
                   ]),
                   const SizedBox(height: 6),
-                  Text(q.explanation, style: const TextStyle(color: AppColors.text, fontSize: 12.5, height: 1.45)),
+                  Text(q.explanation, style:  TextStyle(color: AppColors.text, fontSize: 12.5, height: 1.45)),
                 ]),
               ),
               const SizedBox(height: 12),
@@ -405,9 +405,9 @@ class _QuizScreenState extends State<QuizScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: GradientCard(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${i + 1}. ${_qs[i].prompt}', style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13, height: 1.4)),
+                  Text('${i + 1}. ${_qs[i].prompt}', style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13, height: 1.4)),
                   const SizedBox(height: 5),
-                  Text('Answer: ${_qs[i].answer}', style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w900, fontSize: 12.5)),
+                  Text('Answer: ${_qs[i].answer}', style:  TextStyle(color: AppColors.green, fontWeight: FontWeight.w900, fontSize: 12.5)),
                 ]),
               ),
             )),

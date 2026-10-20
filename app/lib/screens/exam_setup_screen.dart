@@ -90,7 +90,7 @@ class _ExamSetupScreenState extends State<ExamSetupScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Set up your test', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
+        title:  Text('Set up your test', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
       ),
       body: ListView(padding: const EdgeInsets.fromLTRB(18, 10, 18, 30), children: [
         GradientCard(
@@ -114,7 +114,7 @@ class _ExamSetupScreenState extends State<ExamSetupScreen> {
             margin: const EdgeInsets.only(top: 14),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.12), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.amber.withOpacity(0.5))),
-            child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Icon(Icons.lightbulb_rounded, color: AppColors.amber, size: 19),
               SizedBox(width: 10),
               Expanded(
@@ -144,7 +144,7 @@ class _ExamSetupScreenState extends State<ExamSetupScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
             decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(99), border: Border.all(color: AppColors.stroke)),
-            child: Text('$_count questions', style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 12.5)),
+            child: Text('$_count questions', style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 12.5)),
           ),
         ]),
         const SectionTitle('Exam rules'),
@@ -153,16 +153,16 @@ class _ExamSetupScreenState extends State<ExamSetupScreen> {
           child: Column(children: [
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Timed exam', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
-              subtitle: Text(_timed ? 'Auto-submits after $_minutes minutes' : 'No time limit', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+              title:  Text('Timed exam', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+              subtitle: Text(_timed ? 'Auto-submits after $_minutes minutes' : 'No time limit', style:  TextStyle(color: AppColors.muted, fontSize: 12)),
               value: _timed,
               onChanged: (v) => setState(() => _timed = v),
             ),
-            const Divider(color: AppColors.stroke, height: 1),
+             Divider(color: AppColors.stroke, height: 1),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Negative marking', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
-              subtitle: const Text('−0.25 for every wrong MCQ', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+              title:  Text('Negative marking', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+              subtitle:  Text('−0.25 for every wrong MCQ', style: TextStyle(color: AppColors.muted, fontSize: 12)),
               value: _negative,
               onChanged: (v) => setState(() => _negative = v),
             ),
@@ -176,7 +176,7 @@ class _ExamSetupScreenState extends State<ExamSetupScreen> {
           style: FilledButton.styleFrom(backgroundColor: AppColors.teal, foregroundColor: const Color(0xFF06231F), padding: const EdgeInsets.symmetric(vertical: 16)),
         ),
         const SizedBox(height: 10),
-        const Text('Questions are generated on this phone from this part’s key points — no internet needed. Passing marks this part complete.',
+         Text('Questions are generated on this phone from this part’s key points — no internet needed. Passing marks this part complete.',
             textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5)),
       ]),
     );

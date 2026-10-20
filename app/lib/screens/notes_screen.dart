@@ -97,16 +97,16 @@ class _NotesScreenState extends State<NotesScreen> {
                       child: GradientCard(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('Part ${p.part} • ${p.pageLabel}',
-                              style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
+                              style:  TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
                           const SizedBox(height: 10),
                           if (p.keyPoints.isEmpty)
-                            const Text('Key points will appear after the series is loaded.', style: TextStyle(color: AppColors.muted))
+                             Text('Key points will appear after the series is loaded.', style: TextStyle(color: AppColors.muted))
                           else
                             ...p.keyPoints.map((k) => Padding(
                                   padding: const EdgeInsets.only(bottom: 7),
                                   child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    const Text('•  ', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900)),
-                                    Expanded(child: Text(k, style: const TextStyle(color: AppColors.text, height: 1.45))),
+                                     Text('•  ', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900)),
+                                    Expanded(child: Text(k, style:  TextStyle(color: AppColors.text, height: 1.45))),
                                   ]),
                                 )),
                         ]),
@@ -117,11 +117,11 @@ class _NotesScreenState extends State<NotesScreen> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: GradientCard(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          const Text('Teacher said…', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
+                           Text('Teacher said…', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
                           const SizedBox(height: 10),
                           ...e.value.take(30).map((l) => Padding(
                                 padding: const EdgeInsets.only(bottom: 6),
-                                child: Text('• ${l.text}', style: const TextStyle(color: AppColors.muted, height: 1.45)),
+                                child: Text('• ${l.text}', style:  TextStyle(color: AppColors.muted, height: 1.45)),
                               )),
                         ]),
                       ),

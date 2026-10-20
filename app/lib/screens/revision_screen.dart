@@ -106,7 +106,7 @@ class _RevisionScreenState extends State<RevisionScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Revise weak topics', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title:  Text('Revise weak topics', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -152,9 +152,9 @@ class _RevisionScreenState extends State<RevisionScreen> {
                               Expanded(
                                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                   Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13.5)),
+                                      style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13.5)),
                                   Text('Part ${p.part} • ${p.partLabel} • ${p.tests} test${p.tests == 1 ? '' : 's'}',
-                                      style: const TextStyle(color: AppColors.muted, fontSize: 11.5)),
+                                      style:  TextStyle(color: AppColors.muted, fontSize: 11.5)),
                                 ]),
                               ),
                             ]),
@@ -174,7 +174,7 @@ class _RevisionScreenState extends State<RevisionScreen> {
                                   onPressed: () => _flashcards(p),
                                   icon: const Icon(Icons.style_rounded, size: 17),
                                   label: const Text('Flashcards'),
-                                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.teal, side: const BorderSide(color: AppColors.teal)),
+                                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.teal, side:  BorderSide(color: AppColors.teal)),
                                 ),
                               ),
                             ]),

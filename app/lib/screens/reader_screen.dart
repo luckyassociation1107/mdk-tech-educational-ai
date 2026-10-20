@@ -115,11 +115,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         backgroundColor: const Color(0xFF070B14),
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(widget.book.shortTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
-          Text('Page $_page of $total', style: const TextStyle(color: AppColors.muted, fontSize: 11.5)),
+              style:  TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
+          Text('Page $_page of $total', style:  TextStyle(color: AppColors.muted, fontSize: 11.5)),
         ]),
         actions: [
-          IconButton(tooltip: 'Search this book', onPressed: _loading ? null : _search, icon: const Icon(Icons.search_rounded, color: AppColors.teal)),
+          IconButton(tooltip: 'Search this book', onPressed: _loading ? null : _search, icon:  Icon(Icons.search_rounded, color: AppColors.teal)),
           IconButton(
             tooltip: _speaking ? 'Stop reading' : 'Read this page to me',
             onPressed: _loading ? null : () => _readPage(stop: _speaking),
@@ -188,7 +188,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   decoration: const BoxDecoration(color: Color(0xFF0B1020), border: Border(top: BorderSide(color: Color(0xFF1E293B)))),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(children: [
-                      Text('$_page', style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      Text('$_page', style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
                       Expanded(
                         child: Slider(
                           value: total == 0 ? 1.0 : _page.toDouble().clamp(1.0, total.toDouble()).toDouble(),
@@ -198,7 +198,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           activeColor: AppColors.teal,
                         ),
                       ),
-                      Text('$total', style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      Text('$total', style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
                     ]),
                     Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                       _pill(Icons.first_page_rounded, 'Start', () => _goTo(1)),
@@ -220,7 +220,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, color: AppColors.teal, size: 20),
-          Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.w700)),
+          Text(label, style:  TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.w700)),
         ]),
       ),
     );
@@ -280,15 +280,15 @@ class _SearchSheetState extends State<_SearchSheet> {
           child: TextField(
             controller: widget.controller,
             autofocus: true,
-            style: const TextStyle(color: AppColors.text),
+            style:  TextStyle(color: AppColors.text),
             decoration: InputDecoration(
               hintText: 'Search the whole book…',
-              hintStyle: const TextStyle(color: AppColors.muted),
-              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.muted),
+              hintStyle:  TextStyle(color: AppColors.muted),
+              prefixIcon:  Icon(Icons.search_rounded, color: AppColors.muted),
               filled: true,
               fillColor: AppColors.cardLight,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.stroke)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.stroke)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
             ),
             onChanged: _run,
           ),
@@ -300,7 +300,7 @@ class _SearchSheetState extends State<_SearchSheet> {
               _q.trim().length < 2
                   ? 'Type at least 2 letters.'
                   : '${_results.length}${_results.length >= 40 ? '+' : ''} pages found',
-              style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700),
+              style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700),
             ),
           ]),
         ),
@@ -322,12 +322,12 @@ class _SearchSheetState extends State<_SearchSheet> {
                       height: 38,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.16), borderRadius: BorderRadius.circular(10)),
-                      child: Text('${r.page}', style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 13)),
+                      child: Text('${r.page}', style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 13)),
                     ),
                     const SizedBox(width: 11),
                     Expanded(
                       child: Text(r.snippet, maxLines: 3, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.text, fontSize: 12.5, height: 1.4)),
+                          style:  TextStyle(color: AppColors.text, fontSize: 12.5, height: 1.4)),
                     ),
                   ]),
                 ),

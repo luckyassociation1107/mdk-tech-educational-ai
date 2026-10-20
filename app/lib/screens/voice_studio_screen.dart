@@ -96,9 +96,9 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Voice Studio', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title:  Text('Voice Studio', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
         actions: [
-          IconButton(onPressed: () => _preview(), icon: const Icon(Icons.play_circle_rounded, color: AppColors.teal, size: 28)),
+          IconButton(onPressed: () => _preview(), icon:  Icon(Icons.play_circle_rounded, color: AppColors.teal, size: 28)),
         ],
       ),
       body: ListView(
@@ -181,7 +181,7 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
           if (_loading)
             const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
           else if (_noVoices)
-            const GradientCard(
+             GradientCard(
               child: Text(
                 'No voices reported by this device. Android → Settings → Language & input → Text-to-speech → install a voice for this language.',
                 style: TextStyle(color: AppColors.muted, height: 1.45, fontSize: 12.5),
@@ -198,7 +198,7 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
                 Icon(s.voiceName.isEmpty ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
                     color: AppColors.teal, size: 20),
                 const SizedBox(width: 10),
-                const Expanded(
+                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('System default', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13.5)),
                     Text('Let Android choose the best voice', style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
@@ -232,16 +232,16 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
                           Text(_title(v),
                               maxLines: 1, overflow: TextOverflow.ellipsis,
                               style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
-                          Text(_sub(v), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+                          Text(_sub(v), style:  TextStyle(color: AppColors.muted, fontSize: 11)),
                         ]),
                       ),
-                      const Icon(Icons.play_arrow_rounded, color: AppColors.muted, size: 18),
+                       Icon(Icons.play_arrow_rounded, color: AppColors.muted, size: 18),
                     ]),
                   ),
                 ),
               );
             }),
-            const GradientCard(
+             GradientCard(
               child: Text(
                 'Tip: a voice marked “needs internet” sounds better but stops working offline. '
                 'For an offline class, choose a voice without that label.',

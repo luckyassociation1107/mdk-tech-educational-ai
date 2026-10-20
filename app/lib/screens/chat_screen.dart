@@ -93,7 +93,7 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Ask PDF', style: TextStyle(fontWeight: FontWeight.w900)),
-          Text(widget.book.shortTitle, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+          Text(widget.book.shortTitle, style:  TextStyle(fontSize: 12, color: AppColors.muted)),
         ]),
       ),
       body: Column(children: [
@@ -104,7 +104,7 @@ class _ChatScreenState extends State<ChatScreen> {
             itemCount: _msgs.length + (_busy ? 1 : 0),
             itemBuilder: (_, i) {
               if (i >= _msgs.length) {
-                return const Align(
+                return  Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
                     padding: EdgeInsets.all(10),
@@ -134,7 +134,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     border: m.isUser ? null : Border.all(color: AppColors.stroke),
                   ),
-                  child: SelectableText(m.content, style: const TextStyle(color: AppColors.text, height: 1.45)),
+                  child: SelectableText(m.content, style:  TextStyle(color: AppColors.text, height: 1.45)),
                 ),
               );
             },
@@ -142,14 +142,14 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         Container(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
-          decoration: const BoxDecoration(color: AppColors.bg2, border: Border(top: BorderSide(color: AppColors.stroke))),
+          decoration:  BoxDecoration(color: AppColors.bg2, border: Border(top: BorderSide(color: AppColors.stroke))),
           child: Row(children: [
             Expanded(
               child: TextField(
                 controller: _input,
                 minLines: 1,
                 maxLines: 4,
-                style: const TextStyle(color: AppColors.text),
+                style:  TextStyle(color: AppColors.text),
                 decoration: const InputDecoration(hintText: 'Ask PDF…', border: OutlineInputBorder()),
                 onSubmitted: (_) => _send(),
               ),

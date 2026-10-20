@@ -138,7 +138,7 @@ class _TextbookScreenState extends State<TextbookScreen> {
           child: Text(label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
+              style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
         ),
       ]),
     );
@@ -293,7 +293,7 @@ class _TextbookScreenState extends State<TextbookScreen> {
                               width: 46,
                               height: 46,
                               decoration: BoxDecoration(
-                                gradient: done ? const LinearGradient(colors: [AppColors.green, AppColors.teal]) : AppColors.accentGradient,
+                                gradient: done ?  LinearGradient(colors: [AppColors.green, AppColors.teal]) : AppColors.accentGradient,
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Icon(done ? Icons.check_rounded : Icons.play_lesson_rounded, color: Colors.white),
@@ -301,8 +301,8 @@ class _TextbookScreenState extends State<TextbookScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Part ${p.part}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.text)),
-                                Text(p.pageLabel, style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                                Text('Part ${p.part}', style:  TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.text)),
+                                Text(p.pageLabel, style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
                               ]),
                             ),
                             LockBadge(unlocked: unlocked, completed: done),
@@ -312,8 +312,8 @@ class _TextbookScreenState extends State<TextbookScreen> {
                             ...p.keyPoints.take(2).map((k) => Padding(
                                   padding: const EdgeInsets.only(bottom: 5),
                                   child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    const Text('•  ', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900)),
-                                    Expanded(child: Text(k, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, height: 1.4, fontSize: 13))),
+                                     Text('•  ', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900)),
+                                    Expanded(child: Text(k, maxLines: 2, overflow: TextOverflow.ellipsis, style:  TextStyle(color: AppColors.muted, height: 1.4, fontSize: 13))),
                                   ]),
                                 )),
                           ],
@@ -364,12 +364,12 @@ class _TextbookScreenState extends State<TextbookScreen> {
                               label: const Text('Take test — 40% unlocks the next part'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.teal,
-                                side: const BorderSide(color: AppColors.teal),
+                                side:  BorderSide(color: AppColors.teal),
                               ),
                             ),
                           ),
                           if (!unlocked)
-                            const Padding(
+                             Padding(
                               padding: EdgeInsets.only(top: 10),
                               child: Text('Finish the previous part and mark it complete to unlock this class.',
                                   style: TextStyle(color: AppColors.muted, fontSize: 12.5)),
@@ -381,7 +381,7 @@ class _TextbookScreenState extends State<TextbookScreen> {
                 }),
               const SectionTitle('Your videos'),
               if (_videos.isEmpty)
-                const GradientCard(
+                 GradientCard(
                   child: Text('Generated classes for this textbook will appear here.', style: TextStyle(color: AppColors.muted)),
                 )
               else
@@ -392,16 +392,16 @@ class _TextbookScreenState extends State<TextbookScreen> {
                             ? null
                             : () => _openPlayer(path: v.playablePath!, title: v.question),
                         child: Row(children: [
-                          const Icon(Icons.smart_display_rounded, color: AppColors.teal, size: 30),
+                           Icon(Icons.smart_display_rounded, color: AppColors.teal, size: 30),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Text(v.question, maxLines: 2, overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
-                              Text(v.status, style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                                  style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+                              Text(v.status, style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
                             ]),
                           ),
-                          const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                           Icon(Icons.chevron_right_rounded, color: AppColors.muted),
                         ]),
                       ),
                     )),

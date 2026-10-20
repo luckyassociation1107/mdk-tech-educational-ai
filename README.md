@@ -1,3 +1,29 @@
+## v0.19.0 — Theme engine: 6 themes + custom themes with export/import
+
+**Every colour in the app is now theme-driven.** `AppColors` became palette getters
+backed by `ThemeManager`, so a theme switch repaints the entire app instantly
+(Home, classes, quizzes, tools, reader, settings). 261 `const` usages were rewritten
+so dynamic colours are legal everywhere.
+
+**6 built-in themes — 3 dark + 3 light**
+- Dark: **Midnight Indigo** (original premium navy), **Neon Graphite** (black + cyan/lime),
+  **Royal Aurora** (deep violet + pink + amber)
+- Light: **Daylight Paper** (clean white + indigo), **Warm Sand** (cream + terracotta),
+  **Mint Studio** (pale mint + emerald)
+
+**Theme Studio** (Home palette button, or Settings → Appearance):
+- Every theme card shows a gradient preview, a LIGHT/DARK badge and its six colours.
+- **Create tab**: name + six colour pickers (background, card, text, primary, secondary,
+  accent) with a compact HSV picker (hue strip, saturation, brightness, hex entry and
+  swatch rows). Light/dark is detected from the background, and muted/stroke/border
+  tones are generated so text always stays readable. Live preview card updates as you
+  pick; Save & apply stores it, Edit and Delete manage saved themes.
+- **Export / Import tab**: export the current theme or all custom themes as JSON
+  (copied to the clipboard and saved to `classroom/themes/*.json`), import by pasting
+  JSON, or open a saved theme file. Imported themes appear in the list immediately.
+- The aurora background, glass cards, glow icons and gradients all follow the palette;
+  light themes get softer auroras and light-appropriate shadows.
+
 ## v0.18.0 — install-over updates (no uninstall) + premium UI
 
 **Updates now install straight over the old app.** From v0.18.0 every release APK is

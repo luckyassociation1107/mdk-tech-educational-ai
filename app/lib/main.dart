@@ -4,6 +4,7 @@ import 'engine_gateway.dart';
 import 'exam_store.dart';
 import 'screens/home_screen.dart';
 import 'store.dart';
+import 'theme/themes.dart';
 import 'ui/premium_ui.dart';
 import 'updater.dart';
 import 'widgets.dart';
@@ -20,26 +21,49 @@ class TextbookClassroomApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: ThemeManager.revision,
+      builder: (context, _, __) => _app(),
+    );
+  }
+
+  Widget _app() {
+    final p = AppColors.palette;
     return MaterialApp(
       title: 'AI Textbook Classroom',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark,
+        brightness: p.isLight ? Brightness.light : Brightness.dark,
         scaffoldBackgroundColor: AppColors.bg,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.indigo, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.indigo,
+          brightness: p.isLight ? Brightness.light : Brightness.dark,
+          surface: AppColors.card,
+          primary: AppColors.indigo,
+          secondary: AppColors.teal,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.bg,
+          foregroundColor: AppColors.text,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16),
+        ),
+        dialogTheme: DialogTheme(backgroundColor: AppColors.card),
+        bottomSheetTheme: BottomSheetThemeData(backgroundColor: AppColors.card),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.card,
-          labelStyle: const TextStyle(color: AppColors.muted),
-          hintStyle: const TextStyle(color: AppColors.muted),
+          labelStyle:  TextStyle(color: AppColors.muted),
+          hintStyle:  TextStyle(color: AppColors.muted),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.stroke),
+            borderSide:  BorderSide(color: AppColors.stroke),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.teal, width: 1.6),
+            borderSide:  BorderSide(color: AppColors.teal, width: 1.6),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
@@ -53,20 +77,20 @@ class TextbookClassroomApp extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            side: const BorderSide(color: AppColors.stroke),
+            side:  BorderSide(color: AppColors.stroke),
             foregroundColor: AppColors.text,
             textStyle: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        floatingActionButtonTheme:  FloatingActionButtonThemeData(
           backgroundColor: AppColors.indigo,
           foregroundColor: Colors.white,
         ),
         chipTheme: ChipThemeData(
           backgroundColor: AppColors.card,
           selectedColor: AppColors.indigo,
-          labelStyle: const TextStyle(color: AppColors.text),
-          side: const BorderSide(color: AppColors.stroke),
+          labelStyle:  TextStyle(color: AppColors.text),
+          side:  BorderSide(color: AppColors.stroke),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
         ),
         pageTransitionsTheme: const PageTransitionsTheme(builders: {
@@ -76,7 +100,7 @@ class TextbookClassroomApp extends StatelessWidget {
           TargetPlatform.linux: ZoomPageTransitionsBuilder(),
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         }),
-        sliderTheme: const SliderThemeData(activeTrackColor: AppColors.teal, thumbColor: AppColors.teal),
+        sliderTheme:  SliderThemeData(activeTrackColor: AppColors.teal, thumbColor: AppColors.teal),
         switchTheme: SwitchThemeData(
           thumbColor: WidgetStateProperty.all(AppColors.teal),
           trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.teal.withOpacity(0.35) : AppColors.stroke),
@@ -104,6 +128,7 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _go() async {
+    await ThemeManager.load();
     final settings = await AppSettings.load();
     ExamStore.scopeUserId = 'learner';
     await Future.delayed(const Duration(milliseconds: 1500));
@@ -143,7 +168,7 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
             const SizedBox(height: 24),
             FadeTransition(
               opacity: CurvedAnimation(parent: _anim, curve: const Interval(0.25, 1, curve: Curves.easeOut)),
-              child: const Column(children: [
+              child:  Column(children: [
                 GradientText('Textbook Classroom', size: 25),
                 SizedBox(height: 7),
                 Text('Your chapter. Your teacher. Page by page.',

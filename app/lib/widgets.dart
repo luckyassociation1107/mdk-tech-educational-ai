@@ -1,32 +1,29 @@
 import 'package:flutter/material.dart';
 
+import 'theme/themes.dart';
+
 /// Premium design system: deep-navy canvas, indigo→teal gradients,
 /// glass cards, soft shadows. No external fonts/assets needed.
 class AppColors {
-  static const bg = Color(0xFF0B1020);
-  static const bg2 = Color(0xFF111833);
-  static const card = Color(0xFF171F3D);
-  static const cardLight = Color(0xFF1F2A52);
-  static const stroke = Color(0xFF2A3766);
-  static const text = Color(0xFFF2F5FF);
-  static const muted = Color(0xFF9AA7D4);
-  static const indigo = Color(0xFF6366F1);
-  static const violet = Color(0xFFA855F7);
-  static const teal = Color(0xFF2DD4BF);
-  static const amber = Color(0xFFFBBF24);
-  static const red = Color(0xFFF87171);
-  static const green = Color(0xFF34D399);
+  static AppPalette get palette => ThemeManager.palette;
+  static bool get isLight => palette.isLight;
 
-  static const heroGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF4338CA), Color(0xFF7C3AED), Color(0xFF0D9488)],
-  );
-  static const accentGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [indigo, violet],
-  );
+  static Color get bg => palette.bg;
+  static Color get bg2 => palette.bg2;
+  static Color get card => palette.card;
+  static Color get cardLight => palette.cardLight;
+  static Color get stroke => palette.stroke;
+  static Color get text => palette.text;
+  static Color get muted => palette.muted;
+  static Color get indigo => palette.primary;
+  static Color get violet => palette.secondary;
+  static Color get teal => palette.accent;
+  static Color get amber => palette.amber;
+  static Color get red => palette.red;
+  static Color get green => palette.green;
+
+  static LinearGradient get heroGradient => palette.heroGradient;
+  static LinearGradient get accentGradient => palette.accentGradient;
 }
 
 class GradientCard extends StatelessWidget {
@@ -46,7 +43,7 @@ class GradientCard extends StatelessWidget {
         color: gradient == null ? AppColors.card : null,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: AppColors.stroke.withOpacity(0.7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 8))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(AppColors.isLight ? 0.10 : 0.35), blurRadius: 18, offset: const Offset(0, 8))],
       ),
       child: child,
     );
@@ -64,10 +61,10 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
         child: Row(children: [
-          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.text)),
+          Text(title, style:  TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.text)),
           const Spacer(),
           if (action != null)
-            TextButton(onPressed: onAction, child: Text(action!, style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700))),
+            TextButton(onPressed: onAction, child: Text(action!, style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700))),
         ]),
       );
 }
@@ -111,7 +108,7 @@ class ProgressRing extends StatelessWidget {
             value: value.clamp(0, 1),
             strokeWidth: 6,
             backgroundColor: AppColors.stroke,
-            valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+            valueColor:  AlwaysStoppedAnimation(AppColors.teal),
           ),
           Text(centerLabel ?? '${(value * 100).round()}%',
               style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: size * 0.24)),
@@ -138,9 +135,9 @@ class EmptyState extends StatelessWidget {
               child: Icon(icon, size: 40, color: AppColors.muted),
             ),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.text)),
+            Text(title, style:  TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.text)),
             const SizedBox(height: 6),
-            Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, height: 1.45)),
+            Text(message, textAlign: TextAlign.center, style:  TextStyle(color: AppColors.muted, height: 1.45)),
             if (buttonLabel != null) ...[
               const SizedBox(height: 18),
               FilledButton(onPressed: onButton, child: Text(buttonLabel!)),
@@ -200,14 +197,14 @@ class _GenerationProgressState extends State<GenerationProgress> with SingleTick
             scale: Tween(begin: 0.92, end: 1.05).animate(_pulse),
             child: Container(
               padding: const EdgeInsets.all(26),
-              decoration: const BoxDecoration(gradient: AppColors.heroGradient, shape: BoxShape.circle),
+              decoration:  BoxDecoration(gradient: AppColors.heroGradient, shape: BoxShape.circle),
               child: Icon(stages[_stage].$2, size: 52, color: Colors.white),
             ),
           ),
           const SizedBox(height: 26),
-          Text(stages[_stage].$1, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.text)),
+          Text(stages[_stage].$1, style:  TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.text)),
           const SizedBox(height: 8),
-          const Text('Your class is being prepared on this phone.\nDetailed videos can take a few minutes — keep the app open.',
+           Text('Your class is being prepared on this phone.\nDetailed videos can take a few minutes — keep the app open.',
               textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, height: 1.5)),
           const SizedBox(height: 26),
           ...List.generate(stages.length, (i) {

@@ -12,6 +12,7 @@ import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
 import 'revision_screen.dart';
+import 'theme_studio_screen.dart';
 import 'settings_screen.dart';
 import 'textbook_screen.dart';
 
@@ -181,10 +182,10 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('CONTINUE LEARNING', style: TextStyle(color: AppColors.teal, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
+             Text('CONTINUE LEARNING', style: TextStyle(color: AppColors.teal, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
             const SizedBox(height: 3),
             Text(book.shortTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15)),
+                style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15)),
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(99),
@@ -196,19 +197,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: v,
                   minHeight: 6,
                   backgroundColor: Colors.white12,
-                  valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+                  valueColor:  AlwaysStoppedAnimation(AppColors.teal),
                 ),
               ),
             ),
             const SizedBox(height: 5),
-            Text('$pct% completed', style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+            Text('$pct% completed', style:  TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.w700)),
           ]),
         ),
         const SizedBox(width: 10),
         Container(
           width: 42,
           height: 42,
-          decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppColors.heroGradient),
+          decoration:  BoxDecoration(shape: BoxShape.circle, gradient: AppColors.heroGradient),
           child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 26),
         ),
       ]),
@@ -310,9 +311,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final unlocked = _badges.where((b) => b.unlocked).length;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        const Text('Achievements', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14.5)),
+         Text('Achievements', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14.5)),
         const SizedBox(width: 8),
-        Text('$unlocked/${_badges.length}', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+        Text('$unlocked/${_badges.length}', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
       ]),
       const SizedBox(height: 8),
       SizedBox(
@@ -384,7 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     const GradientText('Textbook Classroom', size: 20),
-                    Text(_greeting(), style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                    Text(_greeting(), style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
                   ]),
                 ),
                 GlassCard(
@@ -394,7 +395,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     await Navigator.of(context).push(PageTransition.route(SettingsScreen(settings: widget.settings)));
                     _load();
                   },
-                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.settings_rounded, color: AppColors.muted, size: 20)),
+                  child:  Padding(padding: EdgeInsets.all(6), child: Icon(Icons.settings_rounded, color: AppColors.muted, size: 20)),
                 ),
               ]),
               const SizedBox(height: 16),
@@ -430,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (_) => ExamsHubScreen(gateway: widget.gateway, settings: widget.settings),
                     )),
                     padding: const EdgeInsets.all(16),
-                    child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    child:  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Icon(Icons.quiz_rounded, color: AppColors.teal, size: 26),
                       SizedBox(height: 10),
                       Text('Exams & Tests', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
@@ -446,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       builder: (_) => ReportScreen(gateway: widget.gateway, settings: widget.settings),
                     )),
                     padding: const EdgeInsets.all(16),
-                    child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    child:  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Icon(Icons.emoji_events_rounded, color: AppColors.amber, size: 26),
                       SizedBox(height: 10),
                       Text('Report Card', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
@@ -470,10 +471,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(color: AppColors.red.withOpacity(0.14), borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.auto_fix_high_rounded, color: AppColors.red, size: 24),
+                    child:  Icon(Icons.auto_fix_high_rounded, color: AppColors.red, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Revise weak topics', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 14.5)),
                       SizedBox(height: 3),
@@ -481,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.4)),
                     ]),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                   Icon(Icons.chevron_right_rounded, color: AppColors.muted),
                 ]),
               ),
               const SectionTitle('My textbooks'),
@@ -516,9 +517,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               Text(b.shortTitle, maxLines: 2, overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.text, fontSize: 15)),
+                                  style:  TextStyle(fontWeight: FontWeight.w800, color: AppColors.text, fontSize: 15)),
                               const SizedBox(height: 4),
-                              Text('${b.pageCount} pages • ${b.state}', style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                              Text('${b.pageCount} pages • ${b.state}', style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
                               const SizedBox(height: 8),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(99),
@@ -526,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   value: _progress[b.sessionId] ?? 0,
                                   minHeight: 6,
                                   backgroundColor: AppColors.stroke,
-                                  valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+                                  valueColor:  AlwaysStoppedAnimation(AppColors.teal),
                                 ),
                               ),
                             ]),
@@ -537,7 +538,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )),
               const SizedBox(height: 10),
-              const GradientCard(
+               GradientCard(
                 child: Row(children: [
                   Icon(Icons.phone_android_rounded, color: AppColors.teal),
                   SizedBox(width: 12),

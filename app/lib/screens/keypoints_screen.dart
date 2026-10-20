@@ -124,9 +124,9 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Key Points Book', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title:  Text('Key Points Book', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
         actions: [
-          IconButton(tooltip: 'Save as text file', onPressed: rows.isEmpty ? null : _export, icon: const Icon(Icons.save_alt_rounded, color: AppColors.teal)),
+          IconButton(tooltip: 'Save as text file', onPressed: rows.isEmpty ? null : _export, icon:  Icon(Icons.save_alt_rounded, color: AppColors.teal)),
         ],
       ),
       body: _loading
@@ -136,15 +136,15 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
                 child: TextField(
                   controller: _search,
-                  style: const TextStyle(color: AppColors.text),
+                  style:  TextStyle(color: AppColors.text),
                   decoration: InputDecoration(
                     hintText: 'Search key points…',
-                    hintStyle: const TextStyle(color: AppColors.muted),
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.muted),
+                    hintStyle:  TextStyle(color: AppColors.muted),
+                    prefixIcon:  Icon(Icons.search_rounded, color: AppColors.muted),
                     filled: true,
                     fillColor: AppColors.card,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.stroke)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.stroke)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
                   ),
                   onChanged: (v) => setState(() => _q = v.trim().toLowerCase()),
                 ),
@@ -153,10 +153,10 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Row(children: [
                   Text('${rows.length} points • ${widget.parts.length} parts',
-                      style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   if (_brain.isNotEmpty)
-                    const Text('brain summary included', style: TextStyle(color: AppColors.teal, fontSize: 11, fontWeight: FontWeight.w700)),
+                     Text('brain summary included', style: TextStyle(color: AppColors.teal, fontSize: 11, fontWeight: FontWeight.w700)),
                 ]),
               ),
               const SizedBox(height: 6),
@@ -180,7 +180,7 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                                 child: Row(children: [
                                   Container(width: 4, height: 16, decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(99))),
                                   const SizedBox(width: 8),
-                                  Text(r.label, style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13.5)),
+                                  Text(r.label, style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13.5)),
                                 ]),
                               ),
                             Padding(
@@ -188,14 +188,14 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                               child: GradientCard(
                                 onTap: () => _speak(r.point),
                                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  const Padding(
+                                   Padding(
                                     padding: EdgeInsets.only(top: 1),
                                     child: Icon(Icons.circle, size: 7, color: AppColors.teal),
                                   ),
                                   const SizedBox(width: 9),
-                                  Expanded(child: Text(r.point, style: const TextStyle(color: AppColors.text, fontSize: 13, height: 1.45, fontWeight: FontWeight.w600))),
+                                  Expanded(child: Text(r.point, style:  TextStyle(color: AppColors.text, fontSize: 13, height: 1.45, fontWeight: FontWeight.w600))),
                                   const SizedBox(width: 6),
-                                  const Icon(Icons.volume_up_rounded, size: 17, color: AppColors.muted),
+                                   Icon(Icons.volume_up_rounded, size: 17, color: AppColors.muted),
                                 ]),
                               ),
                             ),

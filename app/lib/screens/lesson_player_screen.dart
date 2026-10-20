@@ -567,7 +567,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                   padding: const EdgeInsets.only(bottom: 5),
                   child: Text('📖 ${s.labels.first.trim()}',
                       maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.w900)),
+                      style:  TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.w900)),
                 ),
               Text(_trOf(_scenes.indexOf(s)) ?? s.narration, maxLines: 3, overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white, fontSize: 12.5, height: 1.45)),
@@ -600,7 +600,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
             borderRadius: BorderRadius.circular(99),
             border: Border.all(color: AppColors.red.withOpacity(0.4 + 0.4 * _pulse.value)),
           ),
-          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+          child:  Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.circle, size: 8, color: AppColors.red),
             SizedBox(width: 5),
             Text('LIVE', style: TextStyle(color: AppColors.red, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
@@ -608,18 +608,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
         ),
       ),
       const SizedBox(width: 8),
-      const CircleAvatar(radius: 11, backgroundColor: AppColors.indigo, child: Icon(Icons.school_rounded, size: 13, color: Colors.white)),
+       CircleAvatar(radius: 11, backgroundColor: AppColors.indigo, child: Icon(Icons.school_rounded, size: 13, color: Colors.white)),
       const SizedBox(width: 6),
-      const Text('Teacher', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+       Text('Teacher', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
       const Spacer(),
       Icon(Icons.visibility_rounded, size: 13, color: AppColors.muted.withOpacity(0.9)),
       const SizedBox(width: 4),
-      Text('$_viewers', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+      Text('$_viewers', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
       const SizedBox(width: 10),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.14), borderRadius: BorderRadius.circular(99)),
-        child: Text('$_xp XP', style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 11.5)),
+        child: Text('$_xp XP', style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 11.5)),
       ),
       if (_xpGained > 0)
         TweenAnimationBuilder<double>(
@@ -629,7 +629,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
             opacity: (1 - t).clamp(0.0, 1.0),
             child: Transform.translate(offset: Offset(0, -18 * t), child: child),
           ),
-          child: const Padding(
+          child:  Padding(
             padding: EdgeInsets.only(left: 6),
             child: Text('+10', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 13)),
           ),
@@ -663,7 +663,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(icon, size: 19, color: AppColors.muted),
             const SizedBox(height: 2),
-            Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w700)),
+            Text(label, style:  TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w700)),
           ]),
         ),
       ),
@@ -717,18 +717,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
           : AppBar(
               backgroundColor: AppColors.bg,
               title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15.5)),
+            style:  TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15.5)),
         actions: [
           IconButton(
             tooltip: 'Theatre mode',
             onPressed: () => setState(() => _theatre = true),
-            icon: const Icon(Icons.fullscreen_rounded, color: AppColors.muted),
+            icon:  Icon(Icons.fullscreen_rounded, color: AppColors.muted),
           ),
           IconButton(
             tooltip: 'Explanation language',
             onPressed: _changeLanguage,
             icon: Stack(clipBehavior: Clip.none, children: [
-              const Icon(Icons.translate_rounded, color: AppColors.teal),
+               Icon(Icons.translate_rounded, color: AppColors.teal),
               if (_lang != 'en')
                 Positioned(
                   right: -6,
@@ -741,7 +741,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                 ),
             ]),
           ),
-          TextButton(onPressed: _finish, child: const Text('Finish', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800))),
+          TextButton(onPressed: _finish, child:  Text('Finish', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800))),
         ],
       ),
       body: _loading
@@ -758,14 +758,14 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(color: AppColors.red.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-                            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                            child:  Row(mainAxisSize: MainAxisSize.min, children: [
                               Icon(Icons.circle, size: 7, color: AppColors.red),
                               SizedBox(width: 4),
                               Text('LIVE', style: TextStyle(color: AppColors.red, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.7)),
                             ]),
                           ),
                           const SizedBox(width: 8),
-                          Text('${_scene + 1}/${_scenes.length}', style: const TextStyle(color: AppColors.muted, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                          Text('${_scene + 1}/${_scenes.length}', style:  TextStyle(color: AppColors.muted, fontSize: 11.5, fontWeight: FontWeight.w700)),
                           const Spacer(),
                           TextButton.icon(
                             onPressed: () => setState(() => _theatre = false),
@@ -780,9 +780,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                       const SizedBox(height: 6),
                       Row(children: [
                         Text('Part ${widget.partNumber} • ${_scene + 1}/${_scenes.length}',
-                            style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+                            style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
                         const Spacer(),
-                        Text(_kindLabel(s), style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12)),
+                        Text(_kindLabel(s), style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12)),
                       ]),
                       const SizedBox(height: 6),
                     ],
@@ -792,7 +792,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                         value: _scenes.isEmpty ? 0 : (_scene + _progress) / _scenes.length,
                         minHeight: _theatre ? 3 : 5,
                         backgroundColor: AppColors.stroke,
-                        valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+                        valueColor:  AlwaysStoppedAnimation(AppColors.teal),
                       ),
                     ),
                     if (_translating && !_theatre)
@@ -802,7 +802,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                           const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
                           const SizedBox(width: 8),
                           Text('Preparing ${xLang(_lang).english} explanation…',
-                              style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                              style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
                         ]),
                       ),
                     const SizedBox(height: 10),
@@ -832,11 +832,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
                         decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.stroke)),
                         child: Row(children: [
-                          const Icon(Icons.subtitles_rounded, size: 15, color: AppColors.teal),
+                           Icon(Icons.subtitles_rounded, size: 15, color: AppColors.teal),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(_currentSentence(), maxLines: 2, overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: AppColors.text, height: 1.4, fontSize: 13, fontWeight: FontWeight.w600)),
+                                style:  TextStyle(color: AppColors.text, height: 1.4, fontSize: 13, fontWeight: FontWeight.w600)),
                           ),
                         ]),
                       ),
@@ -992,14 +992,14 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
         builder: (ctx, scroll) => Column(children: [
           const SizedBox(height: 12),
           Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(99))),
-          const Padding(
+           Padding(
             padding: EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text('Word help', style: TextStyle(color: AppColors.text, fontSize: 17, fontWeight: FontWeight.w900)),
             ),
           ),
-          const Padding(
+           Padding(
             padding: EdgeInsets.symmetric(horizontal: 18),
             child: Text('Tap a word — the voice says it slowly, and you see it inside your own textbook line.',
                 style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.35)),
@@ -1031,24 +1031,24 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
                 GradientCard(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Text(_word!, style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 17)),
+                      Text(_word!, style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 17)),
                       const SizedBox(width: 8),
                       IconButton(
                         visualDensity: VisualDensity.compact,
                         onPressed: () => widget.tts.invokeMethod('speak', {'text': _word!, 'language': 'en-IN', 'rate': 0.55}).catchError((_) => null),
-                        icon: const Icon(Icons.volume_up_rounded, size: 18, color: AppColors.teal),
+                        icon:  Icon(Icons.volume_up_rounded, size: 18, color: AppColors.teal),
                       ),
                       const Spacer(),
                       if (_loading) const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
                     ]),
                     if (_translation != null) ...[
                       const SizedBox(height: 4),
-                      Text(_translation!, style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 14)),
+                      Text(_translation!, style:  TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 14)),
                     ],
                     const SizedBox(height: 10),
-                    const Text('In your textbook', style: TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                     Text('In your textbook', style: TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
                     const SizedBox(height: 4),
-                    Text(_context(_word!), style: const TextStyle(color: AppColors.text, fontSize: 13, height: 1.5)),
+                    Text(_context(_word!), style:  TextStyle(color: AppColors.text, fontSize: 13, height: 1.5)),
                   ]),
                 ),
               ]),

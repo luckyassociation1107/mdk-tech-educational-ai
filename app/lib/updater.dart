@@ -9,7 +9,7 @@ import 'ui/premium_ui.dart';
 import 'widgets.dart';
 
 /// The running app version. Bumped together with pubspec.yaml on every release.
-const String kAppVersion = '0.18.0';
+const String kAppVersion = '0.19.0';
 
 const String kRepo = 'luckyassociation1107/mdk-tech-educational-ai';
 
@@ -130,9 +130,9 @@ class _UpdateBannerState extends State<UpdateBanner> {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Update ${info.version} is ready',
-                    style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13.5)),
+                    style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13.5)),
                 const SizedBox(height: 2),
-                const Text('Installs straight over your app — nothing is deleted.',
+                 Text('Installs straight over your app — nothing is deleted.',
                     style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.35)),
               ]),
             ),

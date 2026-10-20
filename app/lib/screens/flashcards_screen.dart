@@ -183,12 +183,12 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> with SingleTickerPr
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Flashcards', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title:  Text('Flashcards', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
         actions: [
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 14),
-              child: Text('${_cards.length} cards', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+              child: Text('${_cards.length} cards', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
             ),
           ),
         ],
@@ -207,15 +207,15 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> with SingleTickerPr
                       padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
                       children: [
                         Row(children: [
-                          Text('Due today', style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15)),
+                          Text('Due today', style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15)),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-                            child: Text('${math.max(0, _due.length - _i)}', style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
+                            child: Text('${math.max(0, _due.length - _i)}', style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
                           ),
                           const Spacer(),
-                          Text('reviewed $_reviewed', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                          Text('reviewed $_reviewed', style:  TextStyle(color: AppColors.muted, fontSize: 12)),
                         ]),
                         const SizedBox(height: 10),
                         ClipRRect(
@@ -224,19 +224,19 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> with SingleTickerPr
                             value: _due.isEmpty ? 0.0 : (_i / _due.length).clamp(0.0, 1.0).toDouble(),
                             minHeight: 5,
                             backgroundColor: AppColors.stroke,
-                            valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+                            valueColor:  AlwaysStoppedAnimation(AppColors.teal),
                           ),
                         ),
                         const SizedBox(height: 16),
                         if (_due.isEmpty)
                           GradientCard(
                             child: Column(children: [
-                              const Icon(Icons.check_circle_rounded, color: AppColors.green, size: 42),
+                               Icon(Icons.check_circle_rounded, color: AppColors.green, size: 42),
                               const SizedBox(height: 8),
-                              const Text('All caught up!', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 17)),
+                               Text('All caught up!', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 17)),
                               const SizedBox(height: 4),
                               Text('${_cards.length} cards are scheduled for later. Come back tomorrow — or watch a class to add more cards.',
-                                  textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)),
+                                  textAlign: TextAlign.center, style:  TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)),
                             ]),
                           )
                         else ...[
@@ -364,9 +364,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> with SingleTickerPr
   Widget _boxLegend() {
     return GradientCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('How it works', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13)),
+         Text('How it works', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13)),
         const SizedBox(height: 6),
-        const Text(
+         Text(
           'Right answers move the card further into the future (1 → 2 → 4 → 8 → 16 days). '
           'A wrong card comes back today, so the same weak point repeats until it is truly remembered.',
           style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45),
@@ -382,7 +382,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen> with SingleTickerPr
             const SizedBox(width: 4),
           ],
           const Spacer(),
-          const Text('new → known', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+           Text('new → known', style: TextStyle(color: AppColors.muted, fontSize: 10)),
         ]),
       ]),
     );

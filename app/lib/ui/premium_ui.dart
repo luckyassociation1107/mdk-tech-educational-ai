@@ -33,11 +33,20 @@ class _AuroraBackgroundState extends State<AuroraBackground> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
-      Positioned.fill(child: Container(color: const Color(0xFF070B16))),
+      Positioned.fill(child: Container(color: AppColors.bg)),
       Positioned.fill(
         child: AnimatedBuilder(
           animation: _c,
-          builder: (context, _) => CustomPaint(painter: _AuroraPainter(t: _c.value, dense: widget.dense)),
+          builder: (context, _) => CustomPaint(
+            painter: _AuroraPainter(
+              t: _c.value,
+              dense: widget.dense,
+              c1: AppColors.indigo,
+              c2: AppColors.teal,
+              c3: AppColors.violet,
+              strength: AppColors.isLight ? 0.16 : 0.30,
+            ),
+          ),
         ),
       ),
       Positioned.fill(child: widget.child),
@@ -48,7 +57,11 @@ class _AuroraBackgroundState extends State<AuroraBackground> with SingleTickerPr
 class _AuroraPainter extends CustomPainter {
   final double t;
   final bool dense;
-  _AuroraPainter({required this.t, required this.dense});
+  final Color c1;
+  final Color c2;
+  final Color c3;
+  final double strength;
+  _AuroraPainter({required this.t, required this.dense, required this.c1, required this.c2, required this.c3, required this.strength});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -65,16 +78,13 @@ class _AuroraPainter extends CustomPainter {
     final a2 = 2 * math.pi * t + 2.1;
     final a3 = 2 * math.pi * t + 4.2;
     final k = dense ? 1.0 : 0.72;
-    blob(Offset(w * (0.22 + 0.12 * math.sin(a1)), h * (0.16 + 0.10 * math.cos(a1 * 0.8))), w * 0.62 * k,
-        const Color(0xFF4F46E5), 0.30);
-    blob(Offset(w * (0.82 + 0.10 * math.cos(a2)), h * (0.30 + 0.12 * math.sin(a2 * 0.9))), w * 0.58 * k,
-        const Color(0xFF0D9488), 0.26);
-    blob(Offset(w * (0.50 + 0.18 * math.sin(a3 * 0.7)), h * (0.86 + 0.06 * math.cos(a3))), w * 0.70 * k,
-        const Color(0xFF7C3AED), 0.22);
+    blob(Offset(w * (0.22 + 0.12 * math.sin(a1)), h * (0.16 + 0.10 * math.cos(a1 * 0.8))), w * 0.62 * k, c1, strength);
+    blob(Offset(w * (0.82 + 0.10 * math.cos(a2)), h * (0.30 + 0.12 * math.sin(a2 * 0.9))), w * 0.58 * k, c2, strength * 0.85);
+    blob(Offset(w * (0.50 + 0.18 * math.sin(a3 * 0.7)), h * (0.86 + 0.06 * math.cos(a3))), w * 0.70 * k, c3, strength * 0.72);
   }
 
   @override
-  bool shouldRepaint(covariant _AuroraPainter old) => old.t != t;
+  bool shouldRepaint(covariant _AuroraPainter old) => old.t != t || old.c1 != c1 || old.c2 != c2 || old.c3 != c3;
 }
 
 /// Frosted glass surface — used for top-level cards instead of flat fills.
@@ -105,12 +115,12 @@ class GlassCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            (tint ?? Colors.white).withOpacity(alpha + 0.05),
-            (tint ?? Colors.white).withOpacity(alpha * 0.35),
+            (tint ?? AppColors.palette.text).withOpacity(alpha + (AppColors.isLight ? 0.55 : 0.05)),
+            (tint ?? AppColors.palette.text).withOpacity(alpha * (AppColors.isLight ? 0.9 : 0.35)),
           ],
         ),
-        border: Border.all(color: Colors.white.withOpacity(0.10)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 26, offset: const Offset(0, 12))],
+        border: Border.all(color: AppColors.stroke.withOpacity(AppColors.isLight ? 0.9 : 0.45)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(AppColors.isLight ? 0.10 : 0.35), blurRadius: 26, offset: const Offset(0, 12))],
       ),
       child: child,
     );
@@ -286,7 +296,7 @@ class GradientText extends StatelessWidget {
   final double size;
   final FontWeight weight;
   final Gradient gradient;
-  const GradientText(this.text, {super.key, this.size = 22, this.weight = FontWeight.w900, this.gradient = AppColors.heroGradient});
+   GradientText(this.text, {super.key, this.size = 22, this.weight = FontWeight.w900, this.gradient = AppColors.heroGradient});
 
   @override
   Widget build(BuildContext context) {

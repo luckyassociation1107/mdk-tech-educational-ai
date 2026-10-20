@@ -17,7 +17,7 @@ class ExamResultScreen extends StatelessWidget {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Test result', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
+        title:  Text('Test result', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
       ),
       body: ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 30), children: [
         GradientCard(
@@ -64,15 +64,15 @@ class ExamResultScreen extends StatelessWidget {
                   Text('${_fmt(r.awarded)}/${r.maxMarks}', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 12.5)),
                 ]),
                 const SizedBox(height: 9),
-                Text(r.prompt, style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, height: 1.45)),
+                Text(r.prompt, style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, height: 1.45)),
                 const SizedBox(height: 8),
                 Text('Your answer: ${r.given.isEmpty ? '(not answered)' : r.given}',
                     style: TextStyle(color: zero ? AppColors.red : AppColors.muted, height: 1.45, fontSize: 13)),
                 const SizedBox(height: 5),
-                Text('Correct: ${r.correct}', style: const TextStyle(color: AppColors.teal, height: 1.45, fontSize: 13, fontWeight: FontWeight.w700)),
+                Text('Correct: ${r.correct}', style:  TextStyle(color: AppColors.teal, height: 1.45, fontSize: 13, fontWeight: FontWeight.w700)),
                 if (r.explanation.isNotEmpty && r.explanation != r.correct) ...[
                   const SizedBox(height: 7),
-                  Text('From your textbook: ${r.explanation}', style: const TextStyle(color: AppColors.muted, height: 1.5, fontSize: 12.5)),
+                  Text('From your textbook: ${r.explanation}', style:  TextStyle(color: AppColors.muted, height: 1.5, fontSize: 12.5)),
                 ],
               ]),
             ),
@@ -97,7 +97,7 @@ class ExamResultScreen extends StatelessWidget {
           ),
         ]),
         const SizedBox(height: 10),
-        const Text('This marks sheet is saved in your Report Card on this phone.', textAlign: TextAlign.center,
+         Text('This marks sheet is saved in your Report Card on this phone.', textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.muted, fontSize: 12)),
       ]),
     );

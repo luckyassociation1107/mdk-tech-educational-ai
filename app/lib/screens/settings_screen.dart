@@ -10,6 +10,7 @@ import '../translate_service.dart';
 import '../ui/premium_ui.dart';
 import '../updater.dart';
 import '../widgets.dart';
+import 'theme_studio_screen.dart';
 import 'voice_studio_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -48,6 +49,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
         children: [
+          const SectionTitle('Appearance'),
+          GradientCard(
+            padding: const EdgeInsets.all(16),
+            onTap: () async {
+              await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ThemeStudioScreen(settings: s)));
+              if (mounted) setState(() {});
+            },
+            child: Row(children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(gradient: AppColors.accentGradient, borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.palette_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Theme Studio', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text('6 themes • 3 dark + 3 light • create & share your own',
+                      style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
+                ]),
+              ),
+              Row(children: [
+                for (final c in [AppColors.bg, AppColors.palette.primary, AppColors.palette.secondary, AppColors.palette.accent])
+                  Padding(
+                    padding: const EdgeInsets.only(left: 3),
+                    child: Container(width: 13, height: 13, decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: AppColors.stroke))),
+                  ),
+              ]),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            ]),
+          ),
           const SectionTitle('Learning'),
           GradientCard(
             child: Column(children: [
@@ -87,7 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   (v) => setState(() => s.brain = v)),
               if (s.brain == 'website') ...[
                 const SizedBox(height: 10),
-                const Text(
+                 Text(
                     'Each textbook gets an “AI Brain” button: the app drives the PDF-teacher website in an in-app browser with THIS device’s PDF, then keeps the summary, chat answers, lessons and tests on this device only — so every student gets their own individual brain session. (Android app; needs internet.)',
                     style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.45)),
               ],
@@ -96,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SectionTitle('Voice'),
           GradientCard(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Teacher voice uses this phone’s Text-to-Speech for on-device narration. Check that a voice exists for your language:',
+               Text('Teacher voice uses this phone’s Text-to-Speech for on-device narration. Check that a voice exists for your language:',
                   style: TextStyle(color: AppColors.muted, height: 1.45)),
               const SizedBox(height: 12),
               const SizedBox(height: 4),
@@ -123,17 +158,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
               const SizedBox(height: 10),
               Text('Voice: ${s.voiceName.isEmpty ? 'system default' : s.voiceName.split('#').last} • speed ${(s.speechRate * 100).round()}% • pitch ${s.speechPitch.toStringAsFixed(2)}',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 11.5)),
+                  style:  TextStyle(color: AppColors.muted, fontSize: 11.5)),
               if (_ttsInfo != null) ...[
                 const SizedBox(height: 10),
-                Text(_ttsInfo!, style: const TextStyle(color: AppColors.teal, height: 1.45)),
+                Text(_ttsInfo!, style:  TextStyle(color: AppColors.teal, height: 1.45)),
               ],
             ]),
           ),
           const SectionTitle('Progress backup'),
           GradientCard(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Everything is stored on this phone. Export a backup file before changing phone, or to keep your marks safe.',
+               Text('Everything is stored on this phone. Export a backup file before changing phone, or to keep your marks safe.',
                   style: TextStyle(color: AppColors.muted, height: 1.45, fontSize: 12.5)),
               const SizedBox(height: 12),
               Row(children: [
@@ -147,7 +182,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save_rounded), label: const Text('Save settings')),
           const SizedBox(height: 16),
           Center(
-            child: Text('Version $kAppVersion', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+            child: Text('Version $kAppVersion', style:  TextStyle(color: AppColors.muted, fontSize: 11)),
           ),
         ],
         ),
@@ -225,13 +260,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Row(children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Explanation language', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+               Text('Explanation language', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
               Text(
                 s.explainLanguage == 'en'
                     ? 'Explanation in English. Tap to pick from ${kExplainLanguages.length} languages.'
                     : 'Explanation in ${cur.english} • textbook points stay in the book\'s language, main words in English.',
-                style: const TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.3),
+                style:  TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.3),
               ),
             ]),
           ),
@@ -239,9 +274,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.14), borderRadius: BorderRadius.circular(99)),
-            child: Text(cur.native, style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
+            child: Text(cur.native, style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 12)),
           ),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+           Icon(Icons.chevron_right_rounded, color: AppColors.muted),
         ]),
       ),
     );
@@ -251,11 +286,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(children: [
-        Expanded(child: Text(label, style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700))),
+        Expanded(child: Text(label, style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700))),
         DropdownButton<String>(
           value: options.containsKey(value) ? value : options.keys.first,
           dropdownColor: AppColors.card,
-          style: const TextStyle(color: AppColors.text, fontSize: 13),
+          style:  TextStyle(color: AppColors.text, fontSize: 13),
           underline: const SizedBox.shrink(),
           items: options.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
           onChanged: (v) {

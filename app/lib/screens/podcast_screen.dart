@@ -191,9 +191,9 @@ class _PodcastScreenState extends State<PodcastScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Podcast class', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title:  Text('Podcast class', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
         actions: [
-          IconButton(onPressed: _language, icon: const Icon(Icons.translate_rounded, color: AppColors.teal)),
+          IconButton(onPressed: _language, icon:  Icon(Icons.translate_rounded, color: AppColors.teal)),
         ],
       ),
       body: _loading
@@ -206,17 +206,17 @@ class _PodcastScreenState extends State<PodcastScreen> {
                     _Artwork(book: widget.book, playing: _playing, subjectLabel: widget.book.subjectLabel),
                     const SizedBox(height: 14),
                     Text('${widget.book.shortTitle} • Part ${part.part}',
-                        style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 17)),
+                        style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 17)),
                     Text('${part.pageLabel} • ${_scenes.length} scenes • offline voice',
-                        style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                        style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
                     if (_translating)
-                      const Padding(
+                       Padding(
                         padding: EdgeInsets.only(top: 6),
                         child: Text('Translating explanation…', style: TextStyle(color: AppColors.teal, fontSize: 12)),
                       ),
                     const SizedBox(height: 12),
                     Row(children: [
-                      const Text('Part', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+                       Text('Part', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
                       const SizedBox(width: 10),
                       Expanded(
                         child: DropdownButton<int>(
@@ -224,7 +224,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
                           isExpanded: true,
                           dropdownColor: AppColors.card,
                           underline: Container(height: 1, color: AppColors.stroke),
-                          style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13.5),
+                          style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13.5),
                           items: [
                             for (var i = 0; i < widget.parts.length; i++)
                               DropdownMenuItem(value: i, child: Text('Part ${widget.parts[i].part} — ${widget.parts[i].pageLabel}')),
@@ -247,10 +247,10 @@ class _PodcastScreenState extends State<PodcastScreen> {
                             },
                     ),
                     Row(children: [
-                      Text('Scene ${_scene + 1}/${_scenes.length}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                      Text('Scene ${_scene + 1}/${_scenes.length}', style:  TextStyle(color: AppColors.muted, fontSize: 12)),
                       const Spacer(),
                       Text(_kindName(_scenes.isEmpty ? '' : _scenes[_scene].kind),
-                          style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12)),
+                          style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12)),
                     ]),
                     const SizedBox(height: 6),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -300,9 +300,9 @@ class _PodcastScreenState extends State<PodcastScreen> {
                                 Text(s.heading, style: TextStyle(color: sel ? AppColors.teal : AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
                                 const SizedBox(height: 2),
                                 Text(_tr[i] ?? s.narration, maxLines: 3, overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)),
+                                    style:  TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)),
                                 if (_tr.containsKey(i))
-                                  const Padding(
+                                   Padding(
                                     padding: EdgeInsets.only(top: 3),
                                     child: Text('Explanation translated • textbook line kept in the book\'s language',
                                         style: TextStyle(color: AppColors.teal, fontSize: 10.5, fontWeight: FontWeight.w700)),

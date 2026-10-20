@@ -78,10 +78,10 @@ class _ExamScreenState extends State<ExamScreen> {
         context: context,
         builder: (_) => AlertDialog(
           backgroundColor: AppColors.card,
-          title: const Text('Submit test?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
+          title:  Text('Submit test?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
           content: Text(
             unanswered > 0 ? 'You still have $unanswered unanswered question(s). Submit anyway?' : 'You answered everything. Submit for marking?',
-            style: const TextStyle(color: AppColors.muted),
+            style:  TextStyle(color: AppColors.muted),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep writing')),
@@ -155,8 +155,8 @@ class _ExamScreenState extends State<ExamScreen> {
           context: context,
           builder: (_) => AlertDialog(
             backgroundColor: AppColors.card,
-            title: const Text('Leave this test?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
-            content: const Text('Your answers will be lost and this attempt will not be marked.', style: TextStyle(color: AppColors.muted)),
+            title:  Text('Leave this test?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
+            content:  Text('Your answers will be lost and this attempt will not be marked.', style: TextStyle(color: AppColors.muted)),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Stay')),
               FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Leave')),
@@ -170,8 +170,8 @@ class _ExamScreenState extends State<ExamScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.bg,
           title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(widget.config.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.text)),
-            Text(widget.config.partLabel, style: const TextStyle(fontSize: 11.5, color: AppColors.muted)),
+            Text(widget.config.title, style:  TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.text)),
+            Text(widget.config.partLabel, style:  TextStyle(fontSize: 11.5, color: AppColors.muted)),
           ]),
           actions: [
             if (widget.config.timed)
@@ -196,7 +196,7 @@ class _ExamScreenState extends State<ExamScreen> {
             value: total == 0 ? 0 : _answeredCount / total,
             minHeight: 5,
             backgroundColor: AppColors.stroke,
-            valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+            valueColor:  AlwaysStoppedAnimation(AppColors.teal),
           ),
           // Question palette
           SizedBox(
@@ -233,15 +233,15 @@ class _ExamScreenState extends State<ExamScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(color: AppColors.violet.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-                  child: Text(q.type.label, style: const TextStyle(color: AppColors.violet, fontSize: 11.5, fontWeight: FontWeight.w800)),
+                  child: Text(q.type.label, style:  TextStyle(color: AppColors.violet, fontSize: 11.5, fontWeight: FontWeight.w800)),
                 ),
                 const SizedBox(width: 8),
-                Text('Question ${_index + 1} of $total', style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+                Text('Question ${_index + 1} of $total', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
                 const Spacer(),
-                Text('${q.marks} mark${q.marks == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 12.5)),
+                Text('${q.marks} mark${q.marks == 1 ? '' : 's'}', style:  TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 12.5)),
               ]),
               const SizedBox(height: 16),
-              Text(q.prompt, style: const TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700, color: AppColors.text, height: 1.5)),
+              Text(q.prompt, style:  TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700, color: AppColors.text, height: 1.5)),
               const SizedBox(height: 20),
               if (q.type == QuestionType.mcq)
                 ...q.options.map((o) {
@@ -272,13 +272,13 @@ class _ExamScreenState extends State<ExamScreen> {
                 TextField(
                   controller: _controllers[_index],
                   maxLines: q.type == QuestionType.short ? 6 : 1,
-                  style: const TextStyle(color: AppColors.text),
+                  style:  TextStyle(color: AppColors.text),
                   decoration: InputDecoration(
                     hintText: q.type == QuestionType.fill ? 'Type the missing term…' : 'Write your answer here…',
                   ),
                 ),
               if (q.type == QuestionType.short)
-                const Padding(
+                 Padding(
                   padding: EdgeInsets.only(top: 10),
                   child: Text('Short answers are marked by how many key ideas from the textbook point your answer covers. The model answer is shown after submission.',
                       style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45)),
@@ -287,7 +287,7 @@ class _ExamScreenState extends State<ExamScreen> {
           ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-            decoration: const BoxDecoration(color: AppColors.bg2, border: Border(top: BorderSide(color: AppColors.stroke))),
+            decoration:  BoxDecoration(color: AppColors.bg2, border: Border(top: BorderSide(color: AppColors.stroke))),
             child: Row(children: [
               OutlinedButton(
                 onPressed: _index > 0 ? () => setState(() => _index--) : null,

@@ -156,7 +156,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
                       child: Row(children: [
-                        Text(_fmt(c.value.position), style: const TextStyle(color: AppColors.muted)),
+                        Text(_fmt(c.value.position), style:  TextStyle(color: AppColors.muted)),
                         Expanded(
                           child: Slider(
                             value: c.value.duration == Duration.zero
@@ -165,7 +165,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             onChanged: (v) => c.seekTo(Duration(milliseconds: (v * c.value.duration.inMilliseconds).round())),
                           ),
                         ),
-                        Text(_fmt(c.value.duration), style: const TextStyle(color: AppColors.muted)),
+                        Text(_fmt(c.value.duration), style:  TextStyle(color: AppColors.muted)),
                       ]),
                     ),
                     Padding(
@@ -217,7 +217,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           ),
                         ),
                       ),
-                    const Padding(
+                     Padding(
                       padding: EdgeInsets.all(16),
                       child: Text('Tip: 1.0x is the teacher pace the class was recorded at. Use 0.75x for revision and pause to copy the notes.',
                           textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, height: 1.45)),
