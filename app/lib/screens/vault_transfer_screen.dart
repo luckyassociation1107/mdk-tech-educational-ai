@@ -107,25 +107,31 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
                       Icon(Icons.enhanced_encryption_rounded,
                           color: AppColors.amber, size: 20),
                       const SizedBox(width: 8),
-                      Text('Your encrypted backup',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w900, fontSize: 15)),
+                      Expanded(
+                        child: Text('Your encrypted backup',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900, fontSize: 15)),
+                      ),
                     ]),
                     const SizedBox(height: 6),
                     Text(
                       'This emoji code is your whole progress, encrypted on this device. '
-                      'Save it somewhere safe — without it, deleting the app deletes the accounts.',
+                      'Save it somewhere safe — without it, deleting the app deletes the progress.',
                       style: TextStyle(
                           color: AppColors.muted, fontSize: 12, height: 1.5),
                     ),
                     const SizedBox(height: 10),
                     Row(children: [
-                      Text(
-                          '${_code.runes.length} emoji • ${(_code.runes.length * 4 / 1024).toStringAsFixed(1)} KB',
-                          style: TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700)),
+                      Flexible(
+                        child: Text(
+                            '${_code.runes.length} emoji • ${(_code.runes.length * 4 / 1024).toStringAsFixed(1)} KB',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700)),
+                      ),
                     ]),
                   ]),
             ),

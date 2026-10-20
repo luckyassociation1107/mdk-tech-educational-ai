@@ -546,82 +546,9 @@ class VaultStore {
     return profiles.length;
   }
 
-  // ---------- root access (for the emoji table packet / Nostr sync) ----------
+  // ---------- backup / transfer ----------
 
-  static Map<String, dynamic> exportRoot() => _root();
-
-  static Future<void> applyRoot(Map root) async {
-    _profilesMeta = ((root['profiles'] as List?) ?? const [])
-        .whereType<Map>()
-        .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
-        .toList();
-    final vault = root['vault'];
-    _sealedData = {};
-    if (vault is Map) {
-      for (final e in vault.entries) {
-        if (e.value is Map) {
-          _sealedData['${e.key}'] =
-              (e.value as Map).map((k, v) => MapEntry(k.toString(), v));
-        }
-      }
-    }
-    final st = root['settings'];
-    _settings = st is Map
-        ? st.map((k, v) => MapEntry(k.toString(), v))
-        : <String, dynamic>{};
-    await _adoptLocal(root);
-    await _save();
-  }
-
-  /// The Nostr identity key of this device, generated once and then kept
-  /// INSIDE the vault — so the emoji backup code also carries it and a new
-  /// phone can find the same relay events again.
-  static Future<String> nostrSecret() async {
-    final existing = _settings['nostr_sk'];
-    if (existing is String && existing.length == 64) return existing;
-    final rnd = math.Random.secure();
-    final hex = List<int>.generate(32, (_) => rnd.nextInt(256))
-        .map((b) => b.toRadixString(16).padLeft(2, '0'))
-        .join();
-    _settings['nostr_sk'] = hex;
-    await _save();
-    return hex;
-  }
-
-  static String? get nostrSecretCached {
-    final v = _settings['nostr_sk'];
-    return v is String && v.length == 64 ? v : null;
-  }
-
-  static Future<void> setRelays(List<String> relays) async {
-    _settings['nostr_relays'] = relays;
-    await _save();
-  }
-
-  static List<String> get savedRelays {
-    final r = _settings['nostr_relays'];
-    if (r is List) return r.map((e) => '$e').toList();
-    return const [];
-  }
-
-  /// Auto-backup switch (relay sync after each finished class/test).
-  static bool get autoBackup => '${_settings['nostr_auto'] ?? 'true'}' == 'true';
-
-  static Future<void> setAutoBackup(bool on) async {
-    _settings['nostr_auto'] = on ? 'true' : 'false';
-    await _save();
-  }
-
-  static Future<void> setLastSync(int ms, String eventId) async {
-    _settings['last_sync'] = ms;
-    _settings['last_event'] = eventId;
-    await _save();
-  }
-
-  static int get lastSync => (_settings['last_sync'] as num?)?.toInt() ?? 0;
-  static String get lastEventId => '${_settings['last_event'] ?? ''}';
-
-  /// Unlocked data of the logged-in child (for the activity screen).
+  /// Unlocked data of the learner (for the activity screen).
   static List<Map<String, dynamic>> get logs {
     final c = current;
     if (c == null) return [];

@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:textbook_video_classroom/screens/home_screen.dart';
 import 'package:textbook_video_classroom/screens/profile_screen.dart';
-import 'package:textbook_video_classroom/screens/vault_sync_screen.dart';
 import 'package:textbook_video_classroom/engine_gateway.dart';
 import 'package:textbook_video_classroom/store.dart';
 import 'package:textbook_video_classroom/vault/emoji_vault.dart';
@@ -82,7 +81,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('profile screen builds and links to the cloud vault',
+  testWidgets('profile screen builds and links to the emoji backup',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await setPhone(tester);
@@ -96,36 +95,15 @@ void main() {
     await settle(tester);
 
     expect(find.text('My space'), findsOneWidget);
-    expect(find.text('Emoji cloud vault (free Nostr relays)'), findsOneWidget);
+    expect(find.text('Emoji backup'), findsOneWidget);
+    expect(find.textContaining('cloud'), findsNothing,
+        reason: 'there is no cloud sync any more');
     expect(find.textContaining('Finished part 1'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Emoji cloud vault (free Nostr relays)'));
+    await tester.tap(find.text('Emoji backup'));
     await settle(tester);
-    expect(find.text('Backup now'), findsOneWidget);
-    expect(find.text('Restore'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('vault sync screen fits a small phone and lists 6 relays',
-      (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await setPhone(tester);
-
-    await tester.pumpWidget(const MaterialApp(home: VaultSyncScreen()));
-    await settle(tester);
-
-    expect(find.text('Backup now'), findsOneWidget);
-    expect(find.text('Copy emoji'), findsOneWidget);
-    expect(find.text('Paste emoji'), findsOneWidget);
-
-    // Relay list lives further down the page — scroll like a real user.
-    await tester.drag(find.byType(ListView).first, const Offset(0, -900));
-    await settle(tester);
-    await tester.drag(find.byType(ListView).first, const Offset(0, -900));
-    await settle(tester);
-    expect(find.text('relay.damus.io'), findsOneWidget);
-    expect(find.text('nos.lol'), findsOneWidget);
+    expect(find.text('Your encrypted backup'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

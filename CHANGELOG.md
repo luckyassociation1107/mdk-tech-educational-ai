@@ -3,6 +3,37 @@
 Everything below is the project's own running log, newest first.
 The current architecture is described in README.md.
 
+## v0.28.0 — the emoji cloud vault is gone
+
+The Nostr-relay backup is removed. Nothing in the app talks to a server on its
+own any more: the only network call left is the free AI website.
+
+### Removed
+
+- `screens/vault_sync_screen.dart` — the whole cloud vault screen (relay list,
+  backup now, restore, decoded tables).
+- `vault/nostr_sync.dart`, `vault/secp256k1.dart`, `vault/vault_table.dart` —
+  the Nostr client, the BIP-340 signing code and the table encoder that only
+  the cloud screen used.
+- Auto-backup after a finished class/test in the lesson player and the exam
+  screen.
+- `VaultStore.nostrSecret`, `setRelays`, `savedRelays`, `autoBackup`,
+  `setAutoBackup`, `setLastSync`, `lastSync`, `exportRoot`, `applyRoot`.
+- The "Emoji cloud vault (free Nostr relays)" card on **My space**.
+
+### Kept
+
+- **Emoji backup** — export/copy the encrypted code, save it as a file, import
+  it on another phone. Still restores the same learner with all progress.
+- The vault itself: PBKDF2 + HMAC sealing at rest.
+
+### Fixed
+
+- Two `RenderFlex` overflows on a 360 dp phone (`Emoji backup` header and the
+  code-size line), caught by the UI test.
+
+Tests: **45** (cloud table/Nostr tests removed).
+
 ## v0.27.0 — no sign-up, no login: the app opens straight to the classroom
 
 **Both screens are gone.** There is no gate, no profile picker, no PIN pad, no

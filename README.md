@@ -7,9 +7,10 @@ live class: a board that writes itself, a voice that speaks every line, figures 
 straight out of your book, quick questions, exams and a report card. Works on
 **Android and Windows**, offline once a book has been read.
 
-> **v0.27.0 — no sign-up, no login, no key.** The app opens straight into the
-> classroom: one learner lives on the device. There is also no paid option
-> anywhere in the app — reading a book is free.
+> **v0.28.0 — no sign-up, no login, no key, no cloud.** The app opens straight
+> into the classroom: one learner lives on the device, and progress is backed
+> up as an emoji code. There is no paid option anywhere in the app — reading a
+> book is free.
 > The PDF is read by the AI with two editable prompts: one extracts the page
 > text and says **where** each figure sits, the other designs the **lesson
 > script**. The AI is the public PDF-teacher website, driven inside the app's
@@ -31,7 +32,7 @@ straight out of your book, quick questions, exams and a report card. Works on
 | 📺 **On-device video** | The lesson is *rendered on the device*: Flutter paints the board, the system voice narrates with word-level highlighting (Android), figures and pages are local files. |
 | 🗣️ **Speech on both platforms** | Android keeps the native bridge (real word ranges); Windows uses `flutter_tts`. |
 | 🧪 **Exams, flashcards, revision** | Question bank, listening exam, daily challenge, SRS flashcards, report card and a completion certificate. |
-| 🔐 **No sign-up, no login** | The app opens straight to the classroom. Progress is sealed on the device and can be backed up as an emoji code or to free Nostr relays. |
+| 🔐 **No sign-up, no login** | The app opens straight to the classroom. Progress is sealed on the device and can be backed up as an emoji code (copy, file, or paste on a new phone). |
 | 🎨 **Themes** | Six built-in themes plus a custom theme studio with export/import. |
 
 ## How a lesson is made
@@ -113,7 +114,7 @@ app/lib/
   speech/        speech_channel — Android bridge / flutter_tts everywhere else
   engine         dart_engine, engine_gateway, subject_engine, lesson_content
   screens/       30 screens (home, lesson player, reader, exams, backup, …)
-  vault/         PBKDF2 + HMAC sealing, emoji codec, secp256k1, Nostr sync
+  vault/         PBKDF2 + HMAC sealing, emoji codec
 app/test/        51 tests: AI pipeline, figure finder, vault, brain/clip, UI smoke
 docs/            architecture, setup, platforms, troubleshooting
 ```
@@ -140,8 +141,8 @@ brain and UI. `flutter analyze` reports **0 errors**.
 - **Reading a book needs Android.** Windows can open and play books that were
   already read (the index, figures and lessons are cached on the device).
 - Windows needs `dart run pdfx:install_windows` once before building.
-- Public Nostr relays may prune old events — the encrypted emoji code is the
-  durable backup.
+- Backup is manual: copy the emoji code (or the file) somewhere safe. There is
+  no cloud sync — nothing leaves the phone on its own.
 
 ## License
 

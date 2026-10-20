@@ -4,12 +4,11 @@ import '../store.dart';
 import '../ui/premium_ui.dart';
 import '../vault/emoji_vault.dart';
 import '../widgets.dart';
-import 'vault_sync_screen.dart';
 import 'vault_transfer_screen.dart';
 
-/// The learner's space: avatar, activity log (encrypted) and backup.
-/// There is nothing to sign in to or out of — one learner lives on this
-/// device, so this screen only holds personal touches and backups.
+/// The learner's space: avatar, activity log (encrypted) and the local emoji
+/// backup. There is nothing to sign in to, out of, or to sync to a server —
+/// one learner lives on this device.
 class ProfileScreen extends StatefulWidget {
   final AppSettings settings;
   const ProfileScreen({super.key, required this.settings});
@@ -171,24 +170,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
             ),
             const SizedBox(height: 10),
-            GlassCard(
-              onTap: () => Navigator.of(context)
-                  .push(PageTransition.route(const VaultSyncScreen())),
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
-              child: Row(children: [
-                Icon(Icons.cloud_sync_rounded, size: 18, color: AppColors.violet),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Emoji cloud vault (free Nostr relays)',
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5)),
-                    Text('Backup as emojis · restore · read the tables',
-                        style: TextStyle(color: AppColors.muted, fontSize: 10.5)),
-                  ]),
-                ),
-                Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.muted),
-              ]),
-            ),
             const SectionTitle('Activity log'),
             if (logs.isEmpty)
               GlassCard(
