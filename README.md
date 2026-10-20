@@ -7,7 +7,9 @@ live class: a board that writes itself, a voice that speaks every line, figures 
 straight out of your book, quick questions, exams and a report card. Works on
 **Android and Windows**, offline once a book has been read.
 
-> **v0.26.0 — 100% free. There is no paid option anywhere in the app.**
+> **v0.27.0 — no sign-up, no login, no key.** The app opens straight into the
+> classroom: one learner lives on the device. There is also no paid option
+> anywhere in the app — reading a book is free.
 > The PDF is read by the AI with two editable prompts: one extracts the page
 > text and says **where** each figure sits, the other designs the **lesson
 > script**. The AI is the public PDF-teacher website, driven inside the app's
@@ -29,7 +31,7 @@ straight out of your book, quick questions, exams and a report card. Works on
 | 📺 **On-device video** | The lesson is *rendered on the device*: Flutter paints the board, the system voice narrates with word-level highlighting (Android), figures and pages are local files. |
 | 🗣️ **Speech on both platforms** | Android keeps the native bridge (real word ranges); Windows uses `flutter_tts`. |
 | 🧪 **Exams, flashcards, revision** | Question bank, listening exam, daily challenge, SRS flashcards, report card and a completion certificate. |
-| 🔐 **Child profiles** | PIN-protected profiles in an encrypted, emoji-encoded vault, with an optional free Nostr-relay backup. |
+| 🔐 **No sign-up, no login** | The app opens straight to the classroom. Progress is sealed on the device and can be backed up as an emoji code or to free Nostr relays. |
 | 🎨 **Themes** | Six built-in themes plus a custom theme studio with export/import. |
 
 ## How a lesson is made
@@ -110,7 +112,7 @@ app/lib/
   pdf/           pdf_raster — pages + figure crops (PDFium, Android & Windows)
   speech/        speech_channel — Android bridge / flutter_tts everywhere else
   engine         dart_engine, engine_gateway, subject_engine, lesson_content
-  screens/       31 screens (home, lesson player, reader, exams, vault, …)
+  screens/       30 screens (home, lesson player, reader, exams, backup, …)
   vault/         PBKDF2 + HMAC sealing, emoji codec, secp256k1, Nostr sync
 app/test/        51 tests: AI pipeline, figure finder, vault, brain/clip, UI smoke
 docs/            architecture, setup, platforms, troubleshooting

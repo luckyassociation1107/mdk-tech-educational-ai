@@ -1,7 +1,7 @@
 name: textbook_video_classroom
 description: "AI Textbook-to-Video Classroom Designer — free, no API key: upload a textbook PDF, ask doubts, get teaching videos."
 publish_to: "none"
-version: 0.26.0+27
+version: 0.27.0+28
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

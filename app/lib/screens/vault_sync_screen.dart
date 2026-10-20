@@ -134,8 +134,8 @@ class _VaultSyncScreenState extends State<VaultSyncScreen> {
         backgroundColor: AppColors.card,
         title: const Text('Restore this backup?'),
         content: const Text(
-            'Child profiles, PIN verifiers and encrypted data will be replaced by the '
-            'backup. Progress marks (XP, completed parts, test results) will be merged in.'),
+            'The backup replaces the data on this phone. Progress marks (XP, '
+            'completed parts, test results) will be merged in.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           FilledButton(
@@ -150,9 +150,10 @@ class _VaultSyncScreenState extends State<VaultSyncScreen> {
     setState(() => _busy = true);
     try {
       await VaultStore.applyRoot(VaultTables.rootFromTables(doc));
+      await VaultStore.openLocal(); // reopen the restored learner
       final n = await VaultTables.restoreProgress(doc);
       await VaultStore.log('sync', 'Restored $n progress entries from emoji backup');
-      _say('✅ Restored ${n} progress entries + all profiles');
+      _say('✅ Restored $n progress entries');
     } catch (e) {
       _say('⚠️ $e');
     }

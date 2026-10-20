@@ -3,6 +3,37 @@
 Everything below is the project's own running log, newest first.
 The current architecture is described in README.md.
 
+## v0.27.0 — no sign-up, no login: the app opens straight to the classroom
+
+**Both screens are gone.** There is no gate, no profile picker, no PIN pad, no
+"create a profile" and no "sign out" anywhere in the app.
+
+### Removed
+
+- `lib/screens/child_gate_screen.dart` — the whole gate: profile list, PIN
+  entry, sign-up flow with avatar picker and PIN confirmation (`SignupScreen`,
+  `PinPad`, `_ChildGateScreenState`).
+- "Switch child", "Sign out" and "Change PIN" from the profile screen, and the
+  sign-out path on Home.
+- PIN/plan text in the backup screens ("sealed with your PIN", "PIN verifiers",
+  "each child's PIN"). `VaultTransferScreen` moved to its own file and kept.
+
+### Changed
+
+- `VaultStore.openLocal()` — one local learner is created silently on first
+  launch and reopened on every later launch. The vault still encrypts at rest
+  (a random device key lives in the app's own preferences), so notes, XP and
+  logs are not plain text on disk.
+- The device key and learner id travel **inside the emoji backup**, so
+  "restore on a new phone" still reopens the same learner with all data —
+  tested end to end.
+- Splash → Home directly (no intermediate screen).
+- Home: fixed a `RenderFlex` overflow in the streak/level row on a 360 dp
+  phone (now flexible with ellipsis).
+- Tests: **51**, and the gate/sign-up/PIN tests are replaced by tests that
+  prove the app boots with no credentials, keeps one learner across restarts,
+  and restores from an emoji code.
+
 ## v0.26.0 — the paid option is gone; the app is free, full stop
 
 There is no API key, no provider, no model and no billing code left in the app.

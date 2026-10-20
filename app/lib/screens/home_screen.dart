@@ -13,7 +13,6 @@ import '../vault/emoji_vault.dart';
 import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
-import 'child_gate_screen.dart';
 import 'daily_challenge_screen.dart';
 import 'revision_screen.dart';
 import 'brain_screen.dart';
@@ -365,30 +364,44 @@ class _HomeScreenState extends State<HomeScreen> {
           colors: [Color(0xFF0F766E), Color(0xFF1E1B4B)]),
       padding: const EdgeInsets.all(18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(99)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.local_fire_department_rounded,
-                  color: Color(0xFFFBBF24), size: 16),
-              const SizedBox(width: 4),
-              Text('$_streak day streak',
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(99)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.local_fire_department_rounded,
+                      color: Color(0xFFFBBF24), size: 16),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text('$_streak day streak',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12)),
+                  ),
+                ]),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text('Level $level • ${StudyStats.levelName(level)}',
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
-                      fontSize: 12)),
-            ]),
-          ),
-          const Spacer(),
-          Text('Level $level • ${StudyStats.levelName(level)}',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12.5)),
-        ]),
+                      fontSize: 12.5)),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
         Row(children: [
           SizedBox(
@@ -601,29 +614,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     radius: 14,
                     onTap: () async {
                       await Navigator.of(context).push(PageTransition.route(
-                        ProfileScreen(
-                          settings: widget.settings,
-                          onSignedOut: () {
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (_) => ChildGateScreen(
-                                  settings: widget.settings,
-                                  onLoggedIn: () {
-                                    Navigator.of(context).pushAndRemoveUntil(
-                                      MaterialPageRoute(
-                                          builder: (_) => HomeScreen(
-                                              gateway: widget.gateway,
-                                              settings: widget.settings)),
-                                      (_) => false,
-                                    );
-                                  },
-                                ),
-                              ),
-                              (_) => false,
-                            );
-                          },
-                        ),
-                      ));
+                          ProfileScreen(settings: widget.settings)));
                       if (mounted) setState(() {});
                     },
                     child: Padding(
