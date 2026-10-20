@@ -47,12 +47,19 @@ jobs:
       - name: Write android/local.properties
         run: |
           FLUTTER_SDK="$(dirname "$(dirname "$(readlink -f "$(which flutter)")")")"
+          # Version comes from pubspec.yaml (e.g. "0.28.0+29") so the APK always
+          # matches the release it was built from.
+          VERSION_NAME="$(grep -m1 '^version:' app/pubspec.yaml | sed 's/^version: *//; s/+.*//')"
+          VERSION_CODE="$(grep -m1 '^version:' app/pubspec.yaml | sed -n 's/.*+\([0-9][0-9]*\).*/\1/p')"
+          [ -z "$VERSION_NAME" ] && VERSION_NAME="0.1.0"
+          [ -z "$VERSION_CODE" ] && VERSION_CODE="1"
+          echo "building $VERSION_NAME+$VERSION_CODE"
           {
             echo "sdk.dir=$ANDROID_HOME"
             echo "flutter.sdk=$FLUTTER_SDK"
             echo "flutter.buildMode=release"
-            echo "flutter.versionName=0.24.0"
-            echo "flutter.versionCode=25"
+            echo "flutter.versionName=$VERSION_NAME"
+            echo "flutter.versionCode=$VERSION_CODE"
           } > app/android/local.properties
           cat app/android/local.properties
 

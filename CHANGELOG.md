@@ -31,6 +31,16 @@ own any more: the only network call left is the free AI website.
 
 - Two `RenderFlex` overflows on a 360 dp phone (`Emoji backup` header and the
   code-size line), caught by the UI test.
+- A PDF that is only photos of pages (a scan) now says so in plain words
+  instead of waiting two minutes and timing out — the free site's own
+  "Errors" popup is read and translated.
+- The free site's "Errors" popup is also caught while a question is being
+  answered, and answers are only taken as finished after a full second of
+  silence (long JSON replies were being cut short).
+- The APK's Android `versionName`/`versionCode` now come from `pubspec.yaml`
+  instead of a hard-coded `0.24.0`/`25` in the workflow.
+- A pushed `v*` tag now builds the Windows installer and attaches it to the
+  Release too (it only attached the APK before).
 
 Tests: **45** (cloud table/Nostr tests removed).
 

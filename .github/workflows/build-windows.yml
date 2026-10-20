@@ -11,12 +11,16 @@ on:
       - "app/**"
       - "installer/**"
       - ".github/workflows/build-windows.yml"
+  # A pushed v* tag must attach the installer to the Release, exactly like the
+  # APK workflow does.
+  create:
 
 permissions:
   contents: write
 
 jobs:
   build-windows:
+    if: github.event_name != 'create' || github.event.ref_type == 'tag'
     runs-on: windows-2022
     timeout-minutes: 60
     defaults:
