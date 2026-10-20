@@ -129,7 +129,7 @@ app/lib/
   engine         dart_engine, engine_gateway, subject_engine, lesson_content
   screens/       31 screens (home, lesson player, reader, exams, vault, …)
   vault/         PBKDF2 + HMAC sealing, emoji codec, secp256k1, Nostr sync
-app/test/        48 tests: AI pipeline, vault, brain/clip, UI smoke
+app/test/        59 tests: AI pipeline, figure finder, vault, brain/clip, UI smoke
 docs/            architecture, setup, platforms, troubleshooting
 ```
 

@@ -49,7 +49,7 @@ bundled PDFium matches the plugin. Without it, page rendering fails on Windows
 ```bash
 cd app
 flutter analyze      # 0 errors
-flutter test         # 48 tests
+flutter test         # 59 tests
 ```
 
 The AI tests use a fake transport — no key or network is needed.
