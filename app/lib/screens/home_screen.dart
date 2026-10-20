@@ -384,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const GradientText('Textbook Classroom', size: 20),
+                    GradientText('Textbook Classroom', size: 20),
                     Text(_greeting(), style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
                   ]),
                 ),

@@ -295,14 +295,14 @@ class GradientText extends StatelessWidget {
   final String text;
   final double size;
   final FontWeight weight;
-  final Gradient gradient;
-   GradientText(this.text, {super.key, this.size = 22, this.weight = FontWeight.w900, this.gradient = AppColors.heroGradient});
+  final Gradient? gradient;
+   GradientText(this.text, {super.key, this.size = 22, this.weight = FontWeight.w900, this.gradient});
 
   @override
   Widget build(BuildContext context) {
     return ShaderMask(
       blendMode: BlendMode.srcIn,
-      shaderCallback: (rect) => gradient.createShader(Rect.fromLTWH(0, 0, rect.width, rect.height)),
+      shaderCallback: (rect) => (gradient ?? AppColors.heroGradient).createShader(Rect.fromLTWH(0, 0, rect.width, rect.height)),
       child: Text(text, style: TextStyle(fontSize: size, fontWeight: weight, color: Colors.white, letterSpacing: -0.2)),
     );
   }

@@ -66,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Theme Studio', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
+                   Text('Theme Studio', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
                   const SizedBox(height: 2),
                   Text('6 themes • 3 dark + 3 light • create & share your own',
                       style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
@@ -80,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
               ]),
               const SizedBox(width: 6),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+               Icon(Icons.chevron_right_rounded, color: AppColors.muted),
             ]),
           ),
           const SectionTitle('Learning'),
