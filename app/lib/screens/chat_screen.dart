@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../brain/ai_brain.dart';
+import '../dart_engine.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
@@ -50,12 +52,34 @@ class _ChatScreenState extends State<ChatScreen> {
     });
     _jump();
     try {
-      final out = await widget.gateway.askChat(
-        sessionId: widget.book.sessionId,
-        question: q,
-        brain: widget.settings.brain,
-        brainServerUrl: widget.settings.brainServerUrl,
-      );
+      // 1) Online AI brain (same free service the PDF website uses).
+      final index = await DartEngine.loadIndex(widget.book.sessionId);
+      final bookText = index == null
+          ? ''
+          : List.generate(index.pages.length, (i) => index.pageText(i + 1))
+              .join('\n\n');
+      String? aiAnswer;
+      if (bookText.trim().length > 40) {
+        final brainData = await DartEngine.loadBrainData(widget.book.sessionId);
+        try {
+          aiAnswer = await AiBrain.ask(
+            pdfText: bookText,
+            question: q,
+            summary: (brainData['summary'] ?? '').toString(),
+          );
+        } on BrainException {
+          aiAnswer = null; // offline → fall through to the book search
+        }
+      }
+      // 2) Offline fallback: the textbook's own sentences with page numbers.
+      final out = aiAnswer == null
+          ? await widget.gateway.askChat(
+              sessionId: widget.book.sessionId,
+              question: q,
+              brain: widget.settings.brain,
+              brainServerUrl: widget.settings.brainServerUrl,
+            )
+          : {'answer': aiAnswer};
       if (!mounted) return;
       setState(() {
         _msgs.add(ChatMsg('assistant', (out['answer'] ?? '').toString()));

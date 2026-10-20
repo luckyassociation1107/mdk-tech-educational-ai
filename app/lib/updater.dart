@@ -9,7 +9,7 @@ import 'ui/premium_ui.dart';
 import 'widgets.dart';
 
 /// The running app version. Bumped together with pubspec.yaml on every release.
-const String kAppVersion = '0.22.1';
+const String kAppVersion = '0.23.0';
 
 const String kRepo = 'luckyassociation1107/mdk-tech-educational-ai';
 

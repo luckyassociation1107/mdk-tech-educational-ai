@@ -15,6 +15,7 @@ import 'report_screen.dart';
 import 'child_gate_screen.dart';
 import 'daily_challenge_screen.dart';
 import 'revision_screen.dart';
+import 'brain_screen.dart';
 import 'profile_screen.dart';
 import 'theme_studio_screen.dart';
 import 'settings_screen.dart';
@@ -602,6 +603,78 @@ class _HomeScreenState extends State<HomeScreen> {
                               icon: Icons.chat_rounded, label: 'Ask PDF chat'),
                         ]),
                       ]),
+                ),
+                const SizedBox(height: 16),
+                GradientCard(
+                  onTap: () {
+                    if (_books.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text(
+                              'Add a textbook first — the brain reads that book.')));
+                      return;
+                    }
+                    final b = _books.first;
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => BrainScreen(
+                        settings: widget.settings,
+                        sessionId: b.sessionId,
+                        bookTitle: b.shortTitle,
+                      ),
+                    ));
+                  },
+                  padding: const EdgeInsets.all(18),
+                  child: Row(children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: AppColors.violet.withOpacity(0.18),
+                      ),
+                      child: const Text('🧠', style: TextStyle(fontSize: 22)),
+                    ),
+                    const SizedBox(width: 13),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            Text('AI Brain',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15,
+                                    color: AppColors.text)),
+                            const SizedBox(width: 7),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.green.withOpacity(0.16),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text('online',
+                                  style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.green)),
+                            ),
+                          ]),
+                          const SizedBox(height: 3),
+                          Text(
+                            _books.isEmpty
+                                ? 'Add a book, then get a real AI summary + answers'
+                                : 'Real AI summary & answers → used in your lessons',
+                            style: TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 11.5,
+                                height: 1.45),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                  ]),
                 ),
                 const SectionTitle('Academics'),
                 Row(children: [
