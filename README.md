@@ -1,3 +1,31 @@
+## v0.18.0 — install-over updates (no uninstall) + premium UI
+
+**Updates now install straight over the old app.** From v0.18.0 every release APK is
+signed with the permanent release key (same certificate for every future build), so
+Android treats each new version as an *update* of the installed app: marks, streaks,
+flashcards, downloaded textbooks and settings all stay. `tools/release_sign_apk.sh`
+documents the zipalign + apksigner (v1/v2/v3) flow used for the release asset; the
+keystore itself never enters the repo. The Windows installer already upgrades in place
+(same Inno AppId). One honest note: builds up to v0.17.0 were debug-signed by CI, so the
+install of v0.18.0 is the last one that needs a fresh install; everything after it updates
+over the top.
+
+**In-app update banner.** Home asks GitHub for the newest release once per launch; when
+a newer version exists it shows an amber card with an Update button that opens the APK
+link directly (native `openUrl`), saying plainly that nothing is deleted.
+
+**Premium UI layer (pure Flutter, no packages).**
+- `AuroraBackground` — animated three-blob aurora behind Home, Settings and the splash.
+- `GlassCard` — frosted glass surfaces with soft shadows replacing flat fills.
+- `GlowIcon` — gradient icon chips with coloured glow.
+- `GradientText` — shader-masked gradient headlines.
+- `RiseIn` — staggered fade-and-rise entrances for list content.
+- `AnimatedCount`, animated progress fills, Zoom page transitions app-wide.
+- **Celebrations**: confetti + sparkle burst dialog when a badge unlocks (once per badge).
+- New splash: glowing logo, gradient wordmark, aurora, smooth hand-off to Home.
+- New Home: greeting by time of day, **Continue learning** card (animated progress +
+  one-tap resume), update banner, glass stat card, achievements strip.
+
 ## v0.17.0 — voice studio, streaks & badges, flashcards, reader, revision hub
 
 **Voice Studio (Settings → Voice, or the "Voice" key inside a class).** Lists the real

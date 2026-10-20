@@ -1,10 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
 import '../study_stats.dart';
+import '../ui/premium_ui.dart';
+import '../updater.dart';
 import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
@@ -79,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _badges = badges;
         _loading = false;
       });
+      _celebrateNewBadges();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -118,6 +122,97 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _adding = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
     }
+  }
+
+  bool _celebrating = false;
+
+  /// Shows a one-time celebration the first time a badge unlocks.
+  Future<void> _celebrateNewBadges() async {
+    if (_celebrating) return;
+    final unlocked = _badges.where((b) => b.unlocked).map((b) => b.id).toSet();
+    if (unlocked.isEmpty) return;
+    final p = await SharedPreferences.getInstance();
+    final seen = (p.getStringList('seen_badges') ?? const <String>[]).toSet();
+    final fresh = unlocked.difference(seen);
+    if (fresh.isEmpty) return;
+    await p.setStringList('seen_badges', seen.union(unlocked).toList());
+    if (!mounted) return;
+    final badge = _badges.firstWhere((b) => b.id == fresh.first);
+    _celebrating = true;
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    await showCelebration(context, title: 'Badge unlocked!', subtitle: '${badge.title} — ${badge.description}');
+    _celebrating = false;
+  }
+
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning — ready to learn?';
+    if (h < 17) return 'Good afternoon — keep the streak alive';
+    return 'Good evening — one class a day wins';
+  }
+
+  /// "Continue learning" — the single most useful action on Home.
+  Widget _continueCard() {
+    final next = _books.where((b) => (_progress[b.sessionId] ?? 0) < 1.0).toList();
+    final book = next.isEmpty ? _books.first : next.first;
+    final pct = ((_progress[book.sessionId] ?? 0) * 100).round();
+    return GlassCard(
+      padding: const EdgeInsets.all(18),
+      tint: const Color(0xFF6366F1),
+      alpha: 0.18,
+      onTap: () async {
+        await Navigator.of(context).push(PageTransition.route(
+          TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: book),
+        ));
+        _load();
+      },
+      child: Row(children: [
+        Container(
+          width: 54,
+          height: 66,
+          decoration: BoxDecoration(
+            gradient: AppColors.accentGradient,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [BoxShadow(color: AppColors.indigo.withOpacity(0.45), blurRadius: 16, offset: const Offset(0, 6))],
+          ),
+          child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 26),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('CONTINUE LEARNING', style: TextStyle(color: AppColors.teal, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
+            const SizedBox(height: 3),
+            Text(book.shortTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15)),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: (_progress[book.sessionId] ?? 0).clamp(0.0, 1.0).toDouble()),
+                duration: const Duration(milliseconds: 900),
+                curve: Curves.easeOutCubic,
+                builder: (context, v, _) => LinearProgressIndicator(
+                  value: v,
+                  minHeight: 6,
+                  backgroundColor: Colors.white12,
+                  valueColor: const AlwaysStoppedAnimation(AppColors.teal),
+                ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text('$pct% completed', style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+        const SizedBox(width: 10),
+        Container(
+          width: 42,
+          height: 42,
+          decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppColors.heroGradient),
+          child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 26),
+        ),
+      ]),
+    );
   }
 
   Widget _statsCard() {
@@ -275,34 +370,37 @@ class _HomeScreenState extends State<HomeScreen> {
             : const Icon(Icons.upload_file_rounded),
         label: const Text('Add textbook'),
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 96),
-            children: [
+      body: AuroraBackground(
+        dense: true,
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 96),
+              children: [
               Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(gradient: AppColors.accentGradient, borderRadius: BorderRadius.circular(14)),
-                  child: const Icon(Icons.school_rounded, color: Colors.white, size: 24),
-                ),
+                const GlowIcon(Icons.auto_stories_rounded, color: Color(0xFF6366F1), size: 46),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('AI Textbook Classroom', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: AppColors.text)),
-                    Text('Learn any chapter, page by page', style: TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                    const GradientText('Textbook Classroom', size: 20),
+                    Text(_greeting(), style: const TextStyle(color: AppColors.muted, fontSize: 12.5)),
                   ]),
                 ),
-                IconButton(
-                  onPressed: () async {
-                    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => SettingsScreen(settings: widget.settings)));
+                GlassCard(
+                  padding: const EdgeInsets.all(4),
+                  radius: 14,
+                  onTap: () async {
+                    await Navigator.of(context).push(PageTransition.route(SettingsScreen(settings: widget.settings)));
                     _load();
                   },
-                  icon: const Icon(Icons.settings_rounded, color: AppColors.muted),
+                  child: const Padding(padding: EdgeInsets.all(6), child: Icon(Icons.settings_rounded, color: AppColors.muted, size: 20)),
                 ),
               ]),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
+              const UpdateBanner(),
+              if (_books.isNotEmpty) _continueCard(),
+              if (_books.isNotEmpty) const SizedBox(height: 12),
               _statsCard(),
               const SizedBox(height: 14),
               _badgesStrip(),
@@ -450,6 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ]),
               ),
             ],
+            ),
           ),
         ),
       ),

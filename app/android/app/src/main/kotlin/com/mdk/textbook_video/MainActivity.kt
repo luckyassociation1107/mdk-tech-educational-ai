@@ -108,6 +108,17 @@ class MainActivity : FlutterActivity() {
                         out.sortByDescending { (it["quality"] as Int) }
                         result.success(out)
                     }
+                    "openUrl" -> {
+                        val url = call.argument<String>("url") ?: ""
+                        try {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.success(false)
+                        }
+                    }
                     "stopTts" -> {
                         try { tts?.stop() } catch (e: Exception) { /* ignore */ }
                         result.success(true)

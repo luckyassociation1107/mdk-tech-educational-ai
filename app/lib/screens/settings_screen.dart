@@ -7,6 +7,8 @@ import '../engine_gateway.dart';
 import '../store.dart';
 import '../study_stats.dart';
 import '../translate_service.dart';
+import '../ui/premium_ui.dart';
+import '../updater.dart';
 import '../widgets.dart';
 import 'voice_studio_screen.dart';
 
@@ -42,7 +44,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, title: const Text('Settings')),
-      body: ListView(
+      body: AuroraBackground(
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
         children: [
           const SectionTitle('Learning'),
@@ -142,7 +145,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 22),
           FilledButton.icon(onPressed: _save, icon: const Icon(Icons.save_rounded), label: const Text('Save settings')),
+          const SizedBox(height: 16),
+          Center(
+            child: Text('Version $kAppVersion', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+          ),
         ],
+        ),
       ),
     );
   }

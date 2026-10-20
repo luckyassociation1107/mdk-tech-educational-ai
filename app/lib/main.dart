@@ -4,6 +4,8 @@ import 'engine_gateway.dart';
 import 'exam_store.dart';
 import 'screens/home_screen.dart';
 import 'store.dart';
+import 'ui/premium_ui.dart';
+import 'updater.dart';
 import 'widgets.dart';
 
 void main() {
@@ -67,6 +69,13 @@ class TextbookClassroomApp extends StatelessWidget {
           side: const BorderSide(color: AppColors.stroke),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
         ),
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+          TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        }),
         sliderTheme: const SliderThemeData(activeTrackColor: AppColors.teal, thumbColor: AppColors.teal),
         switchTheme: SwitchThemeData(
           thumbColor: WidgetStateProperty.all(AppColors.teal),
@@ -114,28 +123,36 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AppColors.bg, AppColors.bg2, AppColors.bg]),
-        ),
+      backgroundColor: const Color(0xFF070B16),
+      body: AuroraBackground(
+        dense: true,
         child: Center(
-          child: ScaleTransition(
-            scale: CurvedAnimation(parent: _anim, curve: Curves.easeOutBack),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(30)),
-                child: const Icon(Icons.school_rounded, size: 62, color: Colors.white),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ScaleTransition(
+              scale: CurvedAnimation(parent: _anim, curve: Curves.easeOutBack),
+              child: Container(
+                padding: const EdgeInsets.all(26),
+                decoration: BoxDecoration(
+                  gradient: AppColors.heroGradient,
+                  borderRadius: BorderRadius.circular(34),
+                  boxShadow: [BoxShadow(color: AppColors.indigo.withOpacity(0.55), blurRadius: 44, spreadRadius: 4)],
+                ),
+                child: const Icon(Icons.auto_stories_rounded, size: 58, color: Colors.white),
               ),
-              const SizedBox(height: 22),
-              const Text('AI Textbook Classroom', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.text)),
-              const SizedBox(height: 6),
-              const Text('Your chapter. Your teacher. Page by page.', style: TextStyle(color: AppColors.muted)),
-              const SizedBox(height: 26),
-              const CircularProgressIndicator(),
-            ]),
-          ),
+            ),
+            const SizedBox(height: 24),
+            FadeTransition(
+              opacity: CurvedAnimation(parent: _anim, curve: const Interval(0.25, 1, curve: Curves.easeOut)),
+              child: const Column(children: [
+                GradientText('Textbook Classroom', size: 25),
+                SizedBox(height: 7),
+                Text('Your chapter. Your teacher. Page by page.',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12.5, letterSpacing: 0.2)),
+                SizedBox(height: 30),
+                SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.teal)),
+              ]),
+            ),
+          ]),
         ),
       ),
     );
