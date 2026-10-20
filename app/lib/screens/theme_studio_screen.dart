@@ -40,7 +40,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
 
   AppPalette _buildPalette() => AppPalette.fromFiveColors(
         id: _editingId ?? 'custom_${DateTime.now().millisecondsSinceEpoch}',
-        name: _nameCtrl.text.trim().isEmpty ? 'My theme' : _nameCtrl.text.trim(),
+        name:
+            _nameCtrl.text.trim().isEmpty ? 'My theme' : _nameCtrl.text.trim(),
         bg: _cBg,
         card: _cCard,
         text: _cText,
@@ -53,7 +54,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
     await ThemeManager.select(t.id);
     if (!mounted) return;
     setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t.name} applied')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('${t.name} applied')));
   }
 
   Future<void> _exportCurrent() async {
@@ -63,7 +65,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       final dir = await getApplicationDocumentsDirectory();
       final folder = Directory('${dir.path}/classroom/themes');
       if (!await folder.exists()) await folder.create(recursive: true);
-      final safe = ThemeManager.palette.name.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '_');
+      final safe =
+          ThemeManager.palette.name.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '_');
       final f = File('${folder.path}/theme_$safe.json');
       await f.writeAsString(json);
       if (!mounted) return;
@@ -72,7 +75,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       ));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Theme copied to clipboard')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Theme copied to clipboard')));
     }
   }
 
@@ -80,7 +84,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
     final json = ThemeManager.exportAll();
     await Clipboard.setData(ClipboardData(text: json));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All custom themes copied to clipboard')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All custom themes copied to clipboard')));
   }
 
   Future<void> _import() async {
@@ -89,10 +94,13 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Import theme', style: TextStyle(fontWeight: FontWeight.w900)),
+        title: const Text('Import theme',
+            style: TextStyle(fontWeight: FontWeight.w900)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-           Text('Paste theme JSON (from Export) below, or load the newest saved theme file.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)),
+          Text(
+              'Paste theme JSON (from Export) below, or load the newest saved theme file.',
+              style: TextStyle(
+                  color: AppColors.muted, fontSize: 12.5, height: 1.4)),
           const SizedBox(height: 12),
           TextField(
             controller: ctrl,
@@ -115,7 +123,9 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
           ),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(ctrl.text),
             style: FilledButton.styleFrom(backgroundColor: AppColors.indigo),
@@ -129,10 +139,13 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       final imported = await ThemeManager.importTheme(raw);
       if (!mounted) return;
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${imported.length} theme${imported.length == 1 ? '' : 's'}')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              'Imported ${imported.length} theme${imported.length == 1 ? '' : 's'}')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not import: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not import: $e')));
     }
   }
 
@@ -142,10 +155,15 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       final folder = Directory('${dir.path}/classroom/themes');
       if (!await folder.exists()) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No saved theme files yet — export one first.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('No saved theme files yet — export one first.')));
         return;
       }
-      final files = folder.listSync().whereType<File>().where((f) => f.path.endsWith('.json')).toList()
+      final files = folder
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.json'))
+          .toList()
         ..sort((a, b) => b.path.compareTo(a.path));
       if (files.isEmpty) return;
       if (!mounted) return;
@@ -158,19 +176,23 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
             for (final f in files.take(10))
               SimpleDialogOption(
                 onPressed: () => Navigator.of(ctx).pop(f),
-                child: Text(f.uri.pathSegments.last, style: const TextStyle(fontSize: 13)),
+                child: Text(f.uri.pathSegments.last,
+                    style: const TextStyle(fontSize: 13)),
               ),
           ],
         ),
       );
       if (chosen == null) return;
-      final imported = await ThemeManager.importTheme(await chosen.readAsString());
+      final imported =
+          await ThemeManager.importTheme(await chosen.readAsString());
       if (!mounted) return;
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported ${imported.first.name}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Imported ${imported.first.name}')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not import file: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not import file: $e')));
     }
   }
 
@@ -180,7 +202,10 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
     if (!mounted) return;
     setState(() {});
     await showCelebration(context,
-        title: 'Theme saved!', subtitle: '${palette.name} is now your active theme. It is also exported to your theme list.', big: false);
+        title: 'Theme saved!',
+        subtitle:
+            '${palette.name} is now your active theme. It is also exported to your theme list.',
+        big: false);
     if (!mounted) return;
     setState(() => _tab = 'builtin');
   }
@@ -196,10 +221,17 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Theme Studio', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        title: const Text('Theme Studio',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
         actions: [
-          IconButton(tooltip: 'Export current theme', onPressed: _exportCurrent, icon:  Icon(Icons.ios_share_rounded, color: AppColors.teal)),
-          IconButton(tooltip: 'Import theme', onPressed: _import, icon:  Icon(Icons.download_rounded, color: AppColors.teal)),
+          IconButton(
+              tooltip: 'Export current theme',
+              onPressed: _exportCurrent,
+              icon: Icon(Icons.ios_share_rounded, color: AppColors.teal)),
+          IconButton(
+              tooltip: 'Import theme',
+              onPressed: _import,
+              icon: Icon(Icons.download_rounded, color: AppColors.teal)),
         ],
       ),
       body: AuroraBackground(
@@ -237,7 +269,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
             gradient: sel ? AppColors.accentGradient : null,
             color: sel ? null : AppColors.card,
             borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: sel ? Colors.transparent : AppColors.stroke),
+            border:
+                Border.all(color: sel ? Colors.transparent : AppColors.stroke),
           ),
           child: Center(
             child: Text(label,
@@ -259,20 +292,33 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       decoration: BoxDecoration(
         gradient: t.heroGradient,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: t.primary.withOpacity(0.35), blurRadius: 22, offset: const Offset(0, 10))],
+        boxShadow: [
+          BoxShadow(
+              color: t.primary.withOpacity(0.35),
+              blurRadius: 22,
+              offset: const Offset(0, 10))
+        ],
       ),
       child: Row(children: [
         Container(
           width: 46,
           height: 46,
-          decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(14)),
+          decoration: BoxDecoration(
+              color: Colors.white24, borderRadius: BorderRadius.circular(14)),
           child: const Icon(Icons.palette_rounded, color: Colors.white),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(t.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-            Text('${t.isLight ? 'Light' : 'Dark'}${t.isCustom ? ' • custom' : ' • built-in'}', style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(t.name,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16)),
+            Text(
+                '${t.isLight ? 'Light' : 'Dark'}${t.isCustom ? ' • custom' : ' • built-in'}',
+                style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
           ]),
         ),
         Row(children: [
@@ -282,7 +328,10 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
               child: Container(
                 width: 16,
                 height: 16,
-                decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: Colors.white54)),
+                decoration: BoxDecoration(
+                    color: c,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white54)),
               ),
             ),
         ]),
@@ -295,12 +344,18 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
           padding: const EdgeInsets.only(left: 3, bottom: 8, top: 6),
-          child: Text(title, style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
+          child: Text(title,
+              style: TextStyle(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14)),
         ),
-        ...List.generate(items.length, (i) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: RiseIn(index: offset + i, child: _themeTile(items[i])),
-            )),
+        ...List.generate(
+            items.length,
+            (i) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: RiseIn(index: offset + i, child: _themeTile(items[i])),
+                )),
       ]);
     }
 
@@ -323,7 +378,9 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
         decoration: BoxDecoration(
           color: AppColors.card,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: sel ? AppColors.teal : AppColors.stroke, width: sel ? 1.8 : 1),
+          border: Border.all(
+              color: sel ? AppColors.teal : AppColors.stroke,
+              width: sel ? 1.8 : 1),
         ),
         child: Row(children: [
           Container(
@@ -338,12 +395,15 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
               child: Container(
                 width: 40,
                 height: 22,
-                decoration: BoxDecoration(color: t.bg, borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(
+                    color: t.bg, borderRadius: BorderRadius.circular(6)),
                 child: Center(
                   child: Container(
                     width: 20,
                     height: 4,
-                    decoration: BoxDecoration(color: t.text.withOpacity(0.8), borderRadius: BorderRadius.circular(99)),
+                    decoration: BoxDecoration(
+                        color: t.text.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(99)),
                   ),
                 ),
               ),
@@ -351,14 +411,21 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Text(t.name, style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
+                Text(t.name,
+                    style: TextStyle(
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14)),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
-                    color: (t.isLight ? AppColors.amber : AppColors.indigo).withOpacity(0.16),
+                    color: (t.isLight ? AppColors.amber : AppColors.indigo)
+                        .withOpacity(0.16),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(t.isLight ? 'LIGHT' : 'DARK',
@@ -372,19 +439,30 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
               ]),
               const SizedBox(height: 7),
               Row(children: [
-                for (final c in [t.bg, t.card, t.primary, t.secondary, t.accent, t.text])
+                for (final c in [
+                  t.bg,
+                  t.card,
+                  t.primary,
+                  t.secondary,
+                  t.accent,
+                  t.text
+                ])
                   Padding(
                     padding: const EdgeInsets.only(right: 5),
                     child: Container(
                       width: 15,
                       height: 15,
-                      decoration: BoxDecoration(color: c, shape: BoxShape.circle, border: Border.all(color: AppColors.stroke)),
+                      decoration: BoxDecoration(
+                          color: c,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.stroke)),
                     ),
                   ),
               ]),
             ]),
           ),
-          if (sel)  Icon(Icons.check_circle_rounded, color: AppColors.teal, size: 22),
+          if (sel)
+            Icon(Icons.check_circle_rounded, color: AppColors.teal, size: 22),
         ]),
       ),
     );
@@ -392,50 +470,82 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
 
   List<Widget> _customTab() => [
         GradientCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-             Text('Build your own', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Build your own',
+                style: TextStyle(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16)),
             const SizedBox(height: 4),
-             Text('Pick six colours. Light or dark is detected automatically, and text, borders and muted tones are generated so everything stays readable.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.4)),
+            Text(
+                'Pick six colours. Light or dark is detected automatically, and text, borders and muted tones are generated so everything stays readable.',
+                style: TextStyle(
+                    color: AppColors.muted, fontSize: 12, height: 1.4)),
             const SizedBox(height: 14),
             TextField(
               controller: _nameCtrl,
               style: TextStyle(color: AppColors.text),
-              decoration: const InputDecoration(labelText: 'Theme name', hintText: 'e.g. My Blue Night'),
+              decoration: const InputDecoration(
+                  labelText: 'Theme name', hintText: 'e.g. My Blue Night'),
               onChanged: (_) => _previewCustom(),
             ),
           ]),
         ),
         const SizedBox(height: 12),
-        _colorRow('Background', _cBg, (c) => setState(() {
-              _cBg = c;
-              _previewCustom();
-            })),
-        _colorRow('Card surface', _cCard, (c) => setState(() {
-              _cCard = c;
-              _previewCustom();
-            })),
-        _colorRow('Text', _cText, (c) => setState(() {
-              _cText = c;
-              _previewCustom();
-            })),
-        _colorRow('Primary (buttons)', _cPrimary, (c) => setState(() {
-              _cPrimary = c;
-              _previewCustom();
-            })),
-        _colorRow('Secondary (gradient)', _cSecondary, (c) => setState(() {
-              _cSecondary = c;
-              _previewCustom();
-            })),
-        _colorRow('Accent (highlights)', _cAccent, (c) => setState(() {
-              _cAccent = c;
-              _previewCustom();
-            })),
+        _colorRow(
+            'Background',
+            _cBg,
+            (c) => setState(() {
+                  _cBg = c;
+                  _previewCustom();
+                })),
+        _colorRow(
+            'Card surface',
+            _cCard,
+            (c) => setState(() {
+                  _cCard = c;
+                  _previewCustom();
+                })),
+        _colorRow(
+            'Text',
+            _cText,
+            (c) => setState(() {
+                  _cText = c;
+                  _previewCustom();
+                })),
+        _colorRow(
+            'Primary (buttons)',
+            _cPrimary,
+            (c) => setState(() {
+                  _cPrimary = c;
+                  _previewCustom();
+                })),
+        _colorRow(
+            'Secondary (gradient)',
+            _cSecondary,
+            (c) => setState(() {
+                  _cSecondary = c;
+                  _previewCustom();
+                })),
+        _colorRow(
+            'Accent (highlights)',
+            _cAccent,
+            (c) => setState(() {
+                  _cAccent = c;
+                  _previewCustom();
+                })),
         const SizedBox(height: 14),
         GlassCard(
           padding: const EdgeInsets.all(14),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-             Text('Live preview', style: TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.9)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Live preview',
+                style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.9)),
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(14),
@@ -448,22 +558,39 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(gradient: _buildPalette().accentGradient, borderRadius: BorderRadius.circular(11)),
-                  child: Icon(Icons.school_rounded, color: _buildPalette().text, size: 20),
+                  decoration: BoxDecoration(
+                      gradient: _buildPalette().accentGradient,
+                      borderRadius: BorderRadius.circular(11)),
+                  child: Icon(Icons.school_rounded,
+                      color: _buildPalette().text, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Chapter 4 — Photosynthesis', style: TextStyle(color: _buildPalette().text, fontWeight: FontWeight.w900, fontSize: 13.5)),
-                    const SizedBox(height: 3),
-                    Text('Explanation, quiz and flashcards',
-                        style: TextStyle(color: _buildPalette().muted, fontSize: 11.5)),
-                  ]),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Chapter 4 — Photosynthesis',
+                            style: TextStyle(
+                                color: _buildPalette().text,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13.5)),
+                        const SizedBox(height: 3),
+                        Text('Explanation, quiz and flashcards',
+                            style: TextStyle(
+                                color: _buildPalette().muted, fontSize: 11.5)),
+                      ]),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(color: _buildPalette().accent.withOpacity(0.18), borderRadius: BorderRadius.circular(99)),
-                  child: Text('Play', style: TextStyle(color: _buildPalette().accent, fontWeight: FontWeight.w900, fontSize: 11)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                      color: _buildPalette().accent.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(99)),
+                  child: Text('Play',
+                      style: TextStyle(
+                          color: _buildPalette().accent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11)),
                 ),
               ]),
             ),
@@ -502,7 +629,11 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
         ]),
         if (ThemeManager.customs.isNotEmpty) ...[
           const SizedBox(height: 20),
-           Text('My themes', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14)),
+          Text('My themes',
+              style: TextStyle(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14)),
           const SizedBox(height: 8),
           ...ThemeManager.customs.map((t) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -525,7 +656,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
                       });
                       _previewCustom();
                     },
-                    icon:  Icon(Icons.edit_rounded, size: 18, color: AppColors.muted),
+                    icon: Icon(Icons.edit_rounded,
+                        size: 18, color: AppColors.muted),
                   ),
                   IconButton(
                     tooltip: 'Delete',
@@ -533,7 +665,8 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
                       await ThemeManager.deleteCustom(t.id);
                       if (mounted) setState(() {});
                     },
-                    icon:  Icon(Icons.delete_outline_rounded, size: 19, color: AppColors.red),
+                    icon: Icon(Icons.delete_outline_rounded,
+                        size: 19, color: AppColors.red),
                   ),
                 ]),
               )),
@@ -542,11 +675,18 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
 
   List<Widget> _transferTab() => [
         GradientCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-             Text('Export / Import', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Export / Import',
+                style: TextStyle(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16)),
             const SizedBox(height: 6),
-             Text('A theme is a small JSON file. Export it to keep a backup, send it to a friend, or move it to another phone — then import it back.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45)),
+            Text(
+                'A theme is a small JSON file. Export it to keep a backup, send it to a friend, or move it to another phone — then import it back.',
+                style: TextStyle(
+                    color: AppColors.muted, fontSize: 12, height: 1.45)),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -554,7 +694,9 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
                 onPressed: _exportCurrent,
                 icon: const Icon(Icons.ios_share_rounded, size: 18),
                 label: const Text('Export current theme'),
-                style: FilledButton.styleFrom(backgroundColor: AppColors.indigo, padding: const EdgeInsets.symmetric(vertical: 13)),
+                style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.indigo,
+                    padding: const EdgeInsets.symmetric(vertical: 13)),
               ),
             ),
             const SizedBox(height: 8),
@@ -589,12 +731,22 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
         const SizedBox(height: 12),
         GlassCard(
           padding: const EdgeInsets.all(14),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-             Text('Format', style: TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.9)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Format',
+                style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.9)),
             const SizedBox(height: 8),
             SelectableText(
               ThemeManager.exportTheme(),
-              style: TextStyle(color: AppColors.text, fontSize: 10.5, height: 1.45, fontFamily: 'monospace'),
+              style: TextStyle(
+                  color: AppColors.text,
+                  fontSize: 10.5,
+                  height: 1.45,
+                  fontFamily: 'monospace'),
             ),
           ]),
         ),
@@ -616,8 +768,18 @@ class _ThemeStudioScreenState extends State<ThemeStudioScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(label, style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13))),
-          Text(AppPalette.hex(value), style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'monospace')),
+          Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      color: AppColors.text,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13))),
+          Text(AppPalette.hex(value),
+              style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'monospace')),
           const SizedBox(width: 6),
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -639,127 +801,175 @@ Future<Color?> showColorPicker(BuildContext context, Color initial) {
   final hexCtrl = TextEditingController(text: AppPalette.hex(initial));
   final palettes = <List<Color>>[
     [
-      const Color(0xFF0B1020), const Color(0xFF171F3D), const Color(0xFF111827), const Color(0xFF0A0A0B),
-      const Color(0xFF14113A), const Color(0xFF1B1750), const Color(0xFF052E2B), const Color(0xFF2E1065),
+      const Color(0xFF0B1020),
+      const Color(0xFF171F3D),
+      const Color(0xFF111827),
+      const Color(0xFF0A0A0B),
+      const Color(0xFF14113A),
+      const Color(0xFF1B1750),
+      const Color(0xFF052E2B),
+      const Color(0xFF2E1065),
     ],
     [
-      const Color(0xFFFFFFFF), const Color(0xFFF6F7FB), const Color(0xFFF1FAF6), const Color(0xFFFBF7F0),
-      const Color(0xFFEEF1F8), const Color(0xFFF7F0E4), const Color(0xFF0F172A), const Color(0xFF2B2118),
+      const Color(0xFFFFFFFF),
+      const Color(0xFFF6F7FB),
+      const Color(0xFFF1FAF6),
+      const Color(0xFFFBF7F0),
+      const Color(0xFFEEF1F8),
+      const Color(0xFFF7F0E4),
+      const Color(0xFF0F172A),
+      const Color(0xFF2B2118),
     ],
     [
-      const Color(0xFF6366F1), const Color(0xFF7C3AED), const Color(0xFF2DD4BF), const Color(0xFF0D9488),
-      const Color(0xFFF59E0B), const Color(0xFFEC4899), const Color(0xFF22D3EE), const Color(0xFF84CC16),
+      const Color(0xFF6366F1),
+      const Color(0xFF7C3AED),
+      const Color(0xFF2DD4BF),
+      const Color(0xFF0D9488),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEC4899),
+      const Color(0xFF22D3EE),
+      const Color(0xFF84CC16),
     ],
   ];
   return showModalBottomSheet<Color>(
     context: context,
     backgroundColor: AppColors.card,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
     builder: (ctx) => StatefulBuilder(builder: (ctx, setSt) {
       final current = hsv.toColor();
       return Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 26),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(color: current, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.stroke)),
-              ),
-              const SizedBox(width: 12),
-               Text('Pick a colour', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16)),
-              const Spacer(),
-              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-              FilledButton(
-                onPressed: () => Navigator.of(ctx).pop(current),
-                style: FilledButton.styleFrom(backgroundColor: AppColors.indigo),
-                child: const Text('Use'),
-              ),
-            ]),
-            const SizedBox(height: 12),
-            Container(
-              height: 26,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(99),
-                gradient: LinearGradient(colors: [
-                  for (var i = 0; i <= 12; i++) HSVColor.fromAHSV(1, (i * 30) % 360, 0.9, 0.95).toColor(),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                        color: current,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.stroke)),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('Pick a colour',
+                      style: TextStyle(
+                          color: AppColors.text,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16)),
+                  const Spacer(),
+                  TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                    onPressed: () => Navigator.of(ctx).pop(current),
+                    style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.indigo),
+                    child: const Text('Use'),
+                  ),
                 ]),
-              ),
-              child: SliderTheme(
-                data: SliderTheme.of(ctx).copyWith(
-                  trackHeight: 26,
-                  activeTrackColor: Colors.transparent,
-                  inactiveTrackColor: Colors.transparent,
-                  thumbColor: Colors.white,
-                  overlayShape: SliderComponentShape.noOverlay,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-                ),
-                child: Slider(
-                  value: hsv.hue,
-                  min: 0,
-                  max: 360,
-                  onChanged: (v) => setSt(() {
-                    hsv = hsv.withHue(v);
-                    hexCtrl.text = AppPalette.hex(hsv.toColor());
-                  }),
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            _sliderRow(ctx, setSt, 'Saturation', hsv.saturation, (v) {
-              hsv = hsv.withSaturation(v);
-              hexCtrl.text = AppPalette.hex(hsv.toColor());
-            }),
-            _sliderRow(ctx, setSt, 'Brightness', hsv.value, (v) {
-              hsv = hsv.withValue(v);
-              hexCtrl.text = AppPalette.hex(hsv.toColor());
-            }),
-            const SizedBox(height: 10),
-            TextField(
-              controller: hexCtrl,
-              style: TextStyle(color: AppColors.text, fontFamily: 'monospace'),
-              decoration: const InputDecoration(labelText: 'Hex'),
-              onSubmitted: (v) {
-                setSt(() {
-                  hsv = HSVColor.fromColor(AppPalette.parseHex(v, fallback: hsv.toColor()));
-                });
-              },
-            ),
-            const SizedBox(height: 14),
-            for (final row in palettes) ...[
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                for (final c in row)
-                  GestureDetector(
-                    onTap: () => setSt(() {
-                      hsv = HSVColor.fromColor(c);
-                      hexCtrl.text = AppPalette.hex(c);
-                    }),
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: c,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: current.value == c.value ? AppColors.teal : AppColors.stroke, width: current.value == c.value ? 2 : 1),
-                      ),
+                const SizedBox(height: 12),
+                Container(
+                  height: 26,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(99),
+                    gradient: LinearGradient(colors: [
+                      for (var i = 0; i <= 12; i++)
+                        HSVColor.fromAHSV(1, (i * 30) % 360, 0.9, 0.95)
+                            .toColor(),
+                    ]),
+                  ),
+                  child: SliderTheme(
+                    data: SliderTheme.of(ctx).copyWith(
+                      trackHeight: 26,
+                      activeTrackColor: Colors.transparent,
+                      inactiveTrackColor: Colors.transparent,
+                      thumbColor: Colors.white,
+                      overlayShape: SliderComponentShape.noOverlay,
+                      thumbShape:
+                          const RoundSliderThumbShape(enabledThumbRadius: 9),
+                    ),
+                    child: Slider(
+                      value: hsv.hue,
+                      min: 0,
+                      max: 360,
+                      onChanged: (v) => setSt(() {
+                        hsv = hsv.withHue(v);
+                        hexCtrl.text = AppPalette.hex(hsv.toColor());
+                      }),
                     ),
                   ),
+                ),
+                const SizedBox(height: 6),
+                _sliderRow(ctx, setSt, 'Saturation', hsv.saturation, (v) {
+                  hsv = hsv.withSaturation(v);
+                  hexCtrl.text = AppPalette.hex(hsv.toColor());
+                }),
+                _sliderRow(ctx, setSt, 'Brightness', hsv.value, (v) {
+                  hsv = hsv.withValue(v);
+                  hexCtrl.text = AppPalette.hex(hsv.toColor());
+                }),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: hexCtrl,
+                  style:
+                      TextStyle(color: AppColors.text, fontFamily: 'monospace'),
+                  decoration: const InputDecoration(labelText: 'Hex'),
+                  onSubmitted: (v) {
+                    setSt(() {
+                      hsv = HSVColor.fromColor(
+                          AppPalette.parseHex(v, fallback: hsv.toColor()));
+                    });
+                  },
+                ),
+                const SizedBox(height: 14),
+                for (final row in palettes) ...[
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    for (final c in row)
+                      GestureDetector(
+                        onTap: () => setSt(() {
+                          hsv = HSVColor.fromColor(c);
+                          hexCtrl.text = AppPalette.hex(c);
+                        }),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: c,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: current.value == c.value
+                                    ? AppColors.teal
+                                    : AppColors.stroke,
+                                width: current.value == c.value ? 2 : 1),
+                          ),
+                        ),
+                      ),
+                  ]),
+                  const SizedBox(height: 8),
+                ],
               ]),
-              const SizedBox(height: 8),
-            ],
-          ]),
         ),
       );
     }),
   );
 }
 
-Widget _sliderRow(BuildContext ctx, StateSetter setSt, String label, double value, ValueChanged<double> onChanged) {
+Widget _sliderRow(BuildContext ctx, StateSetter setSt, String label,
+    double value, ValueChanged<double> onChanged) {
   return Row(children: [
-    SizedBox(width: 82, child: Text(label, style: TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700))),
+    SizedBox(
+        width: 82,
+        child: Text(label,
+            style: TextStyle(
+                color: AppColors.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w700))),
     Expanded(
       child: Slider(
         value: value.clamp(0.0, 1.0),
@@ -768,6 +978,9 @@ Widget _sliderRow(BuildContext ctx, StateSetter setSt, String label, double valu
         inactiveColor: AppColors.stroke,
       ),
     ),
-    SizedBox(width: 40, child: Text('${(value * 100).round()}', style: TextStyle(color: AppColors.muted, fontSize: 11.5))),
+    SizedBox(
+        width: 40,
+        child: Text('${(value * 100).round()}',
+            style: TextStyle(color: AppColors.muted, fontSize: 11.5))),
   ]);
 }

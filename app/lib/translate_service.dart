@@ -67,12 +67,14 @@ const List<XLang> kExplainLanguages = [
   XLang('tl', 'fil-PH', 'Filipino', 'Filipino'),
 ];
 
-XLang xLang(String code) => kExplainLanguages.firstWhere((l) => l.code == code, orElse: () => kExplainLanguages.first);
+XLang xLang(String code) => kExplainLanguages.firstWhere((l) => l.code == code,
+    orElse: () => kExplainLanguages.first);
 
 /// Detects the language the *textbook itself* is written in, so textbook
 /// lines are always spoken and shown in the book's own language.
 String bookVoiceLocale(String text) {
-  int count(String pattern) => RegExp(pattern, unicode: true).allMatches(text).length;
+  int count(String pattern) =>
+      RegExp(pattern, unicode: true).allMatches(text).length;
   final total = text.replaceAll(RegExp(r'\s+'), '').length;
   if (total == 0) return 'en-IN';
   final te = count(r'[\u0C00-\u0C7F]');
@@ -122,10 +124,12 @@ class TranslateService {
     final dir = await getApplicationDocumentsDirectory();
     final d = Directory('${dir.path}/classroom');
     if (!await d.exists()) await d.create(recursive: true);
-    return _cacheFile ??= Future.value(File('${d.path}/translation_cache.json'));
+    return _cacheFile ??=
+        Future.value(File('${d.path}/translation_cache.json'));
   }
 
-  static String _key(String lang, String text) => '$lang::${text.hashCode}::${text.length}';
+  static String _key(String lang, String text) =>
+      '$lang::${text.hashCode}::${text.length}';
 
   static Future<Map<String, String>> _loadCache() async {
     if (_mem.isNotEmpty) return _mem;
@@ -150,9 +154,24 @@ class TranslateService {
   /// textbook's own key words.
   static List<String> keyTerms(String text, [List<String> known = const []]) {
     final out = <String>{...known};
-    for (final m in RegExp(r'\b[A-Z][a-zA-Z]{2,}(?:\s[A-Z][a-zA-Z]{2,}){0,2}\b').allMatches(text)) {
+    for (final m in RegExp(r'\b[A-Z][a-zA-Z]{2,}(?:\s[A-Z][a-zA-Z]{2,}){0,2}\b')
+        .allMatches(text)) {
       final t = m.group(0)!.trim();
-      if (t.length >= 3 && !const {'The', 'This', 'That', 'These', 'Those', 'When', 'Where', 'What', 'Which', 'From', 'With', 'Your'}.contains(t)) {
+      if (t.length >= 3 &&
+          !const {
+            'The',
+            'This',
+            'That',
+            'These',
+            'Those',
+            'When',
+            'Where',
+            'What',
+            'Which',
+            'From',
+            'With',
+            'Your'
+          }.contains(t)) {
         out.add(t);
       }
     }
@@ -207,14 +226,16 @@ class TranslateService {
     try {
       final data = jsonDecode(body);
       final out = '${data['responseData']?['translatedText'] ?? ''}'.trim();
-      if (out.isEmpty || out.toUpperCase().contains('MYMEMORY WARNING')) return null;
+      if (out.isEmpty || out.toUpperCase().contains('MYMEMORY WARNING'))
+        return null;
       return out;
     } catch (_) {}
     return null;
   }
 
   static Future<String?> _lingva(String text, String lang) async {
-    final url = Uri.parse('https://lingva.ml/api/v1/en/$lang/${Uri.encodeComponent(text)}');
+    final url = Uri.parse(
+        'https://lingva.ml/api/v1/en/$lang/${Uri.encodeComponent(text)}');
     final body = await _get(url, timeout: const Duration(seconds: 8));
     if (body == null) return null;
     try {
@@ -229,7 +250,8 @@ class TranslateService {
     try {
       client = HttpClient()..connectionTimeout = timeout;
       final req = await client.getUrl(url).timeout(timeout);
-      req.headers.set('User-Agent', 'Mozilla/5.0 (Android) AI-Textbook-Classroom');
+      req.headers
+          .set('User-Agent', 'Mozilla/5.0 (Android) AI-Textbook-Classroom');
       final res = await req.close().timeout(timeout);
       if (res.statusCode != 200) return null;
       return await res.transform(utf8.decoder).join().timeout(timeout);
@@ -242,7 +264,8 @@ class TranslateService {
 
   /// Translate one explanation. Returns null when every engine fails
   /// (offline first run) so the caller can honestly fall back to English.
-  static Future<String?> translate(String text, String lang, {List<String> knownTerms = const []}) async {
+  static Future<String?> translate(String text, String lang,
+      {List<String> knownTerms = const []}) async {
     final clean = text.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (clean.isEmpty || lang == 'en') return clean;
     final cache = await _loadCache();
@@ -271,7 +294,8 @@ class TranslateService {
   }
 
   /// Translate a whole list of explanations in parallel (max 4 at once).
-  static Future<Map<int, String>> translateAll(List<String> texts, String lang, {List<String> knownTerms = const []}) async {
+  static Future<Map<int, String>> translateAll(List<String> texts, String lang,
+      {List<String> knownTerms = const []}) async {
     final out = <int, String>{};
     if (lang == 'en') return out;
     final cache = await _loadCache();
@@ -301,7 +325,8 @@ Future<XLang?> pickExplainLanguage(BuildContext context, String current) {
     context: context,
     isScrollControlled: true,
     backgroundColor: const Color(0xFF0F172A),
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
     builder: (ctx) {
       return DraggableScrollableSheet(
         expand: false,
@@ -310,20 +335,29 @@ Future<XLang?> pickExplainLanguage(BuildContext context, String current) {
         builder: (ctx, scroll) => Column(
           children: [
             const SizedBox(height: 12),
-            Container(width: 44, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(99))),
+            Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(99))),
             const Padding(
               padding: EdgeInsets.fromLTRB(18, 14, 18, 4),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text('Explanation language',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900)),
               ),
             ),
             const Padding(
               padding: EdgeInsets.fromLTRB(18, 0, 18, 10),
               child: Text(
                 'Only the explanation is translated. Textbook points always stay in the book\'s own language, and main words stay in English.',
-                style: TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.35),
+                style: TextStyle(
+                    color: Colors.white70, fontSize: 12.5, height: 1.35),
               ),
             ),
             Expanded(
@@ -337,12 +371,23 @@ Future<XLang?> pickExplainLanguage(BuildContext context, String current) {
                     dense: true,
                     leading: CircleAvatar(
                       radius: 14,
-                      backgroundColor: sel ? const Color(0xFF0EA5A4) : Colors.white10,
-                      child: Text(l.code.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w900)),
+                      backgroundColor:
+                          sel ? const Color(0xFF0EA5A4) : Colors.white10,
+                      child: Text(l.code.toUpperCase(),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900)),
                     ),
                     title: Text('${l.english}  •  ${l.native}',
-                        style: TextStyle(color: sel ? const Color(0xFF5EEAD4) : Colors.white, fontWeight: sel ? FontWeight.w900 : FontWeight.w600, fontSize: 14)),
-                    trailing: sel ? const Icon(Icons.check_circle_rounded, color: Color(0xFF5EEAD4), size: 20) : null,
+                        style: TextStyle(
+                            color: sel ? const Color(0xFF5EEAD4) : Colors.white,
+                            fontWeight: sel ? FontWeight.w900 : FontWeight.w600,
+                            fontSize: 14)),
+                    trailing: sel
+                        ? const Icon(Icons.check_circle_rounded,
+                            color: Color(0xFF5EEAD4), size: 20)
+                        : null,
                     onTap: () => Navigator.of(ctx).pop(l),
                   );
                 },

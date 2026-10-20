@@ -47,12 +47,18 @@ class DiagramView extends StatelessWidget {
           top: 10,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(color: accent.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
+            decoration: BoxDecoration(
+                color: accent.withOpacity(0.16),
+                borderRadius: BorderRadius.circular(99)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.auto_awesome_motion_rounded, size: 12, color: accent),
               const SizedBox(width: 5),
               Text(_title(type).toUpperCase(),
-                  style: TextStyle(color: accent, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.9)),
+                  style: TextStyle(
+                      color: accent,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.9)),
             ]),
           ),
         ),
@@ -103,11 +109,19 @@ class _DiagramPainter extends CustomPainter {
     }
   }
 
-  void _text(Canvas canvas, String s, Offset center, {Color? color, double size = 11, double maxW = 120, FontWeight weight = FontWeight.w700}) {
+  void _text(Canvas canvas, String s, Offset center,
+      {Color? color,
+      double size = 11,
+      double maxW = 120,
+      FontWeight weight = FontWeight.w700}) {
     final tp = TextPainter(
       text: TextSpan(
         text: s,
-        style: TextStyle(color: color ?? ink, fontSize: size, fontWeight: weight, height: 1.15),
+        style: TextStyle(
+            color: color ?? ink,
+            fontSize: size,
+            fontWeight: weight,
+            height: 1.15),
       ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
@@ -133,14 +147,17 @@ class _DiagramPainter extends CustomPainter {
       final a1 = -math.pi / 2 + (2 * math.pi * i / n);
       final a2 = -math.pi / 2 + (2 * math.pi * math.min(i + 1, shown) / n);
       stroke.color = accent.withOpacity(0.55);
-      canvas.drawArc(Rect.fromCircle(center: c, radius: r), a1, a2 - a1, false, stroke);
+      canvas.drawArc(
+          Rect.fromCircle(center: c, radius: r), a1, a2 - a1, false, stroke);
       // arrow head
       final tip = Offset(c.dx + r * math.cos(a2), c.dy + r * math.sin(a2));
       final dir = a2 + math.pi / 2;
       final head = Path()
         ..moveTo(tip.dx, tip.dy)
-        ..lineTo(tip.dx - 8 * math.cos(dir - 0.4), tip.dy - 8 * math.sin(dir - 0.4))
-        ..lineTo(tip.dx - 8 * math.cos(dir + 0.4), tip.dy - 8 * math.sin(dir + 0.4))
+        ..lineTo(
+            tip.dx - 8 * math.cos(dir - 0.4), tip.dy - 8 * math.sin(dir - 0.4))
+        ..lineTo(
+            tip.dx - 8 * math.cos(dir + 0.4), tip.dy - 8 * math.sin(dir + 0.4))
         ..close();
       canvas.drawPath(head, Paint()..color = accent.withOpacity(0.8));
     }
@@ -149,10 +166,18 @@ class _DiagramPainter extends CustomPainter {
       final a = -math.pi / 2 + (2 * math.pi * i / n);
       final p = Offset(c.dx + r * math.cos(a), c.dy + r * math.sin(a));
       canvas.drawCircle(p, 10, Paint()..color = accent.withOpacity(0.18));
-      canvas.drawCircle(p, 10, Paint()..color = accent..style = PaintingStyle.stroke..strokeWidth = 1.6);
-      _text(canvas, labels[i], p + Offset(0, 26), size: 10.5, maxW: 96, weight: FontWeight.w800);
+      canvas.drawCircle(
+          p,
+          10,
+          Paint()
+            ..color = accent
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.6);
+      _text(canvas, labels[i], p + Offset(0, 26),
+          size: 10.5, maxW: 96, weight: FontWeight.w800);
     }
-    _text(canvas, 'continuous cycle', c + const Offset(0, 2), color: line, size: 10);
+    _text(canvas, 'continuous cycle', c + const Offset(0, 2),
+        color: line, size: 10);
   }
 
   void _timeline(Canvas canvas, Size size, List<String> labels) {
@@ -175,7 +200,8 @@ class _DiagramPainter extends CustomPainter {
           ..color = accent.withOpacity(0.55)
           ..strokeWidth = 1.4,
       );
-      _text(canvas, labels[i], Offset(x, y - 62), size: 11, maxW: 110, weight: FontWeight.w900);
+      _text(canvas, labels[i], Offset(x, y - 62),
+          size: 11, maxW: 110, weight: FontWeight.w900);
       _text(canvas, '${i + 1}', Offset(x, y + 20), color: line, size: 9.5);
     }
   }
@@ -189,18 +215,36 @@ class _DiagramPainter extends CustomPainter {
     for (var i = 0; i < n && i < shown; i++) {
       final rect = Rect.fromLTWH(pad, pad + i * (h + 10), w, h);
       final rr = RRect.fromRectAndRadius(rect, const Radius.circular(11));
-      canvas.drawRRect(rr, Paint()..color = accent.withOpacity(i == (shown.floor()).clamp(0, n - 1) ? 0.16 : 0.07));
-      canvas.drawRRect(rr, Paint()..color = accent.withOpacity(0.5)..style = PaintingStyle.stroke..strokeWidth = 1.3);
-      canvas.drawCircle(Offset(rect.left + 18, rect.center.dy), 11, Paint()..color = accent);
-      _text(canvas, '${i + 1}', Offset(rect.left + 18, rect.center.dy), color: Colors.white, size: 11.5, weight: FontWeight.w900, maxW: 30);
-      _text(canvas, labels[i], Offset(rect.left + 18 + (w - 30) / 2 + 6, rect.center.dy), size: 11, maxW: w - 52, weight: FontWeight.w700);
+      canvas.drawRRect(
+          rr,
+          Paint()
+            ..color = accent.withOpacity(
+                i == (shown.floor()).clamp(0, n - 1) ? 0.16 : 0.07));
+      canvas.drawRRect(
+          rr,
+          Paint()
+            ..color = accent.withOpacity(0.5)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.3);
+      canvas.drawCircle(
+          Offset(rect.left + 18, rect.center.dy), 11, Paint()..color = accent);
+      _text(canvas, '${i + 1}', Offset(rect.left + 18, rect.center.dy),
+          color: Colors.white, size: 11.5, weight: FontWeight.w900, maxW: 30);
+      _text(canvas, labels[i],
+          Offset(rect.left + 18 + (w - 30) / 2 + 6, rect.center.dy),
+          size: 11, maxW: w - 52, weight: FontWeight.w700);
     }
   }
 
   void _numberLine(Canvas canvas, Size size, List<String> labels) {
     final y = size.height * 0.58;
     final left = 24.0, right = size.width - 24.0;
-    canvas.drawLine(Offset(left, y), Offset(right, y), Paint()..color = line.withOpacity(0.8)..strokeWidth = 2.4);
+    canvas.drawLine(
+        Offset(left, y),
+        Offset(right, y),
+        Paint()
+          ..color = line.withOpacity(0.8)
+          ..strokeWidth = 2.4);
     // arrow tip
     final tip = Path()
       ..moveTo(right + 10, y)
@@ -212,13 +256,24 @@ class _DiagramPainter extends CustomPainter {
     final shown = (t * (n + 0.3)).clamp(0.0, n.toDouble());
     for (var i = 0; i < n && i < shown; i++) {
       final x = left + (right - left) * (i / math.max(1, n - 1));
-      canvas.drawLine(Offset(x, y - 7), Offset(x, y + 7), Paint()..color = line..strokeWidth = 1.6);
-      _text(canvas, labels[i], Offset(x, y + 26), size: 11.5, weight: FontWeight.w900, maxW: 110);
+      canvas.drawLine(
+          Offset(x, y - 7),
+          Offset(x, y + 7),
+          Paint()
+            ..color = line
+            ..strokeWidth = 1.6);
+      _text(canvas, labels[i], Offset(x, y + 26),
+          size: 11.5, weight: FontWeight.w900, maxW: 110);
     }
-    _text(canvas, 'increasing value', Offset(size.width / 2, size.height * 0.18), color: line, size: 10);
+    _text(
+        canvas, 'increasing value', Offset(size.width / 2, size.height * 0.18),
+        color: line, size: 10);
   }
 
   @override
   bool shouldRepaint(covariant _DiagramPainter old) =>
-      old.t != t || old.labels != labels || old.accent != accent || old.ink != ink;
+      old.t != t ||
+      old.labels != labels ||
+      old.accent != accent ||
+      old.ink != ink;
 }

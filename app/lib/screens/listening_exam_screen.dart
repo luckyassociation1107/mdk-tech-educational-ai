@@ -17,14 +17,19 @@ class ListeningExamScreen extends StatefulWidget {
   final AppSettings settings;
   final TextbookItem book;
   final List<SeriesPart> parts;
-  const ListeningExamScreen({super.key, required this.settings, required this.book, required this.parts});
+  const ListeningExamScreen(
+      {super.key,
+      required this.settings,
+      required this.book,
+      required this.parts});
 
   @override
   State<ListeningExamScreen> createState() => _ListeningExamScreenState();
 }
 
 class _ListeningExamScreenState extends State<ListeningExamScreen> {
-  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
+  static const MethodChannel _ttsCh =
+      MethodChannel('com.mdk.textbook_video/engine');
   List<ExamQuestion> _qs = const [];
   int _i = 0;
   int _right = 0;
@@ -67,7 +72,9 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
       count: 6,
       seed: DateTime.now().millisecondsSinceEpoch % 9973,
     );
-    qs = qs.where((q) => q.type == QuestionType.mcq && q.options.length >= 2).toList();
+    qs = qs
+        .where((q) => q.type == QuestionType.mcq && q.options.length >= 2)
+        .toList();
     if (!mounted) return;
     setState(() {
       _qs = qs;
@@ -77,7 +84,11 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
   }
 
   String _questionSpeech(ExamQuestion q) {
-    final opts = q.options.asMap().entries.map((e) => 'Option ${e.key + 1}. ${e.value}').join('. ');
+    final opts = q.options
+        .asMap()
+        .entries
+        .map((e) => 'Option ${e.key + 1}. ${e.value}')
+        .join('. ');
     return 'Question ${_i + 1}. ${q.prompt} $opts. Tap the correct option.';
   }
 
@@ -140,12 +151,17 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Listening exam', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        title: const Text('Listening exam',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
         actions: [
           IconButton(
             tooltip: _showText ? 'Hide text' : 'Show text',
             onPressed: () => setState(() => _showText = !_showText),
-            icon: Icon(_showText ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: AppColors.muted),
+            icon: Icon(
+                _showText
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
+                color: AppColors.muted),
           ),
         ],
       ),
@@ -155,7 +171,8 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
               ? const EmptyState(
                   icon: Icons.headphones_rounded,
                   title: 'No listening questions yet',
-                  message: 'Watch a class for this textbook first — its key points become the MCQs.',
+                  message:
+                      'Watch a class for this textbook first — its key points become the MCQs.',
                 )
               : _done
                   ? _result()
@@ -164,9 +181,16 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
                       children: [
                         Row(children: [
                           Text('Question ${_i + 1} of ${_qs.length}',
-                              style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12.5)),
+                              style: TextStyle(
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12.5)),
                           const Spacer(),
-                          Text('$_right correct', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12.5)),
+                          Text('$_right correct',
+                              style: TextStyle(
+                                  color: AppColors.teal,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12.5)),
                         ]),
                         const SizedBox(height: 6),
                         ClipRRect(
@@ -181,43 +205,75 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(22)),
+                          decoration: BoxDecoration(
+                              gradient: AppColors.heroGradient,
+                              borderRadius: BorderRadius.circular(22)),
                           child: Column(children: [
                             Container(
                               padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), shape: BoxShape.circle),
-                              child: Icon(Icons.headphones_rounded, color: Colors.white, size: 34),
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.18),
+                                  shape: BoxShape.circle),
+                              child: Icon(Icons.headphones_rounded,
+                                  color: Colors.white, size: 34),
                             ),
                             const SizedBox(height: 12),
                             const Text('Listen carefully',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16)),
                             const SizedBox(height: 4),
-                            Text(_showText ? 'Text shown below' : 'The question is spoken — tap an option to answer',
+                            Text(
+                                _showText
+                                    ? 'Text shown below'
+                                    : 'The question is spoken — tap an option to answer',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)),
+                                style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    height: 1.4)),
                             const SizedBox(height: 14),
-                            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              FilledButton.icon(
-                                onPressed: () => _speakQuestion(countReplay: true),
-                                icon: Icon(_speaking ? Icons.graphic_eq_rounded : Icons.replay_rounded, size: 18),
-                                label: Text(_replays > 0 ? 'Play again ($_replays)' : 'Play question'),
-                                style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.indigo),
-                              ),
-                            ]),
+                            Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  FilledButton.icon(
+                                    onPressed: () =>
+                                        _speakQuestion(countReplay: true),
+                                    icon: Icon(
+                                        _speaking
+                                            ? Icons.graphic_eq_rounded
+                                            : Icons.replay_rounded,
+                                        size: 18),
+                                    label: Text(_replays > 0
+                                        ? 'Play again ($_replays)'
+                                        : 'Play question'),
+                                    style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: AppColors.indigo),
+                                  ),
+                                ]),
                           ]),
                         ),
                         if (_showText && q != null) ...[
                           const SizedBox(height: 12),
                           GradientCard(
-                            child: Text(q.prompt, style: TextStyle(color: AppColors.text, fontSize: 15, height: 1.45, fontWeight: FontWeight.w700)),
+                            child: Text(q.prompt,
+                                style: TextStyle(
+                                    color: AppColors.text,
+                                    fontSize: 15,
+                                    height: 1.45,
+                                    fontWeight: FontWeight.w700)),
                           ),
                         ],
                         const SizedBox(height: 14),
                         if (q != null)
                           ...q.options.asMap().entries.map((e) {
                             final option = e.value;
-                            final isAnswer = option.trim().toLowerCase() == q.answer.trim().toLowerCase();
-                            final chosen = _picked?.trim().toLowerCase() == option.trim().toLowerCase();
+                            final isAnswer = option.trim().toLowerCase() ==
+                                q.answer.trim().toLowerCase();
+                            final chosen = _picked?.trim().toLowerCase() ==
+                                option.trim().toLowerCase();
                             var border = AppColors.stroke;
                             var bg = AppColors.card;
                             if (_revealed && isAnswer) {
@@ -234,7 +290,8 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
                                 onTap: _revealed ? null : () => _answer(option),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 14),
                                   decoration: BoxDecoration(
                                     color: bg,
                                     borderRadius: BorderRadius.circular(14),
@@ -250,15 +307,25 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text('${e.key + 1}',
-                                          style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w900, fontSize: 12)),
+                                          style: TextStyle(
+                                              color: AppColors.muted,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 12)),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(option,
-                                          style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.w600)),
+                                          style: TextStyle(
+                                              color: AppColors.text,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600)),
                                     ),
-                                    if (_revealed && isAnswer) Icon(Icons.check_circle_rounded, color: AppColors.green, size: 19),
-                                    if (_revealed && chosen && !isAnswer) Icon(Icons.cancel_rounded, color: AppColors.red, size: 19),
+                                    if (_revealed && isAnswer)
+                                      Icon(Icons.check_circle_rounded,
+                                          color: AppColors.green, size: 19),
+                                    if (_revealed && chosen && !isAnswer)
+                                      Icon(Icons.cancel_rounded,
+                                          color: AppColors.red, size: 19),
                                   ]),
                                 ),
                               ),
@@ -268,8 +335,13 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
                           FilledButton.icon(
                             onPressed: _next,
                             icon: const Icon(Icons.arrow_forward_rounded),
-                            label: Text(_i >= _qs.length - 1 ? 'Finish' : 'Next question'),
-                            style: FilledButton.styleFrom(backgroundColor: AppColors.indigo, padding: const EdgeInsets.symmetric(vertical: 14)),
+                            label: Text(_i >= _qs.length - 1
+                                ? 'Finish'
+                                : 'Next question'),
+                            style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.indigo,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14)),
                           ),
                       ],
                     ),
@@ -283,12 +355,24 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(22)),
+          decoration: BoxDecoration(
+              gradient: AppColors.heroGradient,
+              borderRadius: BorderRadius.circular(22)),
           child: Column(children: [
-            Icon(pct >= 40 ? Icons.emoji_events_rounded : Icons.headphones_rounded, color: Colors.white, size: 44),
+            Icon(
+                pct >= 40
+                    ? Icons.emoji_events_rounded
+                    : Icons.headphones_rounded,
+                color: Colors.white,
+                size: 44),
             const SizedBox(height: 8),
-            Text('${pct.toStringAsFixed(0)}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 26)),
-            Text('$_right of ${_qs.length} correct', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            Text('${pct.toStringAsFixed(0)}%',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26)),
+            Text('$_right of ${_qs.length} correct',
+                style: const TextStyle(color: Colors.white70, fontSize: 13)),
           ]),
         ),
         const SizedBox(height: 14),
@@ -296,7 +380,9 @@ class _ListeningExamScreenState extends State<ListeningExamScreen> {
           onPressed: _build,
           icon: const Icon(Icons.refresh_rounded),
           label: const Text('Listen again'),
-          style: FilledButton.styleFrom(backgroundColor: AppColors.indigo, padding: const EdgeInsets.symmetric(vertical: 14)),
+          style: FilledButton.styleFrom(
+              backgroundColor: AppColors.indigo,
+              padding: const EdgeInsets.symmetric(vertical: 14)),
         ),
         const SizedBox(height: 10),
         OutlinedButton.icon(

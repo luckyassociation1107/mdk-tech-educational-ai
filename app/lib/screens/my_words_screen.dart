@@ -18,7 +18,8 @@ class MyWordsScreen extends StatefulWidget {
 }
 
 class _MyWordsScreenState extends State<MyWordsScreen> {
-  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
+  static const MethodChannel _ttsCh =
+      MethodChannel('com.mdk.textbook_video/engine');
   List<WordEntry> _all = const [];
   String _q = '';
   bool _loading = true;
@@ -42,12 +43,21 @@ class _MyWordsScreenState extends State<MyWordsScreen> {
   List<WordEntry> get _filtered {
     if (_q.isEmpty) return _all;
     final q = _q.toLowerCase();
-    return _all.where((e) => e.word.toLowerCase().contains(q) || e.context.toLowerCase().contains(q) || e.translation.toLowerCase().contains(q)).toList();
+    return _all
+        .where((e) =>
+            e.word.toLowerCase().contains(q) ||
+            e.context.toLowerCase().contains(q) ||
+            e.translation.toLowerCase().contains(q))
+        .toList();
   }
 
   void _speak(String text) {
-    _ttsCh.invokeMethod('speak', {'text': text, 'language': 'en-IN', 'rate': widget.settings.speechRate, 'pitch': widget.settings.speechPitch})
-        .catchError((_) => null);
+    _ttsCh.invokeMethod('speak', {
+      'text': text,
+      'language': 'en-IN',
+      'rate': widget.settings.speechRate,
+      'pitch': widget.settings.speechPitch
+    }).catchError((_) => null);
   }
 
   @override
@@ -64,7 +74,8 @@ class _MyWordsScreenState extends State<MyWordsScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('My Words', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        title: const Text('My Words',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
         actions: [
           if (_all.isNotEmpty)
             IconButton(
@@ -75,12 +86,16 @@ class _MyWordsScreenState extends State<MyWordsScreen> {
                   builder: (ctx) => AlertDialog(
                     backgroundColor: AppColors.card,
                     title: const Text('Clear word bank?'),
-                    content: const Text('This removes every saved word for this textbook.'),
+                    content: const Text(
+                        'This removes every saved word for this textbook.'),
                     actions: [
-                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                      TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: const Text('Cancel')),
                       FilledButton(
                         onPressed: () => Navigator.of(ctx).pop(true),
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.red),
+                        style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.red),
                         child: const Text('Clear'),
                       ),
                     ],
@@ -91,7 +106,7 @@ class _MyWordsScreenState extends State<MyWordsScreen> {
                   _load();
                 }
               },
-              icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.red),
+              icon: Icon(Icons.delete_sweep_rounded, color: AppColors.red),
             ),
         ],
       ),
@@ -106,7 +121,8 @@ class _MyWordsScreenState extends State<MyWordsScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search your words…',
                     hintStyle: TextStyle(color: AppColors.muted),
-                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.muted),
+                    prefixIcon:
+                        Icon(Icons.search_rounded, color: AppColors.muted),
                   ),
                   onChanged: (v) => setState(() => _q = v.trim()),
                 ),
@@ -114,9 +130,14 @@ class _MyWordsScreenState extends State<MyWordsScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Row(children: [
-                  Text('${rows.length} words', style: TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                  Text('${rows.length} words',
+                      style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700)),
                   const Spacer(),
-                  Text('tap a word to hear it', style: TextStyle(color: AppColors.muted, fontSize: 11)),
+                  Text('tap a word to hear it',
+                      style: TextStyle(color: AppColors.muted, fontSize: 11)),
                 ]),
               ),
               const SizedBox(height: 6),
@@ -139,39 +160,56 @@ class _MyWordsScreenState extends State<MyWordsScreen> {
                             child: GradientCard(
                               padding: const EdgeInsets.all(14),
                               onTap: () => _speak(e.word),
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Row(children: [
-                                  Expanded(
-                                    child: Text(e.word,
-                                        style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15)),
-                                  ),
-                                  if (e.page.isNotEmpty)
-                                    Text('page ${e.page}', style: TextStyle(color: AppColors.muted, fontSize: 10.5)),
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    onPressed: () => _speak(e.word),
-                                    icon: Icon(Icons.volume_up_rounded, size: 18, color: AppColors.teal),
-                                  ),
-                                  IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    onPressed: () async {
-                                      await WordBank.remove(widget.book.sessionId, e.word);
-                                      _load();
-                                    },
-                                    icon: Icon(Icons.close_rounded, size: 17, color: AppColors.muted),
-                                  ),
-                                ]),
-                                if (e.translation.isNotEmpty)
-                                  Text(e.translation,
-                                      style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 13)),
-                                if (e.context.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Text(e.context,
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45)),
-                                ],
-                              ]),
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(children: [
+                                      Expanded(
+                                        child: Text(e.word,
+                                            style: TextStyle(
+                                                color: AppColors.text,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 15)),
+                                      ),
+                                      if (e.page.isNotEmpty)
+                                        Text('page ${e.page}',
+                                            style: TextStyle(
+                                                color: AppColors.muted,
+                                                fontSize: 10.5)),
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed: () => _speak(e.word),
+                                        icon: Icon(Icons.volume_up_rounded,
+                                            size: 18, color: AppColors.teal),
+                                      ),
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed: () async {
+                                          await WordBank.remove(
+                                              widget.book.sessionId, e.word);
+                                          _load();
+                                        },
+                                        icon: Icon(Icons.close_rounded,
+                                            size: 17, color: AppColors.muted),
+                                      ),
+                                    ]),
+                                    if (e.translation.isNotEmpty)
+                                      Text(e.translation,
+                                          style: TextStyle(
+                                              color: AppColors.amber,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 13)),
+                                    if (e.context.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Text(e.context,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              color: AppColors.muted,
+                                              fontSize: 12,
+                                              height: 1.45)),
+                                    ],
+                                  ]),
                             ),
                           );
                         },

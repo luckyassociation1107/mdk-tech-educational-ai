@@ -23,7 +23,8 @@ class WordBank {
 
   static Future<void> add(String sessionId, WordEntry e) async {
     final all = await load(sessionId);
-    final i = all.indexWhere((x) => x.word.toLowerCase() == e.word.toLowerCase());
+    final i =
+        all.indexWhere((x) => x.word.toLowerCase() == e.word.toLowerCase());
     if (i >= 0) {
       all[i] = e;
     } else {
@@ -31,14 +32,16 @@ class WordBank {
     }
     final trimmed = all.take(400).toList();
     final p = await SharedPreferences.getInstance();
-    await p.setString(_key(sessionId), jsonEncode(trimmed.map((x) => x.toMap()).toList()));
+    await p.setString(
+        _key(sessionId), jsonEncode(trimmed.map((x) => x.toMap()).toList()));
   }
 
   static Future<void> remove(String sessionId, String word) async {
     final all = await load(sessionId);
     all.removeWhere((x) => x.word.toLowerCase() == word.toLowerCase());
     final p = await SharedPreferences.getInstance();
-    await p.setString(_key(sessionId), jsonEncode(all.map((x) => x.toMap()).toList()));
+    await p.setString(
+        _key(sessionId), jsonEncode(all.map((x) => x.toMap()).toList()));
   }
 
   static Future<void> clear(String sessionId) async {

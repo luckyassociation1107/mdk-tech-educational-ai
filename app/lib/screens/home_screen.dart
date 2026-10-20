@@ -51,16 +51,29 @@ class _HomeScreenState extends State<HomeScreen> {
       _error = null;
     });
     try {
-      final raw = await widget.gateway.listSessions(brain: widget.settings.brain, brainServerUrl: widget.settings.brainServerUrl);
-      final books = raw.whereType<Map>().map(TextbookItem.fromMap).where((b) => b.sessionId.isNotEmpty).toList();
+      final raw = await widget.gateway.listSessions(
+          brain: widget.settings.brain,
+          brainServerUrl: widget.settings.brainServerUrl);
+      final books = raw
+          .whereType<Map>()
+          .map(TextbookItem.fromMap)
+          .where((b) => b.sessionId.isNotEmpty)
+          .toList();
       final prog = <String, double>{};
       for (final b in books) {
         try {
           final s = await widget.gateway.chapterSeries(b.sessionId,
-              pagesPerPart: widget.settings.pagesPerPart, brain: widget.settings.brain, brainServerUrl: widget.settings.brainServerUrl);
-          final parts = ((s['parts'] as List?) ?? const []).whereType<Map>().map(SeriesPart.fromMap).toList();
+              pagesPerPart: widget.settings.pagesPerPart,
+              brain: widget.settings.brain,
+              brainServerUrl: widget.settings.brainServerUrl);
+          final parts = ((s['parts'] as List?) ?? const [])
+              .whereType<Map>()
+              .map(SeriesPart.fromMap)
+              .toList();
           final localDone = await ProgressStore.completedParts(b.sessionId);
-          final done = parts.where((p) => p.completed || localDone.contains(p.part)).length;
+          final done = parts
+              .where((p) => p.completed || localDone.contains(p.part))
+              .length;
           prog[b.sessionId] = parts.isEmpty ? 0 : done / parts.length;
         } catch (_) {
           prog[b.sessionId] = 0;
@@ -95,7 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addTextbook() async {
-    final picked = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final picked = await FilePicker.platform
+        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     final path = picked?.files.single.path;
     if (path == null) return;
     setState(() => _adding = true);
@@ -116,13 +130,15 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       setState(() => _adding = false);
       await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: book),
+        builder: (_) => TextbookScreen(
+            gateway: widget.gateway, settings: widget.settings, book: book),
       ));
       _load();
     } catch (e) {
       if (!mounted) return;
       setState(() => _adding = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
     }
   }
 
@@ -143,7 +159,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _celebrating = true;
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    await showCelebration(context, title: 'Badge unlocked!', subtitle: '${badge.title} — ${badge.description}');
+    await showCelebration(context,
+        title: 'Badge unlocked!',
+        subtitle: '${badge.title} — ${badge.description}');
     _celebrating = false;
   }
 
@@ -156,7 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// "Continue learning" — the single most useful action on Home.
   Widget _continueCard() {
-    final next = _books.where((b) => (_progress[b.sessionId] ?? 0) < 1.0).toList();
+    final next =
+        _books.where((b) => (_progress[b.sessionId] ?? 0) < 1.0).toList();
     final book = next.isEmpty ? _books.first : next.first;
     final pct = ((_progress[book.sessionId] ?? 0) * 100).round();
     return GlassCard(
@@ -165,7 +184,8 @@ class _HomeScreenState extends State<HomeScreen> {
       alpha: 0.18,
       onTap: () async {
         await Navigator.of(context).push(PageTransition.route(
-          TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: book),
+          TextbookScreen(
+              gateway: widget.gateway, settings: widget.settings, book: book),
         ));
         _load();
       },
@@ -176,42 +196,69 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             gradient: AppColors.accentGradient,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: AppColors.indigo.withOpacity(0.45), blurRadius: 16, offset: const Offset(0, 6))],
+            boxShadow: [
+              BoxShadow(
+                  color: AppColors.indigo.withOpacity(0.45),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6))
+            ],
           ),
-          child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 26),
+          child: const Icon(Icons.menu_book_rounded,
+              color: Colors.white, size: 26),
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-             Text('CONTINUE LEARNING', style: TextStyle(color: AppColors.teal, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('CONTINUE LEARNING',
+                style: TextStyle(
+                    color: AppColors.teal,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1)),
             const SizedBox(height: 3),
-            Text(book.shortTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 15)),
+            Text(book.shortTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15)),
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(99),
               child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: (_progress[book.sessionId] ?? 0).clamp(0.0, 1.0).toDouble()),
+                tween: Tween(
+                    begin: 0,
+                    end: (_progress[book.sessionId] ?? 0)
+                        .clamp(0.0, 1.0)
+                        .toDouble()),
                 duration: const Duration(milliseconds: 900),
                 curve: Curves.easeOutCubic,
                 builder: (context, v, _) => LinearProgressIndicator(
                   value: v,
                   minHeight: 6,
                   backgroundColor: Colors.white12,
-                  valueColor:  AlwaysStoppedAnimation(AppColors.teal),
+                  valueColor: AlwaysStoppedAnimation(AppColors.teal),
                 ),
               ),
             ),
             const SizedBox(height: 5),
-            Text('$pct% completed', style:  TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+            Text('$pct% completed',
+                style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700)),
           ]),
         ),
         const SizedBox(width: 10),
         Container(
           width: 42,
           height: 42,
-          decoration:  BoxDecoration(shape: BoxShape.circle, gradient: AppColors.heroGradient),
-          child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 26),
+          decoration: BoxDecoration(
+              shape: BoxShape.circle, gradient: AppColors.heroGradient),
+          child: const Icon(Icons.play_arrow_rounded,
+              color: Colors.white, size: 26),
         ),
       ]),
     );
@@ -223,22 +270,35 @@ class _HomeScreenState extends State<HomeScreen> {
     final level = StudyStats.levelForXp(_xp);
     final intoLevel = _xp % 250;
     return GradientCard(
-      gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0F766E), Color(0xFF1E1B4B)]),
+      gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0F766E), Color(0xFF1E1B4B)]),
       padding: const EdgeInsets.all(18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(99)),
+            decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(99)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.local_fire_department_rounded, color: Color(0xFFFBBF24), size: 16),
+              const Icon(Icons.local_fire_department_rounded,
+                  color: Color(0xFFFBBF24), size: 16),
               const SizedBox(width: 4),
-              Text('$_streak day streak', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12)),
+              Text('$_streak day streak',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12)),
             ]),
           ),
           const Spacer(),
           Text('Level $level • ${StudyStats.levelName(level)}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12.5)),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12.5)),
         ]),
         const SizedBox(height: 12),
         Row(children: [
@@ -256,15 +316,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   valueColor: const AlwaysStoppedAnimation(Color(0xFF5EEAD4)),
                 ),
               ),
-              Text('${(frac * 100).round()}%', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+              Text('${(frac * 100).round()}%',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13)),
             ]),
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('$_scenesToday / $goal scenes today', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('$_scenesToday / $goal scenes today',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13)),
               const SizedBox(height: 2),
-              Text('$_minutesToday min studied • $_xp XP total', style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
+              Text('$_minutesToday min studied • $_xp XP total',
+                  style:
+                      const TextStyle(color: Colors.white70, fontSize: 11.5)),
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(99),
@@ -276,7 +347,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text('${250 - intoLevel} XP to level ${level + 1}', style: const TextStyle(color: Colors.white54, fontSize: 10.5)),
+              Text('${250 - intoLevel} XP to level ${level + 1}',
+                  style:
+                      const TextStyle(color: Colors.white54, fontSize: 10.5)),
             ]),
           ),
         ]),
@@ -289,15 +362,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   duration: const Duration(milliseconds: 350),
                   height: 26,
                   decoration: BoxDecoration(
-                    color: _week[i] ? const Color(0xFF5EEAD4) : Colors.white.withOpacity(0.14),
+                    color: _week[i]
+                        ? const Color(0xFF5EEAD4)
+                        : Colors.white.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(7),
                   ),
-                  child: _week[i] ? const Icon(Icons.check_rounded, size: 15, color: Color(0xFF0F172A)) : null,
+                  child: _week[i]
+                      ? const Icon(Icons.check_rounded,
+                          size: 15, color: Color(0xFF0F172A))
+                      : null,
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  i == 6 ? 'Today' : ['M', 'T', 'W', 'T', 'F', 'S', 'S'][(DateTime.now().weekday - 6 + i) % 7],
-                  style: const TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.w700),
+                  i == 6
+                      ? 'Today'
+                      : [
+                          'M',
+                          'T',
+                          'W',
+                          'T',
+                          'F',
+                          'S',
+                          'S'
+                        ][(DateTime.now().weekday - 6 + i) % 7],
+                  style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700),
                 ),
               ]),
             ),
@@ -312,9 +403,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final unlocked = _badges.where((b) => b.unlocked).length;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-         Text('Achievements', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 14.5)),
+        Text('Achievements',
+            style: TextStyle(
+                color: AppColors.text,
+                fontWeight: FontWeight.w900,
+                fontSize: 14.5)),
         const SizedBox(width: 8),
-        Text('$unlocked/${_badges.length}', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+        Text('$unlocked/${_badges.length}',
+            style: TextStyle(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w700,
+                fontSize: 12)),
       ]),
       const SizedBox(height: 8),
       SizedBox(
@@ -332,14 +431,24 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: b.unlocked ? color.withOpacity(0.12) : AppColors.card,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: b.unlocked ? color.withOpacity(0.5) : AppColors.stroke),
+                border: Border.all(
+                    color:
+                        b.unlocked ? color.withOpacity(0.5) : AppColors.stroke),
               ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(_badgeIcon(b.icon), color: b.unlocked ? color : AppColors.muted.withOpacity(0.55), size: 22),
+                Icon(_badgeIcon(b.icon),
+                    color:
+                        b.unlocked ? color : AppColors.muted.withOpacity(0.55),
+                    size: 22),
                 const SizedBox(height: 4),
                 Text(b.title,
-                    maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,
-                    style: TextStyle(color: b.unlocked ? AppColors.text : AppColors.muted, fontSize: 9.5, fontWeight: FontWeight.w800)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: b.unlocked ? AppColors.text : AppColors.muted,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800)),
               ]),
             );
           },
@@ -368,7 +477,11 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _adding ? null : _addTextbook,
         icon: _adding
-            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.upload_file_rounded),
         label: const Text('Add textbook'),
       ),
@@ -380,204 +493,314 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 96),
               children: [
-              Row(children: [
-                const GlowIcon(Icons.auto_stories_rounded, color: Color(0xFF6366F1), size: 46),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    GradientText('Textbook Classroom', size: 20),
-                    Text(_greeting(), style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
-                  ]),
+                Row(children: [
+                  const GlowIcon(Icons.auto_stories_rounded,
+                      color: Color(0xFF6366F1), size: 46),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GradientText('Textbook Classroom', size: 20),
+                          Text(_greeting(),
+                              style: TextStyle(
+                                  color: AppColors.muted, fontSize: 12.5)),
+                        ]),
+                  ),
+                  GlassCard(
+                    padding: const EdgeInsets.all(4),
+                    radius: 14,
+                    onTap: () async {
+                      await Navigator.of(context).push(PageTransition.route(
+                          SettingsScreen(settings: widget.settings)));
+                      _load();
+                    },
+                    child: Padding(
+                        padding: EdgeInsets.all(6),
+                        child: Icon(Icons.settings_rounded,
+                            color: AppColors.muted, size: 20)),
+                  ),
+                ]),
+                const SizedBox(height: 16),
+                const UpdateBanner(),
+                if (_books.isNotEmpty) _continueCard(),
+                if (_books.isNotEmpty) const SizedBox(height: 12),
+                _statsCard(),
+                const SizedBox(height: 14),
+                _badgesStrip(),
+                const SizedBox(height: 16),
+                GradientCard(
+                  gradient: AppColors.heroGradient,
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Your teacher is ready.',
+                            style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white)),
+                        const SizedBox(height: 6),
+                        const Text(
+                            'Upload a textbook PDF. The chapter is split into parts — watch, answer, and unlock the next class.',
+                            style:
+                                TextStyle(color: Colors.white70, height: 1.45)),
+                        const SizedBox(height: 16),
+                        Wrap(spacing: 8, runSpacing: 8, children: const [
+                          _HeroChip(
+                              icon: Icons.highlight_rounded,
+                              label: 'Live page highlights'),
+                          _HeroChip(
+                              icon: Icons.draw_rounded,
+                              label: 'Voice-synced writing'),
+                          _HeroChip(
+                              icon: Icons.lock_open_rounded,
+                              label: 'Part unlocking'),
+                          _HeroChip(
+                              icon: Icons.chat_rounded, label: 'Ask PDF chat'),
+                        ]),
+                      ]),
                 ),
-                GlassCard(
-                  padding: const EdgeInsets.all(4),
-                  radius: 14,
+                const SectionTitle('Academics'),
+                Row(children: [
+                  Expanded(
+                    child: GradientCard(
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => ExamsHubScreen(
+                            gateway: widget.gateway, settings: widget.settings),
+                      )),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.quiz_rounded,
+                                color: AppColors.teal, size: 26),
+                            SizedBox(height: 10),
+                            Text('Exams & Tests',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.text,
+                                    fontSize: 15)),
+                            SizedBox(height: 3),
+                            Text(
+                                'MCQ • Fill • Short\nTimed exams, doubt clearing',
+                                style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 11.5,
+                                    height: 1.45)),
+                          ]),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GradientCard(
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => ReportScreen(
+                            gateway: widget.gateway, settings: widget.settings),
+                      )),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.emoji_events_rounded,
+                                color: AppColors.amber, size: 26),
+                            SizedBox(height: 10),
+                            Text('Report Card',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.text,
+                                    fontSize: 15)),
+                            SizedBox(height: 3),
+                            Text(
+                                'Marks • Grades • Rank & level\nWeak-part revision plan',
+                                style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 11.5,
+                                    height: 1.45)),
+                          ]),
+                    ),
+                  ),
+                ]),
+                const SectionTitle('Today'),
+                GradientCard(
                   onTap: () async {
-                    await Navigator.of(context).push(PageTransition.route(SettingsScreen(settings: widget.settings)));
+                    await Navigator.of(context).push(PageTransition.route(
+                      DailyChallengeScreen(
+                          gateway: widget.gateway,
+                          settings: widget.settings,
+                          books: _books),
+                    ));
                     _load();
                   },
-                  child:  Padding(padding: EdgeInsets.all(6), child: Icon(Icons.settings_rounded, color: AppColors.muted, size: 20)),
-                ),
-              ]),
-              const SizedBox(height: 16),
-              const UpdateBanner(),
-              if (_books.isNotEmpty) _continueCard(),
-              if (_books.isNotEmpty) const SizedBox(height: 12),
-              _statsCard(),
-              const SizedBox(height: 14),
-              _badgesStrip(),
-              const SizedBox(height: 16),
-              GradientCard(
-                gradient: AppColors.heroGradient,
-                padding: const EdgeInsets.all(22),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Your teacher is ready.', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
-                  const SizedBox(height: 6),
-                  const Text('Upload a textbook PDF. The chapter is split into parts — watch, answer, and unlock the next class.',
-                      style: TextStyle(color: Colors.white70, height: 1.45)),
-                  const SizedBox(height: 16),
-                  Wrap(spacing: 8, runSpacing: 8, children: const [
-                    _HeroChip(icon: Icons.highlight_rounded, label: 'Live page highlights'),
-                    _HeroChip(icon: Icons.draw_rounded, label: 'Voice-synced writing'),
-                    _HeroChip(icon: Icons.lock_open_rounded, label: 'Part unlocking'),
-                    _HeroChip(icon: Icons.chat_rounded, label: 'Ask PDF chat'),
+                  padding: const EdgeInsets.all(16),
+                  child: Row(children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                          color: AppColors.amber.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.bolt_rounded,
+                          color: AppColors.amber, size: 26),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Daily challenge',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.text,
+                                    fontSize: 14.5)),
+                            const SizedBox(height: 3),
+                            Text(
+                                '5 mixed questions from your books • up to +60 XP',
+                                style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 11.5,
+                                    height: 1.4)),
+                          ]),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: AppColors.muted),
                   ]),
-                ]),
-              ),
-              const SectionTitle('Academics'),
-              Row(children: [
-                Expanded(
-                  child: GradientCard(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => ExamsHubScreen(gateway: widget.gateway, settings: widget.settings),
-                    )),
-                    padding: const EdgeInsets.all(16),
-                    child:  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Icon(Icons.quiz_rounded, color: AppColors.teal, size: 26),
-                      SizedBox(height: 10),
-                      Text('Exams & Tests', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
-                      SizedBox(height: 3),
-                      Text('MCQ • Fill • Short\nTimed exams, doubt clearing', style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.45)),
-                    ]),
-                  ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GradientCard(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => ReportScreen(gateway: widget.gateway, settings: widget.settings),
-                    )),
-                    padding: const EdgeInsets.all(16),
-                    child:  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Icon(Icons.emoji_events_rounded, color: AppColors.amber, size: 26),
-                      SizedBox(height: 10),
-                      Text('Report Card', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
-                      SizedBox(height: 3),
-                      Text('Marks • Grades • Rank & level\nWeak-part revision plan', style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.45)),
-                    ]),
-                  ),
+                const SectionTitle('Smart revision'),
+                GradientCard(
+                  onTap: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => RevisionScreen(
+                          gateway: widget.gateway, settings: widget.settings),
+                    ));
+                    _load();
+                  },
+                  padding: const EdgeInsets.all(16),
+                  child: Row(children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                          color: AppColors.red.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.auto_fix_high_rounded,
+                          color: AppColors.red, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Revise weak topics',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.text,
+                                    fontSize: 14.5)),
+                            SizedBox(height: 3),
+                            Text(
+                                'Parts under 60% get a re-watch + flashcard plan from your own marks',
+                                style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 11.5,
+                                    height: 1.4)),
+                          ]),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                  ]),
                 ),
-              ]),
-              const SectionTitle('Today'),
-              GradientCard(
-                onTap: () async {
-                  await Navigator.of(context).push(PageTransition.route(
-                    DailyChallengeScreen(gateway: widget.gateway, settings: widget.settings, books: _books),
-                  ));
-                  _load();
-                },
-                padding: const EdgeInsets.all(16),
-                child: Row(children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.16), borderRadius: BorderRadius.circular(12)),
-                    child: Icon(Icons.bolt_rounded, color: AppColors.amber, size: 26),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Daily challenge', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 14.5)),
-                      const SizedBox(height: 3),
-                      Text('5 mixed questions from your books • up to +60 XP',
-                          style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.4)),
-                    ]),
-                  ),
-                  Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-                ]),
-              ),
-              const SectionTitle('Smart revision'),
-              GradientCard(
-                onTap: () async {
-                  await Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => RevisionScreen(gateway: widget.gateway, settings: widget.settings),
-                  ));
-                  _load();
-                },
-                padding: const EdgeInsets.all(16),
-                child: Row(children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(color: AppColors.red.withOpacity(0.14), borderRadius: BorderRadius.circular(12)),
-                    child:  Icon(Icons.auto_fix_high_rounded, color: AppColors.red, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                   Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Revise weak topics', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 14.5)),
-                      SizedBox(height: 3),
-                      Text('Parts under 60% get a re-watch + flashcard plan from your own marks',
-                          style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.4)),
-                    ]),
-                  ),
-                   Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-                ]),
-              ),
-              const SectionTitle('My textbooks'),
-              if (_loading)
-                const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))
-              else if (_error != null)
-                EmptyState(icon: Icons.cloud_off_rounded, title: 'Engine not reachable', message: _error!, buttonLabel: 'Retry', onButton: _load)
-              else if (_books.isEmpty)
-                const EmptyState(
-                  icon: Icons.menu_book_rounded,
-                  title: 'No textbooks yet',
-                  message: 'Tap “Add textbook”, choose a chapter PDF, and your first class series will be created.',
-                )
-              else
-                ..._books.map((b) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: GradientCard(
-                        onTap: () async {
-                          await Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => TextbookScreen(gateway: widget.gateway, settings: widget.settings, book: b),
-                          ));
-                          _load();
-                        },
-                        child: Row(children: [
-                          Container(
-                            width: 52,
-                            height: 64,
-                            decoration: BoxDecoration(gradient: AppColors.accentGradient, borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 26),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(b.shortTitle, maxLines: 2, overflow: TextOverflow.ellipsis,
-                                  style:  TextStyle(fontWeight: FontWeight.w800, color: AppColors.text, fontSize: 15)),
-                              const SizedBox(height: 4),
-                              Text('${b.pageCount} pages • ${b.state}', style:  TextStyle(color: AppColors.muted, fontSize: 12.5)),
-                              const SizedBox(height: 8),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(99),
-                                child: LinearProgressIndicator(
-                                  value: _progress[b.sessionId] ?? 0,
-                                  minHeight: 6,
-                                  backgroundColor: AppColors.stroke,
-                                  valueColor:  AlwaysStoppedAnimation(AppColors.teal),
-                                ),
-                              ),
-                            ]),
-                          ),
-                          const SizedBox(width: 12),
-                          ProgressRing(value: _progress[b.sessionId] ?? 0, size: 52),
-                        ]),
-                      ),
-                    )),
-              const SizedBox(height: 10),
-               GradientCard(
-                child: Row(children: [
-                  Icon(Icons.phone_android_rounded, color: AppColors.teal),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text('Videos are rendered on this phone. Only the AI brain may use the internet, depending on your Settings.',
-                        style: TextStyle(color: AppColors.muted, height: 1.45, fontSize: 13)),
-                  ),
-                ]),
-              ),
-            ],
+                const SectionTitle('My textbooks'),
+                if (_loading)
+                  const Padding(
+                      padding: EdgeInsets.all(30),
+                      child: Center(child: CircularProgressIndicator()))
+                else if (_error != null)
+                  EmptyState(
+                      icon: Icons.cloud_off_rounded,
+                      title: 'Engine not reachable',
+                      message: _error!,
+                      buttonLabel: 'Retry',
+                      onButton: _load)
+                else if (_books.isEmpty)
+                  const EmptyState(
+                    icon: Icons.menu_book_rounded,
+                    title: 'No textbooks yet',
+                    message:
+                        'Tap “Add textbook”, choose a chapter PDF, and your first class series will be created.',
+                  )
+                else
+                  ..._books.map((b) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: GradientCard(
+                          onTap: () async {
+                            await Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => TextbookScreen(
+                                  gateway: widget.gateway,
+                                  settings: widget.settings,
+                                  book: b),
+                            ));
+                            _load();
+                          },
+                          child: Row(children: [
+                            Container(
+                              width: 52,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                  gradient: AppColors.accentGradient,
+                                  borderRadius: BorderRadius.circular(12)),
+                              child: const Icon(Icons.menu_book_rounded,
+                                  color: Colors.white, size: 26),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(b.shortTitle,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.text,
+                                            fontSize: 15)),
+                                    const SizedBox(height: 4),
+                                    Text('${b.pageCount} pages • ${b.state}',
+                                        style: TextStyle(
+                                            color: AppColors.muted,
+                                            fontSize: 12.5)),
+                                    const SizedBox(height: 8),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(99),
+                                      child: LinearProgressIndicator(
+                                        value: _progress[b.sessionId] ?? 0,
+                                        minHeight: 6,
+                                        backgroundColor: AppColors.stroke,
+                                        valueColor: AlwaysStoppedAnimation(
+                                            AppColors.teal),
+                                      ),
+                                    ),
+                                  ]),
+                            ),
+                            const SizedBox(width: 12),
+                            ProgressRing(
+                                value: _progress[b.sessionId] ?? 0, size: 52),
+                          ]),
+                        ),
+                      )),
+                const SizedBox(height: 10),
+                GradientCard(
+                  child: Row(children: [
+                    Icon(Icons.phone_android_rounded, color: AppColors.teal),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                          'Videos are rendered on this phone. Only the AI brain may use the internet, depending on your Settings.',
+                          style: TextStyle(
+                              color: AppColors.muted,
+                              height: 1.45,
+                              fontSize: 13)),
+                    ),
+                  ]),
+                ),
+              ],
             ),
           ),
         ),
@@ -594,11 +817,17 @@ class _HeroChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
+        decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.16),
+            borderRadius: BorderRadius.circular(99)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 14, color: Colors.white),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700)),
         ]),
       );
 }

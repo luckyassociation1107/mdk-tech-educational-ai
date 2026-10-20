@@ -18,7 +18,11 @@ class ExamScreen extends StatefulWidget {
   /// the caller marks the part complete so the next class unlocks.
   final Future<void> Function()? onPassed;
 
-  const ExamScreen({super.key, required this.config, required this.questions, this.onPassed});
+  const ExamScreen(
+      {super.key,
+      required this.config,
+      required this.questions,
+      this.onPassed});
 
   @override
   State<ExamScreen> createState() => _ExamScreenState();
@@ -37,7 +41,8 @@ class _ExamScreenState extends State<ExamScreen> {
     super.initState();
     for (var i = 0; i < widget.questions.length; i++) {
       if (widget.questions[i].type != QuestionType.mcq) {
-        _controllers[i] = TextEditingController()..addListener(() => _answers[i] = _controllers[i]!.text);
+        _controllers[i] = TextEditingController()
+          ..addListener(() => _answers[i] = _controllers[i]!.text);
       }
     }
     if (widget.config.timed) {
@@ -68,7 +73,8 @@ class _ExamScreenState extends State<ExamScreen> {
     return '$m:$s';
   }
 
-  int get _answeredCount => _answers.values.where((v) => v.trim().isNotEmpty).length;
+  int get _answeredCount =>
+      _answers.values.where((v) => v.trim().isNotEmpty).length;
 
   Future<void> _submit({bool auto = false}) async {
     if (_submitting) return;
@@ -78,14 +84,22 @@ class _ExamScreenState extends State<ExamScreen> {
         context: context,
         builder: (_) => AlertDialog(
           backgroundColor: AppColors.card,
-          title:  Text('Submit test?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
+          title: Text('Submit test?',
+              style: TextStyle(
+                  color: AppColors.text, fontWeight: FontWeight.w800)),
           content: Text(
-            unanswered > 0 ? 'You still have $unanswered unanswered question(s). Submit anyway?' : 'You answered everything. Submit for marking?',
-            style:  TextStyle(color: AppColors.muted),
+            unanswered > 0
+                ? 'You still have $unanswered unanswered question(s). Submit anyway?'
+                : 'You answered everything. Submit for marking?',
+            style: TextStyle(color: AppColors.muted),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Keep writing')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Submit')),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep writing')),
+            FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Submit')),
           ],
         ),
       );
@@ -103,7 +117,8 @@ class _ExamScreenState extends State<ExamScreen> {
       final q = widget.questions[i];
       final given = (_answers[i] ?? '').trim();
       final got = QuestionBank.grade(q, given);
-      if (q.type == QuestionType.mcq && given.isNotEmpty && got == 0) wrongMcq++;
+      if (q.type == QuestionType.mcq && given.isNotEmpty && got == 0)
+        wrongMcq++;
       earned += got;
       total += q.marks;
       reviews.add(ReviewItem(
@@ -139,7 +154,9 @@ class _ExamScreenState extends State<ExamScreen> {
     }
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(
-      builder: (_) => ExamResultScreen(result: result, negativeApplied: widget.config.negativeMarking ? wrongMcq : 0),
+      builder: (_) => ExamResultScreen(
+          result: result,
+          negativeApplied: widget.config.negativeMarking ? wrongMcq : 0),
     ));
   }
 
@@ -155,11 +172,19 @@ class _ExamScreenState extends State<ExamScreen> {
           context: context,
           builder: (_) => AlertDialog(
             backgroundColor: AppColors.card,
-            title:  Text('Leave this test?', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800)),
-            content:  Text('Your answers will be lost and this attempt will not be marked.', style: TextStyle(color: AppColors.muted)),
+            title: Text('Leave this test?',
+                style: TextStyle(
+                    color: AppColors.text, fontWeight: FontWeight.w800)),
+            content: Text(
+                'Your answers will be lost and this attempt will not be marked.',
+                style: TextStyle(color: AppColors.muted)),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Stay')),
-              FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Leave')),
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Stay')),
+              FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Leave')),
             ],
           ),
         );
@@ -169,24 +194,39 @@ class _ExamScreenState extends State<ExamScreen> {
         backgroundColor: AppColors.bg,
         appBar: AppBar(
           backgroundColor: AppColors.bg,
-          title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(widget.config.title, style:  TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.text)),
-            Text(widget.config.partLabel, style:  TextStyle(fontSize: 11.5, color: AppColors.muted)),
+          title:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(widget.config.title,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.text)),
+            Text(widget.config.partLabel,
+                style: TextStyle(fontSize: 11.5, color: AppColors.muted)),
           ]),
           actions: [
             if (widget.config.timed)
               Container(
                 margin: const EdgeInsets.only(right: 14),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (lowTime ? AppColors.red : AppColors.teal).withOpacity(0.15),
+                  color: (lowTime ? AppColors.red : AppColors.teal)
+                      .withOpacity(0.15),
                   borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: (lowTime ? AppColors.red : AppColors.teal).withOpacity(0.55)),
+                  border: Border.all(
+                      color: (lowTime ? AppColors.red : AppColors.teal)
+                          .withOpacity(0.55)),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.timer_rounded, size: 16, color: lowTime ? AppColors.red : AppColors.teal),
+                  Icon(Icons.timer_rounded,
+                      size: 16,
+                      color: lowTime ? AppColors.red : AppColors.teal),
                   const SizedBox(width: 5),
-                  Text(_clock, style: TextStyle(fontWeight: FontWeight.w900, color: lowTime ? AppColors.red : AppColors.teal)),
+                  Text(_clock,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: lowTime ? AppColors.red : AppColors.teal)),
                 ]),
               ),
           ],
@@ -196,7 +236,7 @@ class _ExamScreenState extends State<ExamScreen> {
             value: total == 0 ? 0 : _answeredCount / total,
             minHeight: 5,
             backgroundColor: AppColors.stroke,
-            valueColor:  AlwaysStoppedAnimation(AppColors.teal),
+            valueColor: AlwaysStoppedAnimation(AppColors.teal),
           ),
           // Question palette
           SizedBox(
@@ -216,78 +256,139 @@ class _ExamScreenState extends State<ExamScreen> {
                     width: 36,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: cur ? AppColors.indigo : answered ? AppColors.teal.withOpacity(0.25) : AppColors.card,
+                      color: cur
+                          ? AppColors.indigo
+                          : answered
+                              ? AppColors.teal.withOpacity(0.25)
+                              : AppColors.card,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cur ? AppColors.indigo : answered ? AppColors.teal : AppColors.stroke),
+                      border: Border.all(
+                          color: cur
+                              ? AppColors.indigo
+                              : answered
+                                  ? AppColors.teal
+                                  : AppColors.stroke),
                     ),
                     child: Text('${i + 1}',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: cur || answered ? Colors.white : AppColors.muted)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                            color: cur || answered
+                                ? Colors.white
+                                : AppColors.muted)),
                   ),
                 );
               },
             ),
           ),
           Expanded(
-            child: ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 18), children: [
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(color: AppColors.violet.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-                  child: Text(q.type.label, style:  TextStyle(color: AppColors.violet, fontSize: 11.5, fontWeight: FontWeight.w800)),
-                ),
-                const SizedBox(width: 8),
-                Text('Question ${_index + 1} of $total', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
-                const Spacer(),
-                Text('${q.marks} mark${q.marks == 1 ? '' : 's'}', style:  TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 12.5)),
-              ]),
-              const SizedBox(height: 16),
-              Text(q.prompt, style:  TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700, color: AppColors.text, height: 1.5)),
-              const SizedBox(height: 20),
-              if (q.type == QuestionType.mcq)
-                ...q.options.map((o) {
-                  final sel = _answers[_index] == o;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () => setState(() => _answers[_index] = o),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                        decoration: BoxDecoration(
-                          color: sel ? AppColors.indigo.withOpacity(0.28) : AppColors.card,
+            child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+                children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                          color: AppColors.violet.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(99)),
+                      child: Text(q.type.label,
+                          style: TextStyle(
+                              color: AppColors.violet,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800)),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Question ${_index + 1} of $total',
+                        style: TextStyle(
+                            color: AppColors.muted,
+                            fontWeight: FontWeight.w700)),
+                    const Spacer(),
+                    Text('${q.marks} mark${q.marks == 1 ? '' : 's'}',
+                        style: TextStyle(
+                            color: AppColors.amber,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12.5)),
+                  ]),
+                  const SizedBox(height: 16),
+                  Text(q.prompt,
+                      style: TextStyle(
+                          fontSize: 17.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.text,
+                          height: 1.5)),
+                  const SizedBox(height: 20),
+                  if (q.type == QuestionType.mcq)
+                    ...q.options.map((o) {
+                      final sel = _answers[_index] == o;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: sel ? AppColors.indigo : AppColors.stroke, width: sel ? 1.6 : 1),
+                          onTap: () => setState(() => _answers[_index] = o),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 15),
+                            decoration: BoxDecoration(
+                              color: sel
+                                  ? AppColors.indigo.withOpacity(0.28)
+                                  : AppColors.card,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color:
+                                      sel ? AppColors.indigo : AppColors.stroke,
+                                  width: sel ? 1.6 : 1),
+                            ),
+                            child: Row(children: [
+                              Icon(
+                                  sel
+                                      ? Icons.radio_button_checked_rounded
+                                      : Icons.radio_button_off_rounded,
+                                  color:
+                                      sel ? AppColors.indigo : AppColors.muted,
+                                  size: 21),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                  child: Text(o,
+                                      style: TextStyle(
+                                          color: AppColors.text,
+                                          fontWeight: sel
+                                              ? FontWeight.w800
+                                              : FontWeight.w500,
+                                          fontSize: 15))),
+                            ]),
+                          ),
                         ),
-                        child: Row(children: [
-                          Icon(sel ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                              color: sel ? AppColors.indigo : AppColors.muted, size: 21),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(o, style: TextStyle(color: AppColors.text, fontWeight: sel ? FontWeight.w800 : FontWeight.w500, fontSize: 15))),
-                        ]),
+                      );
+                    })
+                  else
+                    TextField(
+                      controller: _controllers[_index],
+                      maxLines: q.type == QuestionType.short ? 6 : 1,
+                      style: TextStyle(color: AppColors.text),
+                      decoration: InputDecoration(
+                        hintText: q.type == QuestionType.fill
+                            ? 'Type the missing term…'
+                            : 'Write your answer here…',
                       ),
                     ),
-                  );
-                })
-              else
-                TextField(
-                  controller: _controllers[_index],
-                  maxLines: q.type == QuestionType.short ? 6 : 1,
-                  style:  TextStyle(color: AppColors.text),
-                  decoration: InputDecoration(
-                    hintText: q.type == QuestionType.fill ? 'Type the missing term…' : 'Write your answer here…',
-                  ),
-                ),
-              if (q.type == QuestionType.short)
-                 Padding(
-                  padding: EdgeInsets.only(top: 10),
-                  child: Text('Short answers are marked by how many key ideas from the textbook point your answer covers. The model answer is shown after submission.',
-                      style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45)),
-                ),
-            ]),
+                  if (q.type == QuestionType.short)
+                    Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: Text(
+                          'Short answers are marked by how many key ideas from the textbook point your answer covers. The model answer is shown after submission.',
+                          style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                              height: 1.45)),
+                    ),
+                ]),
           ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-            decoration:  BoxDecoration(color: AppColors.bg2, border: Border(top: BorderSide(color: AppColors.stroke))),
+            decoration: BoxDecoration(
+                color: AppColors.bg2,
+                border: Border(top: BorderSide(color: AppColors.stroke))),
             child: Row(children: [
               OutlinedButton(
                 onPressed: _index > 0 ? () => setState(() => _index--) : null,
@@ -306,10 +407,18 @@ class _ExamScreenState extends State<ExamScreen> {
                   child: FilledButton.icon(
                     onPressed: _submitting ? null : () => _submit(),
                     icon: _submitting
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.assignment_turned_in_rounded, size: 19),
-                    label: Text('Submit test ($_answeredCount/$total answered)'),
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.teal, foregroundColor: const Color(0xFF06231F)),
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.assignment_turned_in_rounded,
+                            size: 19),
+                    label:
+                        Text('Submit test ($_answeredCount/$total answered)'),
+                    style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.teal,
+                        foregroundColor: const Color(0xFF06231F)),
                   ),
                 ),
             ]),

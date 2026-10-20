@@ -8,11 +8,54 @@ import 'academic_models.dart';
 /// study questions that point the student back at their own notes.
 class QuestionBank {
   static const _stop = {
-    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'of', 'to', 'in', 'on',
-    'and', 'or', 'for', 'with', 'that', 'this', 'from', 'by', 'as', 'it',
-    'its', 'be', 'can', 'we', 'you', 'they', 'them', 'then', 'than', 'so',
-    'such', 'into', 'over', 'under', 'between', 'called', 'known', 'given',
-    'when', 'where', 'which', 'what', 'how', 'all', 'any', 'each', 'every',
+    'the',
+    'a',
+    'an',
+    'is',
+    'are',
+    'was',
+    'were',
+    'of',
+    'to',
+    'in',
+    'on',
+    'and',
+    'or',
+    'for',
+    'with',
+    'that',
+    'this',
+    'from',
+    'by',
+    'as',
+    'it',
+    'its',
+    'be',
+    'can',
+    'we',
+    'you',
+    'they',
+    'them',
+    'then',
+    'than',
+    'so',
+    'such',
+    'into',
+    'over',
+    'under',
+    'between',
+    'called',
+    'known',
+    'given',
+    'when',
+    'where',
+    'which',
+    'what',
+    'how',
+    'all',
+    'any',
+    'each',
+    'every',
   };
 
   static List<String> _sentences(List<String> keyPoints) {
@@ -29,11 +72,15 @@ class QuestionBank {
   /// The key term of a sentence: "A set is …" → "set";
   /// "The Empty Set contains …" → "Empty Set"; else longest real word.
   static String? _keyTerm(String sentence) {
-    final m = RegExp(r"^(.{2,40}?)\s+(?:is|are|was|were|means|refers to)\b", caseSensitive: false).firstMatch(sentence);
+    final m = RegExp(r"^(.{2,40}?)\s+(?:is|are|was|were|means|refers to)\b",
+            caseSensitive: false)
+        .firstMatch(sentence);
     if (m != null) {
       var head = m.group(1)!.trim();
-      head = head.replaceAll(RegExp(r'^(a|an|the)\s+', caseSensitive: false), '');
-      final words = head.split(RegExp(r'\s+')).where((w) => w.length > 1).toList();
+      head =
+          head.replaceAll(RegExp(r'^(a|an|the)\s+', caseSensitive: false), '');
+      final words =
+          head.split(RegExp(r'\s+')).where((w) => w.length > 1).toList();
       if (words.isNotEmpty) {
         // "union of two sets" -> "union"; "roster form of a set" -> "roster form"
         var seg = words;
@@ -43,12 +90,15 @@ class QuestionBank {
         if (term.length >= 2 && term.length <= 34) return term;
       }
     }
-    final cap = RegExp(r'\b[A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+)+\b').firstMatch(sentence);
+    final cap =
+        RegExp(r'\b[A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+)+\b').firstMatch(sentence);
     if (cap != null && cap.start > 0) return cap.group(0);
     String? best;
     for (final w in sentence.split(RegExp(r'[^A-Za-z]+'))) {
       final lw = w.toLowerCase();
-      if (w.length >= 6 && !_stop.contains(lw) && (best == null || w.length > best.length)) best = w;
+      if (w.length >= 6 &&
+          !_stop.contains(lw) &&
+          (best == null || w.length > best.length)) best = w;
     }
     return best;
   }
@@ -76,7 +126,8 @@ class QuestionBank {
       for (var i = 0; i < count; i++) {
         questions.add(ExamQuestion(
           type: QuestionType.short,
-          prompt: 'Write the main points, definitions and examples covered in $partLabel of "$bookTitle".',
+          prompt:
+              'Write the main points, definitions and examples covered in $partLabel of "$bookTitle".',
           answer: 'Main points of $partLabel',
           explanation:
               'Compare with your notes for $partLabel: your answer should cover the definitions, worked examples and exercise answers from those pages. Generate/watch the class for this part to get auto-graded MCQ and fill-in questions from its key points.',
@@ -95,7 +146,8 @@ class QuestionBank {
         if (!terms.any((x) => x.toLowerCase() == t.toLowerCase())) terms.add(t);
       }
     }
-    final usable = sentences.where((s) => bySentence.containsKey(s)).toList()..shuffle(rng);
+    final usable = sentences.where((s) => bySentence.containsKey(s)).toList()
+      ..shuffle(rng);
     final typeList = types.toList();
 
     final usedPrompts = <String>{};
@@ -111,10 +163,14 @@ class QuestionBank {
       }
       switch (type) {
         case QuestionType.mcq:
-          final distractors = terms.where((t) => t.toLowerCase() != term.toLowerCase()).toList()..shuffle(rng);
+          final distractors = terms
+              .where((t) => t.toLowerCase() != term.toLowerCase())
+              .toList()
+            ..shuffle(rng);
           final opts = <String>[term, ...distractors.take(3)];
           while (opts.length < 4) {
-            opts.add(opts.length == 1 ? 'None of the above' : 'All of the above');
+            opts.add(
+                opts.length == 1 ? 'None of the above' : 'All of the above');
           }
           opts.shuffle(rng);
           questions.add(ExamQuestion(
@@ -136,7 +192,8 @@ class QuestionBank {
         case QuestionType.short:
           questions.add(ExamQuestion(
             type: type,
-            prompt: 'Explain in your own words: what is "$term"? (from $partLabel)',
+            prompt:
+                'Explain in your own words: what is "$term"? (from $partLabel)',
             answer: term,
             explanation: s,
             marks: type.defaultMarks,
@@ -148,8 +205,11 @@ class QuestionBank {
     return questions;
   }
 
-  static String _norm(String s) =>
-      s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  static String _norm(String s) => s
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
   static Set<String> _keywords(String text) {
     return _norm(text)
@@ -169,7 +229,8 @@ class QuestionBank {
       case QuestionType.fill:
         final a = _norm(q.answer);
         if (g == a) return q.marks.toDouble();
-        if (a.length >= 4 && (g.contains(a) || a.contains(g))) return q.marks.toDouble();
+        if (a.length >= 4 && (g.contains(a) || a.contains(g)))
+          return q.marks.toDouble();
         return 0;
       case QuestionType.short:
         final keys = {..._keywords(q.explanation), ..._keywords(q.answer)};

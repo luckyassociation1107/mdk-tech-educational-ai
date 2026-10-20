@@ -21,8 +21,10 @@ class EngineGateway {
         host.startsWith('192.168.') ||
         host.startsWith('10.') ||
         RegExp(r'^172\.(1[6-9]|2\d|3[01])\.').hasMatch(host);
-    if (uri == null || (uri.scheme != 'https' && !(uri.scheme == 'http' && isLan))) {
-      throw StateError('The online brain needs an HTTPS server URL (plain HTTP is allowed only on your local network).');
+    if (uri == null ||
+        (uri.scheme != 'https' && !(uri.scheme == 'http' && isLan))) {
+      throw StateError(
+          'The online brain needs an HTTPS server URL (plain HTTP is allowed only on your local network).');
     }
   }
 
@@ -34,7 +36,12 @@ class EngineGateway {
     String brainServerUrl = '',
   }) {
     guardBrainUrl(brain, brainServerUrl);
-    return DartEngine.createSession(pdfPath: pdfPath, language: language, grade: grade, brain: brain, brainServerUrl: brainServerUrl);
+    return DartEngine.createSession(
+        pdfPath: pdfPath,
+        language: language,
+        grade: grade,
+        brain: brain,
+        brainServerUrl: brainServerUrl);
   }
 
   Future<Map<String, dynamic>> generateVideo({
@@ -50,7 +57,11 @@ class EngineGateway {
     String brain = 'offline',
     String brainServerUrl = '',
   }) =>
-      DartEngine.generateLesson(sessionId: sessionId, question: question, pageRange: pageRange, partLabel: partLabel);
+      DartEngine.generateLesson(
+          sessionId: sessionId,
+          question: question,
+          pageRange: pageRange,
+          partLabel: partLabel);
 
   /// Chat with the textbook inside the SAME session — answer only.
   Future<Map<String, dynamic>> askChat({
@@ -61,29 +72,42 @@ class EngineGateway {
   }) =>
       DartEngine.askChat(sessionId, question);
 
-  Future<List<dynamic>> sessionVideos(String sessionId, {String brain = 'offline', String brainServerUrl = ''}) =>
+  Future<List<dynamic>> sessionVideos(String sessionId,
+          {String brain = 'offline', String brainServerUrl = ''}) =>
       DartEngine.sessionLessons(sessionId);
 
   /// Whole-chapter series: parts split by real pages, locked/unlocked.
-  Future<Map<String, dynamic>> chapterSeries(String sessionId, {int pagesPerPart = 6, String brain = 'offline', String brainServerUrl = ''}) =>
+  Future<Map<String, dynamic>> chapterSeries(String sessionId,
+          {int pagesPerPart = 6,
+          String brain = 'offline',
+          String brainServerUrl = ''}) =>
       DartEngine.chapterSeries(sessionId, pagesPerPart: pagesPerPart);
 
   /// Finishing a part unlocks the next part in the series.
-  Future<Map<String, dynamic>> completePart(String sessionId, int part, {String brain = 'offline', String brainServerUrl = ''}) =>
+  Future<Map<String, dynamic>> completePart(String sessionId, int part,
+          {String brain = 'offline', String brainServerUrl = ''}) =>
       DartEngine.completePart(sessionId, part);
 
-  Future<Map<String, dynamic>> disconnect(String sessionId) => DartEngine.disconnect(sessionId);
+  Future<Map<String, dynamic>> disconnect(String sessionId) =>
+      DartEngine.disconnect(sessionId);
 
   // Website-brain results, stored locally per session (see DartEngine).
-  Future<String> sessionPdfPath(String sessionId) => DartEngine.sessionPdfPath(sessionId);
-  Future<Map<String, dynamic>> loadBrainData(String sessionId) => DartEngine.loadBrainData(sessionId);
-  Future<void> saveBrainSummary(String sessionId, String summary, int level) => DartEngine.saveBrainSummary(sessionId, summary, level);
-  Future<void> addBrainQa(String sessionId, String question, String answer) => DartEngine.addBrainQa(sessionId, question, answer);
+  Future<String> sessionPdfPath(String sessionId) =>
+      DartEngine.sessionPdfPath(sessionId);
+  Future<Map<String, dynamic>> loadBrainData(String sessionId) =>
+      DartEngine.loadBrainData(sessionId);
+  Future<void> saveBrainSummary(String sessionId, String summary, int level) =>
+      DartEngine.saveBrainSummary(sessionId, summary, level);
+  Future<void> addBrainQa(String sessionId, String question, String answer) =>
+      DartEngine.addBrainQa(sessionId, question, answer);
 
-  Future<List<dynamic>> listSessions({String brain = 'offline', String brainServerUrl = ''}) => DartEngine.listSessions();
+  Future<List<dynamic>> listSessions(
+          {String brain = 'offline', String brainServerUrl = ''}) =>
+      DartEngine.listSessions();
 
   /// Check Android TTS voice availability, e.g. 'te-IN' / 'en-IN'.
-  Future<Map<String, dynamic>> checkTts(String languageCode) => DartEngine.checkTts(languageCode);
+  Future<Map<String, dynamic>> checkTts(String languageCode) =>
+      DartEngine.checkTts(languageCode);
 }
 
 /// Generation modes from the spec (§8).

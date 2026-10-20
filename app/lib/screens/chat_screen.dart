@@ -10,7 +10,11 @@ class ChatScreen extends StatefulWidget {
   final EngineGateway gateway;
   final AppSettings settings;
   final TextbookItem book;
-  const ChatScreen({super.key, required this.gateway, required this.settings, required this.book});
+  const ChatScreen(
+      {super.key,
+      required this.gateway,
+      required this.settings,
+      required this.book});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -60,7 +64,8 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _msgs.add(ChatMsg('assistant', 'I could not answer that right now: $e'));
+        _msgs
+            .add(ChatMsg('assistant', 'I could not answer that right now: $e'));
         _busy = false;
       });
     }
@@ -69,7 +74,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _jump() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients) _scroll.animateTo(_scroll.position.maxScrollExtent, duration: const Duration(milliseconds: 280), curve: Curves.easeOut);
+      if (_scroll.hasClients)
+        _scroll.animateTo(_scroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 280), curve: Curves.easeOut);
     });
   }
 
@@ -84,7 +91,10 @@ class _ChatScreenState extends State<ChatScreen> {
               tooltip: 'AI Brain (website)',
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => BrainWebViewScreen(
-                    gateway: widget.gateway, settings: widget.settings, sessionId: widget.book.sessionId, bookTitle: widget.book.shortTitle),
+                    gateway: widget.gateway,
+                    settings: widget.settings,
+                    sessionId: widget.book.sessionId,
+                    bookTitle: widget.book.shortTitle),
               )),
               icon: const Icon(Icons.psychology_rounded),
             ),
@@ -93,7 +103,8 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Ask PDF', style: TextStyle(fontWeight: FontWeight.w900)),
-          Text(widget.book.shortTitle, style:  TextStyle(fontSize: 12, color: AppColors.muted)),
+          Text(widget.book.shortTitle,
+              style: TextStyle(fontSize: 12, color: AppColors.muted)),
         ]),
       ),
       body: Column(children: [
@@ -104,25 +115,32 @@ class _ChatScreenState extends State<ChatScreen> {
             itemCount: _msgs.length + (_busy ? 1 : 0),
             itemBuilder: (_, i) {
               if (i >= _msgs.length) {
-                return  Align(
+                return Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
                     padding: EdgeInsets.all(10),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2)),
                       SizedBox(width: 10),
-                      Text('Reading your textbook…', style: TextStyle(color: AppColors.muted)),
+                      Text('Reading your textbook…',
+                          style: TextStyle(color: AppColors.muted)),
                     ]),
                   ),
                 );
               }
               final m = _msgs[i];
               return Align(
-                alignment: m.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                alignment:
+                    m.isUser ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.82),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.82),
                   decoration: BoxDecoration(
                     gradient: m.isUser ? AppColors.accentGradient : null,
                     color: m.isUser ? null : AppColors.card,
@@ -132,9 +150,11 @@ class _ChatScreenState extends State<ChatScreen> {
                       bottomLeft: Radius.circular(m.isUser ? 18 : 6),
                       bottomRight: Radius.circular(m.isUser ? 6 : 18),
                     ),
-                    border: m.isUser ? null : Border.all(color: AppColors.stroke),
+                    border:
+                        m.isUser ? null : Border.all(color: AppColors.stroke),
                   ),
-                  child: SelectableText(m.content, style:  TextStyle(color: AppColors.text, height: 1.45)),
+                  child: SelectableText(m.content,
+                      style: TextStyle(color: AppColors.text, height: 1.45)),
                 ),
               );
             },
@@ -142,22 +162,27 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         Container(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
-          decoration:  BoxDecoration(color: AppColors.bg2, border: Border(top: BorderSide(color: AppColors.stroke))),
+          decoration: BoxDecoration(
+              color: AppColors.bg2,
+              border: Border(top: BorderSide(color: AppColors.stroke))),
           child: Row(children: [
             Expanded(
               child: TextField(
                 controller: _input,
                 minLines: 1,
                 maxLines: 4,
-                style:  TextStyle(color: AppColors.text),
-                decoration: const InputDecoration(hintText: 'Ask PDF…', border: OutlineInputBorder()),
+                style: TextStyle(color: AppColors.text),
+                decoration: const InputDecoration(
+                    hintText: 'Ask PDF…', border: OutlineInputBorder()),
                 onSubmitted: (_) => _send(),
               ),
             ),
             const SizedBox(width: 10),
             FilledButton(
               onPressed: _busy ? null : _send,
-              style: FilledButton.styleFrom(shape: const CircleBorder(), padding: const EdgeInsets.all(14)),
+              style: FilledButton.styleFrom(
+                  shape: const CircleBorder(),
+                  padding: const EdgeInsets.all(14)),
               child: const Icon(Icons.arrow_upward_rounded),
             ),
           ]),

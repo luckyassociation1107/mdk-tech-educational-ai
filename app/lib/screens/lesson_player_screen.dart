@@ -16,11 +16,31 @@ import '../widgets.dart';
 import 'voice_studio_screen.dart';
 
 const _boards = <String, ({Color bg, Color fg, Color accent})>{
-  'green': (bg: Color(0xFF17573A), fg: Color(0xFFF4FFF8), accent: Color(0xFFFDE68A)),
-  'black': (bg: Color(0xFF14181F), fg: Color(0xFFF9FAFB), accent: Color(0xFF7DD3FC)),
-  'white': (bg: Color(0xFFF8FAFC), fg: Color(0xFF0F172A), accent: Color(0xFF2563EB)),
-  'ruled': (bg: Color(0xFFEFF4FF), fg: Color(0xFF1E3A8A), accent: Color(0xFFDC2626)),
-  'graph': (bg: Color(0xFFFFFDF5), fg: Color(0xFF1F2937), accent: Color(0xFF059669)),
+  'green': (
+    bg: Color(0xFF17573A),
+    fg: Color(0xFFF4FFF8),
+    accent: Color(0xFFFDE68A)
+  ),
+  'black': (
+    bg: Color(0xFF14181F),
+    fg: Color(0xFFF9FAFB),
+    accent: Color(0xFF7DD3FC)
+  ),
+  'white': (
+    bg: Color(0xFFF8FAFC),
+    fg: Color(0xFF0F172A),
+    accent: Color(0xFF2563EB)
+  ),
+  'ruled': (
+    bg: Color(0xFFEFF4FF),
+    fg: Color(0xFF1E3A8A),
+    accent: Color(0xFFDC2626)
+  ),
+  'graph': (
+    bg: Color(0xFFFFFDF5),
+    fg: Color(0xFF1F2937),
+    accent: Color(0xFF059669)
+  ),
 };
 
 /// The classroom itself — a live Zoom-style class drawn & spoken in Flutter.
@@ -50,8 +70,10 @@ class LessonPlayerScreen extends StatefulWidget {
   State<LessonPlayerScreen> createState() => _LessonPlayerScreenState();
 }
 
-class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTickerProviderStateMixin {
-  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
+class _LessonPlayerScreenState extends State<LessonPlayerScreen>
+    with SingleTickerProviderStateMixin {
+  static const MethodChannel _ttsCh =
+      MethodChannel('com.mdk.textbook_video/engine');
   DartPdfIndex? _index;
   String _pageDir = '';
   List<LessonScene> _scenes = [];
@@ -84,7 +106,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
   Timer? _xpTimer;
   bool _theatre = false;
 
-  late final AnimationController _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+  late final AnimationController _pulse = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1100))
+    ..repeat(reverse: true);
   final int _viewers = 24 + math.Random().nextInt(70);
 
   @override
@@ -101,7 +125,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
     final subject = await DartEngine.subjectOf(widget.sessionId);
     _ttsCh.setMethodCallHandler((call) async {
       if (call.method == 'ttsRange') {
-        final end = (call.arguments is Map) ? (call.arguments['end'] as num?)?.toInt() ?? 0 : 0;
+        final end = (call.arguments is Map)
+            ? (call.arguments['end'] as num?)?.toInt() ?? 0
+            : 0;
         if (end > _spoken) {
           _spoken = end;
           _rangeSeen = true;
@@ -154,12 +180,15 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
       }
     }
     final known = _brainPoints
-        .expand((k) => RegExp(r'\b[A-Z][a-zA-Z]{2,}\b').allMatches(k).map((m) => m.group(0)!))
+        .expand((k) => RegExp(r'\b[A-Z][a-zA-Z]{2,}\b')
+            .allMatches(k)
+            .map((m) => m.group(0)!))
         .where((w) => w.length > 3)
         .toSet()
         .take(40)
         .toList();
-    final out = await TranslateService.translateAll(texts, _lang, knownTerms: known);
+    final out =
+        await TranslateService.translateAll(texts, _lang, knownTerms: known);
     if (!mounted) return;
     setState(() {
       for (final k in out.keys) {
@@ -178,7 +207,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
     }
   }
 
-  String _voiceOf(int i) => _voice.length > i ? (_voice[i] ?? _scenes[i].narration) : '';
+  String _voiceOf(int i) =>
+      _voice.length > i ? (_voice[i] ?? _scenes[i].narration) : '';
   String? _trOf(int i) => _tr[i];
 
   Future<void> _changeLanguage() async {
@@ -198,7 +228,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
 
   // ---------- playback engine (voice-driven) ----------
 
-  double _estSeconds(String text) => (text.length / 13.5).clamp(2.5, 60.0).toDouble();
+  double _estSeconds(String text) =>
+      (text.length / 13.5).clamp(2.5, 60.0).toDouble();
 
   String get _voiceText {
     if (_scenes.isEmpty) return '';
@@ -209,7 +240,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
     if (_scenes.isEmpty) return 0;
     final text = _voiceText;
     if (_rangeSeen) return math.min(text.length, _spoken);
-    final elapsed = DateTime.now().difference(_sceneStart).inMilliseconds / 1000.0;
+    final elapsed =
+        DateTime.now().difference(_sceneStart).inMilliseconds / 1000.0;
     if (elapsed < 0.8) return 0;
     final frac = (elapsed / _estSeconds(text)).clamp(0.0, 1.0);
     return (text.length * frac).floor();
@@ -240,7 +272,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
         _pickedRight = null;
       }
     });
-    final locale = _tr.containsKey(i) ? xLang(_lang).tts : bookVoiceLocale(text);
+    final locale =
+        _tr.containsKey(i) ? xLang(_lang).tts : bookVoiceLocale(text);
     _ttsCh.invokeMethod('speak', {
       'text': text,
       'language': locale,
@@ -262,7 +295,10 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
       final hardCap = elapsed > _estSeconds(text) + 16;
       // Quick checks wait for the student's answer instead of racing on.
       final waitForAnswer = s.kind == 'quick' && _picked == null;
-      if (!_advancing && elapsed >= 1 && !waitForAnswer && (finishedVoice || hardCap)) {
+      if (!_advancing &&
+          elapsed >= 1 &&
+          !waitForAnswer &&
+          (finishedVoice || hardCap)) {
         _advancing = true;
         Future<void>.delayed(const Duration(milliseconds: 350), () {
           if (mounted && _playing) _next(auto: true);
@@ -362,16 +398,31 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
     return text;
   }
 
-  Widget _revealedText(String text, {required Color main, required Color dim, required double size, bool mono = false, double height = 1.6}) {
+  Widget _revealedText(String text,
+      {required Color main,
+      required Color dim,
+      required double size,
+      bool mono = false,
+      double height = 1.6}) {
     final r = (text.length * _progress).floor().clamp(0, text.length);
     return RichText(
       text: TextSpan(children: [
         TextSpan(
             text: text.substring(0, r),
-            style: TextStyle(color: main, fontSize: size, height: height, fontWeight: FontWeight.w700, fontFamily: mono ? 'monospace' : null)),
+            style: TextStyle(
+                color: main,
+                fontSize: size,
+                height: height,
+                fontWeight: FontWeight.w700,
+                fontFamily: mono ? 'monospace' : null)),
         TextSpan(
             text: text.substring(r),
-            style: TextStyle(color: dim, fontSize: size, height: height, fontWeight: FontWeight.w500, fontFamily: mono ? 'monospace' : null)),
+            style: TextStyle(
+                color: dim,
+                fontSize: size,
+                height: height,
+                fontWeight: FontWeight.w500,
+                fontFamily: mono ? 'monospace' : null)),
       ]),
     );
   }
@@ -379,7 +430,13 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
   Widget _boardView(LessonScene s) {
     final c = _boards[s.boardTheme] ?? _boards['green']!;
     final len = _voiceText.length;
-    final size = s.formula ? (len > 160 ? 19.0 : 23.0) : (len > 260 ? 16.0 : len > 140 ? 18.5 : 21.5);
+    final size = s.formula
+        ? (len > 160 ? 19.0 : 23.0)
+        : (len > 260
+            ? 16.0
+            : len > 140
+                ? 18.5
+                : 21.5);
     final translated = _tr.containsKey(_scenes.indexOf(s));
     return Container(
       decoration: BoxDecoration(
@@ -389,29 +446,55 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
       ),
       child: Stack(children: [
         if (s.boardTheme == 'ruled' || s.boardTheme == 'graph')
-          Positioned.fill(child: CustomPaint(painter: _BoardLinesPainter(theme: s.boardTheme, color: c.accent))),
+          Positioned.fill(
+              child: CustomPaint(
+                  painter: _BoardLinesPainter(
+                      theme: s.boardTheme, color: c.accent))),
         Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Text(s.heading.toUpperCase(),
-                  style: TextStyle(color: c.accent, fontWeight: FontWeight.w900, letterSpacing: 1.4, fontSize: 12.5)),
+                  style: TextStyle(
+                      color: c.accent,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.4,
+                      fontSize: 12.5)),
               const Spacer(),
               if (s.explain != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(color: c.accent.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-                  child: Text(translated ? 'EXPLANATION • ${xLang(_lang).code.toUpperCase()}' : 'EXPLANATION',
-                      style: TextStyle(color: c.accent, fontWeight: FontWeight.w900, fontSize: 9.5, letterSpacing: 0.8)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                      color: c.accent.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(99)),
+                  child: Text(
+                      translated
+                          ? 'EXPLANATION • ${xLang(_lang).code.toUpperCase()}'
+                          : 'EXPLANATION',
+                      style: TextStyle(
+                          color: c.accent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 9.5,
+                          letterSpacing: 0.8)),
                 )
               else
                 Text(s.formula ? 'FORMULA' : s.boardTheme.toUpperCase(),
-                    style: TextStyle(color: c.accent.withOpacity(0.75), fontWeight: FontWeight.w800, letterSpacing: 1.1, fontSize: 10)),
+                    style: TextStyle(
+                        color: c.accent.withOpacity(0.75),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.1,
+                        fontSize: 10)),
             ]),
             const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
-                child: _revealedText(_boardDisplay(s), main: c.fg, dim: c.fg.withOpacity(0.35), size: size, mono: s.formula),
+                child: _revealedText(_boardDisplay(s),
+                    main: c.fg,
+                    dim: c.fg.withOpacity(0.35),
+                    size: size,
+                    mono: s.formula),
               ),
             ),
             if (s.kind == 'quick' && s.options.isNotEmpty) ...[
@@ -430,14 +513,25 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Row(children: [
-                    Icon(_pickedRight == true ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                        size: 18, color: _pickedRight == true ? const Color(0xFF059669) : const Color(0xFFDC2626)),
+                    Icon(
+                        _pickedRight == true
+                            ? Icons.check_circle_rounded
+                            : Icons.cancel_rounded,
+                        size: 18,
+                        color: _pickedRight == true
+                            ? const Color(0xFF059669)
+                            : const Color(0xFFDC2626)),
                     const SizedBox(width: 6),
                     Text(
                       _pickedRight == true
                           ? 'Correct! +10 XP'
                           : 'Not quite — the right word is ${s.answer}. Listen once more and continue.',
-                      style: TextStyle(color: _pickedRight == true ? const Color(0xFF065F46) : const Color(0xFF991B1B), fontWeight: FontWeight.w800, fontSize: 12.5),
+                      style: TextStyle(
+                          color: _pickedRight == true
+                              ? const Color(0xFF065F46)
+                              : const Color(0xFF991B1B),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12.5),
                     ),
                     const Spacer(),
                     TextButton(
@@ -445,7 +539,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                         _advancing = true;
                         _next();
                       },
-                      child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.w900)),
+                      child: const Text('Continue',
+                          style: TextStyle(fontWeight: FontWeight.w900)),
                     ),
                   ]),
                 ),
@@ -458,7 +553,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                 s.kind == 'quick' && _picked == null
                     ? 'your turn — tap the right word'
                     : (_ttsDone ? 'done — next…' : 'writing with the voice…'),
-                style: TextStyle(color: c.accent, fontSize: 11, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                    color: c.accent, fontSize: 11, fontWeight: FontWeight.w700),
               ),
             ]),
           ]),
@@ -473,7 +569,10 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(18),
-          child: _revealedText(_voiceText, main: const Color(0xFF334155), dim: const Color(0xFF94A3B8), size: 16),
+          child: _revealedText(_voiceText,
+              main: const Color(0xFF334155),
+              dim: const Color(0xFF94A3B8),
+              size: 16),
         ),
       );
     }
@@ -482,7 +581,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
       final h = box.maxHeight;
       Widget image = Image.file(img, fit: BoxFit.fill, width: w, height: h);
       if (zone != null) {
-        final target = math.min(4.2, 0.92 / math.max(0.15, zone.width)).toDouble();
+        final target =
+            math.min(4.2, 0.92 / math.max(0.15, zone.width)).toDouble();
         final scale = 1 + (target - 1) * zoomT;
         final cx = zone.left + zone.width / 2;
         final cy = zone.top + zone.height / 2;
@@ -502,7 +602,10 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
 
   Widget _diagramView(LessonScene s) {
     return Container(
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.stroke)),
+      decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.stroke)),
       padding: const EdgeInsets.all(12),
       child: Column(children: [
         Expanded(
@@ -525,18 +628,24 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
   }
 
   Widget _readingView(LessonScene s) {
-    final blocks = (_index != null && s.page != null) ? _index!.pages[s.page! - 1].blocks : const <DartBlock>[];
+    final blocks = (_index != null && s.page != null)
+        ? _index!.pages[s.page! - 1].blocks
+        : const <DartBlock>[];
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFFF6F1E7), borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+          color: const Color(0xFFF6F1E7),
+          borderRadius: BorderRadius.circular(18)),
       padding: const EdgeInsets.all(10),
       child: LayoutBuilder(builder: (context, box) {
         final w = box.maxWidth;
         final h = box.maxHeight;
         Rect? rect;
         if (blocks.isNotEmpty) {
-          final idx = math.min(blocks.length - 1, (_progress * blocks.length).floor());
+          final idx =
+              math.min(blocks.length - 1, (_progress * blocks.length).floor());
           final b = blocks[idx].bbox;
-          if (b.length == 4) rect = Rect.fromLTRB(b[0] * w, b[1] * h, b[2] * w, b[3] * h);
+          if (b.length == 4)
+            rect = Rect.fromLTRB(b[0] * w, b[1] * h, b[2] * w, b[3] * h);
         }
         return Stack(children: [
           Positioned.fill(child: _pageImage(s)),
@@ -563,20 +672,32 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
 
   Widget _zoomView(LessonScene s) {
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFF0B1220), borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+          color: const Color(0xFF0B1220),
+          borderRadius: BorderRadius.circular(18)),
       padding: const EdgeInsets.all(10),
       child: Stack(children: [
-        Positioned.fill(child: _pageImage(s, zone: s.zone, zoomT: Curves.easeInOut.transform(_progress.clamp(0.0, 1.0)))),
+        Positioned.fill(
+            child: _pageImage(s,
+                zone: s.zone,
+                zoomT: Curves.easeInOut.transform(_progress.clamp(0.0, 1.0)))),
         Positioned(
           left: 10,
           top: 10,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.65), borderRadius: BorderRadius.circular(99)),
+            decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.65),
+                borderRadius: BorderRadius.circular(99)),
             child: const Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.zoom_in_rounded, size: 14, color: Colors.white),
               SizedBox(width: 5),
-              Text('FIGURE FOCUS', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              Text('FIGURE FOCUS',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1)),
             ]),
           ),
         ),
@@ -586,29 +707,48 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
           bottom: 10,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.78), borderRadius: BorderRadius.circular(12)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              if (s.labels.isNotEmpty && s.labels.first.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 5),
-                  child: Text('📖 ${s.labels.first.trim()}',
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style:  TextStyle(color: AppColors.amber, fontSize: 12, fontWeight: FontWeight.w900)),
-                ),
-              Text(_trOf(_scenes.indexOf(s)) ?? s.narration, maxLines: 3, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 12.5, height: 1.45)),
-              if (s.labels.length > 1) ...[
-                const SizedBox(height: 6),
-                Wrap(spacing: 6, runSpacing: 4, children: [
-                  for (final l in s.labels.skip(1))
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-                      child: Text(l, style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700)),
+            decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.78),
+                borderRadius: BorderRadius.circular(12)),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (s.labels.isNotEmpty && s.labels.first.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 5),
+                      child: Text('📖 ${s.labels.first.trim()}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: AppColors.amber,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900)),
                     ),
+                  Text(_trOf(_scenes.indexOf(s)) ?? s.narration,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 12.5, height: 1.45)),
+                  if (s.labels.length > 1) ...[
+                    const SizedBox(height: 6),
+                    Wrap(spacing: 6, runSpacing: 4, children: [
+                      for (final l in s.labels.skip(1))
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.16),
+                              borderRadius: BorderRadius.circular(99)),
+                          child: Text(l,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                    ]),
+                  ],
                 ]),
-              ],
-            ]),
           ),
         ),
       ]),
@@ -624,28 +764,52 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
           decoration: BoxDecoration(
             color: AppColors.red.withOpacity(0.15 + 0.12 * _pulse.value),
             borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: AppColors.red.withOpacity(0.4 + 0.4 * _pulse.value)),
+            border: Border.all(
+                color: AppColors.red.withOpacity(0.4 + 0.4 * _pulse.value)),
           ),
-          child:  Row(mainAxisSize: MainAxisSize.min, children: [
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.circle, size: 8, color: AppColors.red),
             SizedBox(width: 5),
-            Text('LIVE', style: TextStyle(color: AppColors.red, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+            Text('LIVE',
+                style: TextStyle(
+                    color: AppColors.red,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8)),
           ]),
         ),
       ),
       const SizedBox(width: 8),
-       CircleAvatar(radius: 11, backgroundColor: AppColors.indigo, child: Icon(Icons.school_rounded, size: 13, color: Colors.white)),
+      CircleAvatar(
+          radius: 11,
+          backgroundColor: AppColors.indigo,
+          child: Icon(Icons.school_rounded, size: 13, color: Colors.white)),
       const SizedBox(width: 6),
-       Text('Teacher', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+      Text('Teacher',
+          style: TextStyle(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w700,
+              fontSize: 12)),
       const Spacer(),
-      Icon(Icons.visibility_rounded, size: 13, color: AppColors.muted.withOpacity(0.9)),
+      Icon(Icons.visibility_rounded,
+          size: 13, color: AppColors.muted.withOpacity(0.9)),
       const SizedBox(width: 4),
-      Text('$_viewers', style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+      Text('$_viewers',
+          style: TextStyle(
+              color: AppColors.muted,
+              fontWeight: FontWeight.w700,
+              fontSize: 12)),
       const SizedBox(width: 10),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.14), borderRadius: BorderRadius.circular(99)),
-        child: Text('$_xp XP', style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 11.5)),
+        decoration: BoxDecoration(
+            color: AppColors.teal.withOpacity(0.14),
+            borderRadius: BorderRadius.circular(99)),
+        child: Text('$_xp XP',
+            style: TextStyle(
+                color: AppColors.teal,
+                fontWeight: FontWeight.w900,
+                fontSize: 11.5)),
       ),
       if (_xpGained > 0)
         TweenAnimationBuilder<double>(
@@ -653,11 +817,16 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
           duration: const Duration(milliseconds: 500),
           builder: (context, t, child) => Opacity(
             opacity: (1 - t).clamp(0.0, 1.0),
-            child: Transform.translate(offset: Offset(0, -18 * t), child: child),
+            child:
+                Transform.translate(offset: Offset(0, -18 * t), child: child),
           ),
-          child:  Padding(
+          child: Padding(
             padding: EdgeInsets.only(left: 6),
-            child: Text('+10', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 13)),
+            child: Text('+10',
+                style: TextStyle(
+                    color: AppColors.teal,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13)),
           ),
         ),
     ]);
@@ -690,7 +859,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(icon, size: 19, color: AppColors.muted),
             const SizedBox(height: 2),
-            Text(label, style:  TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w700)),
+            Text(label,
+                style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700)),
           ]),
         ),
       ),
@@ -716,14 +889,16 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
         .toSet()
         .toList()
       ..sort((a, b) => b.length.compareTo(a.length));
-    final pageText = (_index != null && _scenes.isNotEmpty && _scenes[_scene].page != null)
-        ? _index!.pageText(_scenes[_scene].page!)
-        : text;
+    final pageText =
+        (_index != null && _scenes.isNotEmpty && _scenes[_scene].page != null)
+            ? _index!.pageText(_scenes[_scene].page!)
+            : text;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => WordHelpSheet(
         words: words.take(24).toList(),
         pageText: pageText,
@@ -745,38 +920,59 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
           ? null
           : AppBar(
               backgroundColor: AppColors.bg,
-              title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style:  TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15.5)),
-        actions: [
-          IconButton(
-            tooltip: 'Theatre mode',
-            onPressed: () => setState(() => _theatre = true),
-            icon:  Icon(Icons.fullscreen_rounded, color: AppColors.muted),
-          ),
-          IconButton(
-            tooltip: 'Explanation language',
-            onPressed: _changeLanguage,
-            icon: Stack(clipBehavior: Clip.none, children: [
-               Icon(Icons.translate_rounded, color: AppColors.teal),
-              if (_lang != 'en')
-                Positioned(
-                  right: -6,
-                  top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(color: AppColors.indigo, borderRadius: BorderRadius.circular(99)),
-                    child: Text(_lang.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 7.5, fontWeight: FontWeight.w900)),
-                  ),
+              title: Text(widget.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.text,
+                      fontSize: 15.5)),
+              actions: [
+                IconButton(
+                  tooltip: 'Theatre mode',
+                  onPressed: () => setState(() => _theatre = true),
+                  icon: Icon(Icons.fullscreen_rounded, color: AppColors.muted),
                 ),
-            ]),
-          ),
-          TextButton(onPressed: _finish, child:  Text('Finish', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800))),
-        ],
-      ),
+                IconButton(
+                  tooltip: 'Explanation language',
+                  onPressed: _changeLanguage,
+                  icon: Stack(clipBehavior: Clip.none, children: [
+                    Icon(Icons.translate_rounded, color: AppColors.teal),
+                    if (_lang != 'en')
+                      Positioned(
+                        right: -6,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 1),
+                          decoration: BoxDecoration(
+                              color: AppColors.indigo,
+                              borderRadius: BorderRadius.circular(99)),
+                          child: Text(_lang.toUpperCase(),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 7.5,
+                                  fontWeight: FontWeight.w900)),
+                        ),
+                      ),
+                  ]),
+                ),
+                TextButton(
+                    onPressed: _finish,
+                    child: Text('Finish',
+                        style: TextStyle(
+                            color: AppColors.teal,
+                            fontWeight: FontWeight.w800))),
+              ],
+            ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : s == null
-              ? const EmptyState(icon: Icons.error_outline_rounded, title: 'Lesson not available', message: 'This textbook could not be prepared on this device.')
+              ? const EmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: 'Lesson not available',
+                  message:
+                      'This textbook could not be prepared on this device.')
               : Padding(
                   padding: const EdgeInsets.fromLTRB(14, 4, 14, 14),
                   child: Column(children: [
@@ -785,22 +981,38 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(color: AppColors.red.withOpacity(0.16), borderRadius: BorderRadius.circular(99)),
-                            child:  Row(mainAxisSize: MainAxisSize.min, children: [
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                                color: AppColors.red.withOpacity(0.16),
+                                borderRadius: BorderRadius.circular(99)),
+                            child:
+                                Row(mainAxisSize: MainAxisSize.min, children: [
                               Icon(Icons.circle, size: 7, color: AppColors.red),
                               SizedBox(width: 4),
-                              Text('LIVE', style: TextStyle(color: AppColors.red, fontSize: 9.5, fontWeight: FontWeight.w900, letterSpacing: 0.7)),
+                              Text('LIVE',
+                                  style: TextStyle(
+                                      color: AppColors.red,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.7)),
                             ]),
                           ),
                           const SizedBox(width: 8),
-                          Text('${_scene + 1}/${_scenes.length}', style:  TextStyle(color: AppColors.muted, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                          Text('${_scene + 1}/${_scenes.length}',
+                              style: TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700)),
                           const Spacer(),
                           TextButton.icon(
                             onPressed: () => setState(() => _theatre = false),
-                            icon: const Icon(Icons.fullscreen_exit_rounded, size: 17),
+                            icon: const Icon(Icons.fullscreen_exit_rounded,
+                                size: 17),
                             label: const Text('Exit'),
-                            style: TextButton.styleFrom(foregroundColor: AppColors.muted, visualDensity: VisualDensity.compact),
+                            style: TextButton.styleFrom(
+                                foregroundColor: AppColors.muted,
+                                visualDensity: VisualDensity.compact),
                           ),
                         ]),
                       )
@@ -808,30 +1020,46 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                       _liveHeader(),
                       const SizedBox(height: 6),
                       Row(children: [
-                        Text('Part ${widget.partNumber} • ${_scene + 1}/${_scenes.length}',
-                            style:  TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700, fontSize: 12)),
+                        Text(
+                            'Part ${widget.partNumber} • ${_scene + 1}/${_scenes.length}',
+                            style: TextStyle(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12)),
                         const Spacer(),
-                        Text(_kindLabel(s), style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800, fontSize: 12)),
+                        Text(_kindLabel(s),
+                            style: TextStyle(
+                                color: AppColors.teal,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12)),
                       ]),
                       const SizedBox(height: 6),
                     ],
                     ClipRRect(
                       borderRadius: BorderRadius.circular(99),
                       child: LinearProgressIndicator(
-                        value: _scenes.isEmpty ? 0 : (_scene + _progress) / _scenes.length,
+                        value: _scenes.isEmpty
+                            ? 0
+                            : (_scene + _progress) / _scenes.length,
                         minHeight: _theatre ? 3 : 5,
                         backgroundColor: AppColors.stroke,
-                        valueColor:  AlwaysStoppedAnimation(AppColors.teal),
+                        valueColor: AlwaysStoppedAnimation(AppColors.teal),
                       ),
                     ),
                     if (_translating && !_theatre)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Row(children: [
-                          const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2)),
                           const SizedBox(width: 8),
                           Text('Preparing ${xLang(_lang).english} explanation…',
-                              style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                              style: TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700)),
                         ]),
                       ),
                     const SizedBox(height: 10),
@@ -841,8 +1069,14 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                         switchInCurve: Curves.easeOutCubic,
                         switchOutCurve: Curves.easeInCubic,
                         transitionBuilder: (child, anim) {
-                          final slide = Tween<Offset>(begin: const Offset(0.06, 0.03), end: Offset.zero).animate(anim);
-                          return FadeTransition(opacity: anim, child: SlideTransition(position: slide, child: child));
+                          final slide = Tween<Offset>(
+                                  begin: const Offset(0.06, 0.03),
+                                  end: Offset.zero)
+                              .animate(anim);
+                          return FadeTransition(
+                              opacity: anim,
+                              child: SlideTransition(
+                                  position: slide, child: child));
                         },
                         child: KeyedSubtree(
                           key: ValueKey('$_scene-${s.kind}'),
@@ -860,38 +1094,70 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen> with SingleTick
                       const SizedBox(height: 10),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-                        decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.stroke)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 13, vertical: 9),
+                        decoration: BoxDecoration(
+                            color: AppColors.card,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.stroke)),
                         child: Row(children: [
-                           Icon(Icons.subtitles_rounded, size: 15, color: AppColors.teal),
+                          Icon(Icons.subtitles_rounded,
+                              size: 15, color: AppColors.teal),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(_currentSentence(), maxLines: 2, overflow: TextOverflow.ellipsis,
-                                style:  TextStyle(color: AppColors.text, height: 1.4, fontSize: 13, fontWeight: FontWeight.w600)),
+                            child: Text(_currentSentence(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: AppColors.text,
+                                    height: 1.4,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600)),
                           ),
                         ]),
                       ),
                       const SizedBox(height: 8),
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        _miniAction(Icons.replay_rounded, 'Repeat', () => _playScene(_scene)),
-                        _miniAction(Icons.slow_motion_video_rounded, 'Slow', () => _playScene(_scene, slow: true)),
-                        _miniAction(Icons.spellcheck_rounded, 'Words', _wordHelp),
-                        _miniAction(Icons.speed_rounded, 'Voice', _openVoiceStudio),
-                      ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _miniAction(Icons.replay_rounded, 'Repeat',
+                                () => _playScene(_scene)),
+                            _miniAction(Icons.slow_motion_video_rounded, 'Slow',
+                                () => _playScene(_scene, slow: true)),
+                            _miniAction(
+                                Icons.spellcheck_rounded, 'Words', _wordHelp),
+                            _miniAction(
+                                Icons.speed_rounded, 'Voice', _openVoiceStudio),
+                          ]),
                       const SizedBox(height: 10),
                     ],
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                      IconButton.filledTonal(onPressed: _scene > 0 ? _prev : null, icon: const Icon(Icons.skip_previous_rounded)),
-                      IconButton.filled(
-                        onPressed: _toggle,
-                        icon: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 28),
-                        style: IconButton.styleFrom(backgroundColor: AppColors.indigo, foregroundColor: Colors.white, padding: const EdgeInsets.all(14)),
-                      ),
-                      IconButton.filledTonal(
-                        onPressed: _scene < _scenes.length - 1 ? () => _next() : _finish,
-                        icon: Icon(_scene < _scenes.length - 1 ? Icons.skip_next_rounded : Icons.check_rounded),
-                      ),
-                    ]),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          IconButton.filledTonal(
+                              onPressed: _scene > 0 ? _prev : null,
+                              icon: const Icon(Icons.skip_previous_rounded)),
+                          IconButton.filled(
+                            onPressed: _toggle,
+                            icon: Icon(
+                                _playing
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                size: 28),
+                            style: IconButton.styleFrom(
+                                backgroundColor: AppColors.indigo,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.all(14)),
+                          ),
+                          IconButton.filledTonal(
+                            onPressed: _scene < _scenes.length - 1
+                                ? () => _next()
+                                : _finish,
+                            icon: Icon(_scene < _scenes.length - 1
+                                ? Icons.skip_next_rounded
+                                : Icons.check_rounded),
+                          ),
+                        ]),
                   ]),
                 ),
     );
@@ -923,13 +1189,18 @@ class _QuickChip extends StatelessWidget {
     };
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99), border: Border.all(color: border, width: 1.4)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: border, width: 1.4)),
       child: InkWell(
         borderRadius: BorderRadius.circular(99),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-          child: Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w800, fontSize: 14)),
+          child: Text(label,
+              style: TextStyle(
+                  color: fg, fontWeight: FontWeight.w800, fontSize: 14)),
         ),
       ),
     );
@@ -963,7 +1234,6 @@ class _BoardLinesPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
 
 /// Tap any hard word from the board: the voice says it slowly, the app
 /// shows the textbook sentence where it appears, and (when an explanation
@@ -1011,7 +1281,8 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
       _translation = null;
       _loading = widget.lang != 'en';
     });
-    widget.tts.invokeMethod('speak', {'text': w, 'language': 'en-IN', 'rate': 0.62}).catchError((_) => null);
+    widget.tts.invokeMethod('speak',
+        {'text': w, 'language': 'en-IN', 'rate': 0.62}).catchError((_) => null);
     String? t;
     if (widget.lang != 'en') {
       t = await TranslateService.translate(w, widget.lang);
@@ -1022,37 +1293,51 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
         });
       }
     }
-    await WordBank.add(widget.sessionId, WordEntry(
-      word: w,
-      context: _context(w),
-      translation: t ?? '',
-      page: widget.page,
-      when: DateTime.now().millisecondsSinceEpoch,
-    ));
+    await WordBank.add(
+        widget.sessionId,
+        WordEntry(
+          word: w,
+          context: _context(w),
+          translation: t ?? '',
+          page: widget.page,
+          when: DateTime.now().millisecondsSinceEpoch,
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.62,
         maxChildSize: 0.92,
         builder: (ctx, scroll) => Column(children: [
           const SizedBox(height: 12),
-          Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(99))),
-           Padding(
+          Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(99))),
+          Padding(
             padding: EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('Word help', style: TextStyle(color: AppColors.text, fontSize: 17, fontWeight: FontWeight.w900)),
+              child: Text('Word help',
+                  style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900)),
             ),
           ),
-           Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 18),
-            child: Text('Tap a word — the voice says it slowly, and you see it inside your own textbook line.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.35)),
+            child: Text(
+                'Tap a word — the voice says it slowly, and you see it inside your own textbook line.',
+                style: TextStyle(
+                    color: AppColors.muted, fontSize: 12, height: 1.35)),
           ),
           const SizedBox(height: 10),
           Padding(
@@ -1063,13 +1348,22 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
                   onTap: () => _pick(w),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                     decoration: BoxDecoration(
-                      color: _word == w ? AppColors.teal.withOpacity(0.22) : AppColors.cardLight,
+                      color: _word == w
+                          ? AppColors.teal.withOpacity(0.22)
+                          : AppColors.cardLight,
                       borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: _word == w ? AppColors.teal : AppColors.stroke),
+                      border: Border.all(
+                          color:
+                              _word == w ? AppColors.teal : AppColors.stroke),
                     ),
-                    child: Text(w, style: TextStyle(color: _word == w ? AppColors.teal : AppColors.text, fontSize: 12.5, fontWeight: FontWeight.w700)),
+                    child: Text(w,
+                        style: TextStyle(
+                            color: _word == w ? AppColors.teal : AppColors.text,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700)),
                   ),
                 ),
             ]),
@@ -1077,34 +1371,70 @@ class _WordHelpSheetState extends State<WordHelpSheet> {
           if (_word != null) ...[
             const SizedBox(height: 12),
             Expanded(
-              child: ListView(controller: scroll, padding: const EdgeInsets.fromLTRB(18, 0, 18, 24), children: [
-                GradientCard(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Text(_word!, style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 17)),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => widget.tts.invokeMethod('speak', {'text': _word!, 'language': 'en-IN', 'rate': 0.55}).catchError((_) => null),
-                        icon:  Icon(Icons.volume_up_rounded, size: 18, color: AppColors.teal),
-                      ),
-                      const Spacer(),
-                      if (_loading) const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-                    ]),
-                    if (_translation != null) ...[
-                      const SizedBox(height: 4),
-                      Text(_translation!, style:  TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 14)),
-                    ],
-                    const SizedBox(height: 10),
-                     Text('In your textbook', style: TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
-                    const SizedBox(height: 4),
-                    Text(_context(_word!), style:  TextStyle(color: AppColors.text, fontSize: 13, height: 1.5)),
+              child: ListView(
+                  controller: scroll,
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                  children: [
+                    GradientCard(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Text(_word!,
+                                  style: TextStyle(
+                                      color: AppColors.teal,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 17)),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => widget.tts.invokeMethod(
+                                    'speak', {
+                                  'text': _word!,
+                                  'language': 'en-IN',
+                                  'rate': 0.55
+                                }).catchError((_) => null),
+                                icon: Icon(Icons.volume_up_rounded,
+                                    size: 18, color: AppColors.teal),
+                              ),
+                              const Spacer(),
+                              if (_loading)
+                                const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2)),
+                            ]),
+                            if (_translation != null) ...[
+                              const SizedBox(height: 4),
+                              Text(_translation!,
+                                  style: TextStyle(
+                                      color: AppColors.amber,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14)),
+                            ],
+                            const SizedBox(height: 10),
+                            Text('In your textbook',
+                                style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.8)),
+                            const SizedBox(height: 4),
+                            Text(_context(_word!),
+                                style: TextStyle(
+                                    color: AppColors.text,
+                                    fontSize: 13,
+                                    height: 1.5)),
+                          ]),
+                    ),
                   ]),
-                ),
-              ]),
             ),
           ] else
-            Expanded(child: ListView(controller: scroll, children: const [SizedBox(height: 20)])),
+            Expanded(
+                child: ListView(
+                    controller: scroll,
+                    children: const [SizedBox(height: 20)])),
         ]),
       ),
     );

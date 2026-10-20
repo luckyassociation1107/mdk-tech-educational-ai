@@ -21,7 +21,9 @@ class DartBlock {
   Map<String, dynamic> toJson() => {'text': text, 'bbox': bbox};
   factory DartBlock.fromJson(Map<String, dynamic> j) => DartBlock(
         (j['text'] ?? '').toString(),
-        ((j['bbox'] as List?) ?? const []).map((e) => (e as num).toDouble()).toList(),
+        ((j['bbox'] as List?) ?? const [])
+            .map((e) => (e as num).toDouble())
+            .toList(),
       );
 }
 
@@ -30,11 +32,19 @@ class DartPage {
   final String text;
   final List<DartBlock> blocks;
   const DartPage(this.page, this.text, this.blocks);
-  Map<String, dynamic> toJson() => {'page': page, 'text': text, 'blocks': blocks.map((b) => b.toJson()).toList()};
+  Map<String, dynamic> toJson() => {
+        'page': page,
+        'text': text,
+        'blocks': blocks.map((b) => b.toJson()).toList()
+      };
   factory DartPage.fromJson(Map<String, dynamic> j) => DartPage(
         (j['page'] as num?)?.toInt() ?? 0,
         (j['text'] ?? '').toString(),
-        ((j['blocks'] as List?) ?? const []).whereType<Map>().map((e) => DartBlock.fromJson(e.map((k, v) => MapEntry(k.toString(), v)))).toList(),
+        ((j['blocks'] as List?) ?? const [])
+            .whereType<Map>()
+            .map((e) =>
+                DartBlock.fromJson(e.map((k, v) => MapEntry(k.toString(), v))))
+            .toList(),
       );
 }
 
@@ -44,17 +54,40 @@ class DartPdfIndex {
   final List<DartPage> pages;
   const DartPdfIndex(this.title, this.pageCount, this.pages);
 
-  String pageText(int page) => (page >= 1 && page <= pageCount) ? pages[page - 1].text : '';
+  String pageText(int page) =>
+      (page >= 1 && page <= pageCount) ? pages[page - 1].text : '';
 
   static const _stop = {
-    'the', 'and', 'what', 'explain', 'with', 'this', 'that', 'from', 'give', 'does', 'how',
-    'why', 'please', 'video', 'examples', 'example', 'topic', 'concept', 'student', 'question',
+    'the',
+    'and',
+    'what',
+    'explain',
+    'with',
+    'this',
+    'that',
+    'from',
+    'give',
+    'does',
+    'how',
+    'why',
+    'please',
+    'video',
+    'examples',
+    'example',
+    'topic',
+    'concept',
+    'student',
+    'question',
   };
 
   /// Deterministic keyword search — real pages only, exactly like the
   /// engine spec demands.
   List<int> findRelevantPages(String query, {int top = 2}) {
-    final terms = RegExp(r'[a-zA-Z]{3,}').allMatches(query.toLowerCase()).map((m) => m.group(0)!).where((t) => !_stop.contains(t)).toList();
+    final terms = RegExp(r'[a-zA-Z]{3,}')
+        .allMatches(query.toLowerCase())
+        .map((m) => m.group(0)!)
+        .where((t) => !_stop.contains(t))
+        .toList();
     if (terms.isEmpty) return pageCount == 0 ? [] : [1];
     final scored = <(double, int)>[];
     for (final p in pages) {
@@ -66,7 +99,8 @@ class DartPdfIndex {
       scored.add((score, p.page));
     }
     scored.sort((a, b) => b.$1.compareTo(a.$1));
-    final out = scored.where((s) => s.$1 > 0).take(top).map((s) => s.$2).toList();
+    final out =
+        scored.where((s) => s.$1 > 0).take(top).map((s) => s.$2).toList();
     return out.isEmpty ? [1] : out;
   }
 }
@@ -82,13 +116,16 @@ class DartEngine {
     return root;
   }
 
-  static Future<File> _indexFile() async => File('${(await _root()).path}/sessions.json');
+  static Future<File> _indexFile() async =>
+      File('${(await _root()).path}/sessions.json');
 
   static Future<List<Map<String, dynamic>>> _metas() async {
     final f = await _indexFile();
     if (!await f.exists()) return [];
     try {
-      return ((jsonDecode(await f.readAsString()) as List).whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v)))).toList();
+      return ((jsonDecode(await f.readAsString()) as List)
+          .whereType<Map>()
+          .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))).toList();
     } catch (_) {
       return [];
     }
@@ -123,7 +160,8 @@ class DartEngine {
     return dir;
   }
 
-  static Future<String> sessionPdfPath(String sessionId) async => '${(await _sessionDir(sessionId)).path}/book.pdf';
+  static Future<String> sessionPdfPath(String sessionId) async =>
+      '${(await _sessionDir(sessionId)).path}/book.pdf';
 
   static Future<String> subjectOf(String sessionId) async {
     final meta = await _meta(sessionId);
@@ -135,7 +173,8 @@ class DartEngine {
   // PDF-teacher website, but everything it produces — summary, Q&A — is
   // stored here, per session, per student. Nothing is shared or synced.
 
-  static Future<File> _brainFile(String sessionId) async => File('${(await _sessionDir(sessionId)).path}/brain.json');
+  static Future<File> _brainFile(String sessionId) async =>
+      File('${(await _sessionDir(sessionId)).path}/brain.json');
 
   static Future<Map<String, dynamic>> loadBrainData(String sessionId) async {
     try {
@@ -148,7 +187,8 @@ class DartEngine {
     return {'summary': '', 'level': 1, 'qa': <dynamic>[]};
   }
 
-  static Future<void> _saveBrainData(String sessionId, Map<String, dynamic> data) async {
+  static Future<void> _saveBrainData(
+      String sessionId, Map<String, dynamic> data) async {
     final f = await _brainFile(sessionId);
     await f.writeAsString(jsonEncode(data));
     final meta = await _meta(sessionId);
@@ -158,17 +198,23 @@ class DartEngine {
     }
   }
 
-  static Future<void> saveBrainSummary(String sessionId, String summary, int level) async {
+  static Future<void> saveBrainSummary(
+      String sessionId, String summary, int level) async {
     final data = await loadBrainData(sessionId);
     data['summary'] = summary;
     data['level'] = level;
     await _saveBrainData(sessionId, data);
   }
 
-  static Future<void> addBrainQa(String sessionId, String question, String answer) async {
+  static Future<void> addBrainQa(
+      String sessionId, String question, String answer) async {
     final data = await loadBrainData(sessionId);
     final qa = ((data['qa'] as List?) ?? const []).toList();
-    qa.add({'q': question, 'a': answer, 'ts': DateTime.now().millisecondsSinceEpoch});
+    qa.add({
+      'q': question,
+      'a': answer,
+      'ts': DateTime.now().millisecondsSinceEpoch
+    });
     data['qa'] = qa;
     await _saveBrainData(sessionId, data);
   }
@@ -237,7 +283,8 @@ class DartEngine {
     if (index.pageCount == 0) {
       throw StateError('This PDF has no readable pages.');
     }
-    final id = 'session_${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
+    final id =
+        'session_${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
     final dir = await _sessionDir(id);
     final bookFile = File('${dir.path}/book.pdf');
     await bookFile.writeAsBytes(bytes);
@@ -249,12 +296,15 @@ class DartEngine {
 
     String pageDir = '';
     try {
-      pageDir = await _ch.invokeMethod<String>('renderPages', {'pdfPath': bookFile.path}) ?? '';
+      pageDir = await _ch.invokeMethod<String>(
+              'renderPages', {'pdfPath': bookFile.path}) ??
+          '';
     } catch (_) {
       pageDir = ''; // lesson player shows text scenes if pictures are missing
     }
 
-    final subj = SubjectEngine.detect(index.title, index.pages.map((p) => p.text).toList());
+    final subj = SubjectEngine.detect(
+        index.title, index.pages.map((p) => p.text).toList());
     final meta = <String, dynamic>{
       'session_id': id,
       'title': index.title,
@@ -270,7 +320,13 @@ class DartEngine {
       'completed_parts': <dynamic>[],
     };
     await _putMeta(meta);
-    return {'session_id': id, 'title': index.title, 'page_count': index.pageCount, 'brain': brain, 'state': 'active'};
+    return {
+      'session_id': id,
+      'title': index.title,
+      'page_count': index.pageCount,
+      'brain': brain,
+      'state': 'active'
+    };
   }
 
   static DartPdfIndex _extract(List<int> bytes, String fileName) {
@@ -290,7 +346,8 @@ class DartEngine {
         final text = extractor.extractText(startPageIndex: i, endPageIndex: i);
         final blocks = <DartBlock>[];
         try {
-          for (final line in extractor.extractTextLines(startPageIndex: i, endPageIndex: i)) {
+          for (final line in extractor.extractTextLines(
+              startPageIndex: i, endPageIndex: i)) {
             final t = line.text.trim();
             if (t.length < 2) continue;
             final b = line.bounds;
@@ -305,13 +362,23 @@ class DartEngine {
           // text-only page: blocks fall back to paragraph bands below
         }
         if (blocks.isEmpty && text.trim().isNotEmpty) {
-          final paras = text.split(RegExp(r'\n\s*\n|\n')).map((s) => s.trim()).where((s) => s.length >= 2).toList();
+          final paras = text
+              .split(RegExp(r'\n\s*\n|\n'))
+              .map((s) => s.trim())
+              .where((s) => s.length >= 2)
+              .toList();
           final total = paras.fold<int>(0, (a, p) => a + p.length);
           var y = 0.04;
           for (final p in paras) {
-            final frac = total == 0 ? 0.05 : math.max(0.03, p.length / total * 0.9);
+            final frac =
+                total == 0 ? 0.05 : math.max(0.03, p.length / total * 0.9);
             final y2 = math.min(0.96, y + frac);
-            blocks.add(DartBlock(p, [0.05, double.parse(y.toStringAsFixed(3)), 0.95, double.parse(y2.toStringAsFixed(3))]));
+            blocks.add(DartBlock(p, [
+              0.05,
+              double.parse(y.toStringAsFixed(3)),
+              0.95,
+              double.parse(y2.toStringAsFixed(3))
+            ]));
             y = y2 + 0.012;
           }
         }
@@ -326,22 +393,30 @@ class DartEngine {
   static List<String> _keyPointsFor(DartPdfIndex index, List<int> range) {
     final key = <String>[];
     for (final pg in range) {
-      final joined = (index.pageText(pg)).replaceAll(RegExp(r'\s+'), ' ').trim();
+      final joined =
+          (index.pageText(pg)).replaceAll(RegExp(r'\s+'), ' ').trim();
       final sents = joined
           .split(RegExp(r'(?<=[.!?])\s+'))
           .map((s) => s.trim())
-          .where((s) => s.length > 40 && !s.toLowerCase().contains('click here'))
+          .where(
+              (s) => s.length > 40 && !s.toLowerCase().contains('click here'))
           .take(2);
       key.addAll(sents);
     }
-    return key.map((s) => s.length > 220 ? s.substring(0, 220) : s).take(6).toList();
+    return key
+        .map((s) => s.length > 220 ? s.substring(0, 220) : s)
+        .take(6)
+        .toList();
   }
 
-  static Future<Map<String, dynamic>> chapterSeries(String sessionId, {int pagesPerPart = 6}) async {
+  static Future<Map<String, dynamic>> chapterSeries(String sessionId,
+      {int pagesPerPart = 6}) async {
     final meta = await _meta(sessionId);
     final index = await loadIndex(sessionId);
     if (meta == null || index == null) return {'parts': []};
-    final done = ((meta['completed_parts'] as List?) ?? const []).map((e) => (e as num).toInt()).toSet();
+    final done = ((meta['completed_parts'] as List?) ?? const [])
+        .map((e) => (e as num).toInt())
+        .toSet();
     final parts = <Map<String, dynamic>>[];
     var start = 1;
     while (start <= index.pageCount) {
@@ -357,13 +432,21 @@ class DartEngine {
       });
       start += pagesPerPart;
     }
-    return {'session_id': sessionId, 'total_pages': index.pageCount, 'parts': parts};
+    return {
+      'session_id': sessionId,
+      'total_pages': index.pageCount,
+      'parts': parts
+    };
   }
 
-  static Future<Map<String, dynamic>> completePart(String sessionId, int part) async {
+  static Future<Map<String, dynamic>> completePart(
+      String sessionId, int part) async {
     final meta = await _meta(sessionId);
     if (meta != null) {
-      final done = ((meta['completed_parts'] as List?) ?? const []).map((e) => (e as num).toInt()).toSet()..add(part);
+      final done = ((meta['completed_parts'] as List?) ?? const [])
+          .map((e) => (e as num).toInt())
+          .toSet()
+        ..add(part);
       meta['completed_parts'] = done.toList()..sort();
       await _putMeta(meta);
     }
@@ -372,7 +455,8 @@ class DartEngine {
 
   /// Extractive doubt clearing: finds the real pages for the question and
   /// answers with the textbook's own sentences (quoted, page-referenced).
-  static Future<Map<String, dynamic>> askChat(String sessionId, String question) async {
+  static Future<Map<String, dynamic>> askChat(
+      String sessionId, String question) async {
     final index = await loadIndex(sessionId);
     if (index == null) throw StateError('Textbook session not found.');
     final pages = index.findRelevantPages(question, top: 2);
@@ -403,7 +487,8 @@ class DartEngine {
   }) async {
     final meta = await _meta(sessionId);
     if (meta == null) throw StateError('Textbook session not found.');
-    final partNo = RegExp(r'Part\s+(\d+)').firstMatch(partLabel)?.group(1) ?? '0';
+    final partNo =
+        RegExp(r'Part\s+(\d+)').firstMatch(partLabel)?.group(1) ?? '0';
     final url = 'lesson://$sessionId/$partNo';
     final lessons = ((meta['lessons'] as List?) ?? const []).toList();
     lessons.removeWhere((l) => l is Map && l['output'] == url);
@@ -455,8 +540,10 @@ class DartEngine {
 
   static Future<Map<String, dynamic>> checkTts(String language) async {
     try {
-      final r = await _ch.invokeMapMethod<String, dynamic>('checkTts', {'language': language});
-      return r ?? {'available': false, 'reason': 'no response from Android TTS'};
+      final r = await _ch
+          .invokeMapMethod<String, dynamic>('checkTts', {'language': language});
+      return r ??
+          {'available': false, 'reason': 'no response from Android TTS'};
     } catch (e) {
       return {'available': false, 'reason': '$e'};
     }

@@ -16,14 +16,19 @@ class KeyPointsScreen extends StatefulWidget {
   final AppSettings settings;
   final TextbookItem book;
   final List<SeriesPart> parts;
-  const KeyPointsScreen({super.key, required this.settings, required this.book, required this.parts});
+  const KeyPointsScreen(
+      {super.key,
+      required this.settings,
+      required this.book,
+      required this.parts});
 
   @override
   State<KeyPointsScreen> createState() => _KeyPointsScreenState();
 }
 
 class _KeyPointsScreenState extends State<KeyPointsScreen> {
-  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
+  static const MethodChannel _ttsCh =
+      MethodChannel('com.mdk.textbook_video/engine');
   List<String> _brain = const [];
   final _search = TextEditingController();
   bool _loading = true;
@@ -89,25 +94,33 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
     }
     sb
       ..writeln()
-      ..writeln('Note: every line above is from the textbook itself (or the brain summary of it). '
+      ..writeln(
+          'Note: every line above is from the textbook itself (or the brain summary of it). '
           'Explanations given during the class are labelled as examples and are not printed here as textbook facts.');
     try {
       final dir = await getApplicationDocumentsDirectory();
       final d = Directory('${dir.path}/classroom/notes');
       if (!await d.exists()) await d.create(recursive: true);
-      final safe = widget.book.shortTitle.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '_');
+      final safe =
+          widget.book.shortTitle.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '_');
       final f = File('${d.path}/${safe}_key_points.txt');
       await f.writeAsString(sb.toString());
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Saved to ${f.path}')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Saved to ${f.path}')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not save: $e')));
     }
   }
 
   void _speak(String text) {
-    _ttsCh.invokeMethod('speak', {'text': text, 'language': 'en-IN', 'rate': 0.9}).catchError((_) => null);
+    _ttsCh.invokeMethod('speak', {
+      'text': text,
+      'language': 'en-IN',
+      'rate': 0.9
+    }).catchError((_) => null);
   }
 
   @override
@@ -119,14 +132,22 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final rows = _loading ? const <({int part, String label, String point})>[] : _rows;
+    final rows =
+        _loading ? const <({int part, String label, String point})>[] : _rows;
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title:  Text('Key Points Book', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title: Text('Key Points Book',
+            style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AppColors.text,
+                fontSize: 16)),
         actions: [
-          IconButton(tooltip: 'Save as text file', onPressed: rows.isEmpty ? null : _export, icon:  Icon(Icons.save_alt_rounded, color: AppColors.teal)),
+          IconButton(
+              tooltip: 'Save as text file',
+              onPressed: rows.isEmpty ? null : _export,
+              icon: Icon(Icons.save_alt_rounded, color: AppColors.teal)),
         ],
       ),
       body: _loading
@@ -136,15 +157,20 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
                 child: TextField(
                   controller: _search,
-                  style:  TextStyle(color: AppColors.text),
+                  style: TextStyle(color: AppColors.text),
                   decoration: InputDecoration(
                     hintText: 'Search key points…',
-                    hintStyle:  TextStyle(color: AppColors.muted),
-                    prefixIcon:  Icon(Icons.search_rounded, color: AppColors.muted),
+                    hintStyle: TextStyle(color: AppColors.muted),
+                    prefixIcon:
+                        Icon(Icons.search_rounded, color: AppColors.muted),
                     filled: true,
                     fillColor: AppColors.card,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: AppColors.stroke)),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: AppColors.stroke)),
                   ),
                   onChanged: (v) => setState(() => _q = v.trim().toLowerCase()),
                 ),
@@ -153,10 +179,17 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: Row(children: [
                   Text('${rows.length} points • ${widget.parts.length} parts',
-                      style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700)),
                   const Spacer(),
                   if (_brain.isNotEmpty)
-                     Text('brain summary included', style: TextStyle(color: AppColors.teal, fontSize: 11, fontWeight: FontWeight.w700)),
+                    Text('brain summary included',
+                        style: TextStyle(
+                            color: AppColors.teal,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
                 ]),
               ),
               const SizedBox(height: 6),
@@ -165,7 +198,8 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                     ? const EmptyState(
                         icon: Icons.menu_book_rounded,
                         title: 'No key points yet',
-                        message: 'Watch a class for a part first — its textbook key points land here automatically.',
+                        message:
+                            'Watch a class for a part first — its textbook key points land here automatically.',
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -173,33 +207,58 @@ class _KeyPointsScreenState extends State<KeyPointsScreen> {
                         itemBuilder: (context, i) {
                           final r = rows[i];
                           final newPart = i == 0 || rows[i - 1].part != r.part;
-                          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            if (newPart)
-                              Padding(
-                                padding: EdgeInsets.only(top: i == 0 ? 2 : 16, bottom: 8),
-                                child: Row(children: [
-                                  Container(width: 4, height: 16, decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(99))),
-                                  const SizedBox(width: 8),
-                                  Text(r.label, style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 13.5)),
-                                ]),
-                              ),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: GradientCard(
-                                onTap: () => _speak(r.point),
-                                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                   Padding(
-                                    padding: EdgeInsets.only(top: 1),
-                                    child: Icon(Icons.circle, size: 7, color: AppColors.teal),
+                          return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (newPart)
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                        top: i == 0 ? 2 : 16, bottom: 8),
+                                    child: Row(children: [
+                                      Container(
+                                          width: 4,
+                                          height: 16,
+                                          decoration: BoxDecoration(
+                                              color: AppColors.teal,
+                                              borderRadius:
+                                                  BorderRadius.circular(99))),
+                                      const SizedBox(width: 8),
+                                      Text(r.label,
+                                          style: TextStyle(
+                                              color: AppColors.text,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 13.5)),
+                                    ]),
                                   ),
-                                  const SizedBox(width: 9),
-                                  Expanded(child: Text(r.point, style:  TextStyle(color: AppColors.text, fontSize: 13, height: 1.45, fontWeight: FontWeight.w600))),
-                                  const SizedBox(width: 6),
-                                   Icon(Icons.volume_up_rounded, size: 17, color: AppColors.muted),
-                                ]),
-                              ),
-                            ),
-                          ]);
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: GradientCard(
+                                    onTap: () => _speak(r.point),
+                                    child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: EdgeInsets.only(top: 1),
+                                            child: Icon(Icons.circle,
+                                                size: 7, color: AppColors.teal),
+                                          ),
+                                          const SizedBox(width: 9),
+                                          Expanded(
+                                              child: Text(r.point,
+                                                  style: TextStyle(
+                                                      color: AppColors.text,
+                                                      fontSize: 13,
+                                                      height: 1.45,
+                                                      fontWeight:
+                                                          FontWeight.w600))),
+                                          const SizedBox(width: 6),
+                                          Icon(Icons.volume_up_rounded,
+                                              size: 17, color: AppColors.muted),
+                                        ]),
+                                  ),
+                                ),
+                              ]);
                         },
                       ),
               ),

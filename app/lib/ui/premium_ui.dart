@@ -21,8 +21,11 @@ class AuroraBackground extends StatefulWidget {
   State<AuroraBackground> createState() => _AuroraBackgroundState();
 }
 
-class _AuroraBackgroundState extends State<AuroraBackground> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 24))..repeat();
+class _AuroraBackgroundState extends State<AuroraBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(seconds: 24))
+        ..repeat();
 
   @override
   void dispose() {
@@ -61,7 +64,13 @@ class _AuroraPainter extends CustomPainter {
   final Color c2;
   final Color c3;
   final double strength;
-  _AuroraPainter({required this.t, required this.dense, required this.c1, required this.c2, required this.c3, required this.strength});
+  _AuroraPainter(
+      {required this.t,
+      required this.dense,
+      required this.c1,
+      required this.c2,
+      required this.c3,
+      required this.strength});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -69,7 +78,9 @@ class _AuroraPainter extends CustomPainter {
     final h = size.height;
     void blob(Offset c, double r, Color color, double alpha) {
       final paint = Paint()
-        ..shader = RadialGradient(colors: [color.withOpacity(alpha), color.withOpacity(0)]).createShader(Rect.fromCircle(center: c, radius: r))
+        ..shader = RadialGradient(
+                colors: [color.withOpacity(alpha), color.withOpacity(0)])
+            .createShader(Rect.fromCircle(center: c, radius: r))
         ..blendMode = BlendMode.screen;
       canvas.drawCircle(c, r, paint);
     }
@@ -78,13 +89,29 @@ class _AuroraPainter extends CustomPainter {
     final a2 = 2 * math.pi * t + 2.1;
     final a3 = 2 * math.pi * t + 4.2;
     final k = dense ? 1.0 : 0.72;
-    blob(Offset(w * (0.22 + 0.12 * math.sin(a1)), h * (0.16 + 0.10 * math.cos(a1 * 0.8))), w * 0.62 * k, c1, strength);
-    blob(Offset(w * (0.82 + 0.10 * math.cos(a2)), h * (0.30 + 0.12 * math.sin(a2 * 0.9))), w * 0.58 * k, c2, strength * 0.85);
-    blob(Offset(w * (0.50 + 0.18 * math.sin(a3 * 0.7)), h * (0.86 + 0.06 * math.cos(a3))), w * 0.70 * k, c3, strength * 0.72);
+    blob(
+        Offset(w * (0.22 + 0.12 * math.sin(a1)),
+            h * (0.16 + 0.10 * math.cos(a1 * 0.8))),
+        w * 0.62 * k,
+        c1,
+        strength);
+    blob(
+        Offset(w * (0.82 + 0.10 * math.cos(a2)),
+            h * (0.30 + 0.12 * math.sin(a2 * 0.9))),
+        w * 0.58 * k,
+        c2,
+        strength * 0.85);
+    blob(
+        Offset(w * (0.50 + 0.18 * math.sin(a3 * 0.7)),
+            h * (0.86 + 0.06 * math.cos(a3))),
+        w * 0.70 * k,
+        c3,
+        strength * 0.72);
   }
 
   @override
-  bool shouldRepaint(covariant _AuroraPainter old) => old.t != t || old.c1 != c1 || old.c2 != c2 || old.c3 != c3;
+  bool shouldRepaint(covariant _AuroraPainter old) =>
+      old.t != t || old.c1 != c1 || old.c2 != c2 || old.c3 != c3;
 }
 
 /// Frosted glass surface — used for top-level cards instead of flat fills.
@@ -115,19 +142,31 @@ class GlassCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            (tint ?? AppColors.palette.text).withOpacity(alpha + (AppColors.isLight ? 0.55 : 0.05)),
-            (tint ?? AppColors.palette.text).withOpacity(alpha * (AppColors.isLight ? 0.9 : 0.35)),
+            (tint ?? AppColors.palette.text)
+                .withOpacity(alpha + (AppColors.isLight ? 0.55 : 0.05)),
+            (tint ?? AppColors.palette.text)
+                .withOpacity(alpha * (AppColors.isLight ? 0.9 : 0.35)),
           ],
         ),
-        border: Border.all(color: AppColors.stroke.withOpacity(AppColors.isLight ? 0.9 : 0.45)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(AppColors.isLight ? 0.10 : 0.35), blurRadius: 26, offset: const Offset(0, 12))],
+        border: Border.all(
+            color:
+                AppColors.stroke.withOpacity(AppColors.isLight ? 0.9 : 0.45)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(AppColors.isLight ? 0.10 : 0.35),
+              blurRadius: 26,
+              offset: const Offset(0, 12))
+        ],
       ),
       child: child,
     );
     if (onTap == null) return content;
     return Material(
       color: Colors.transparent,
-      child: InkWell(borderRadius: BorderRadius.circular(radius), onTap: onTap, child: content),
+      child: InkWell(
+          borderRadius: BorderRadius.circular(radius),
+          onTap: onTap,
+          child: content),
     );
   }
 }
@@ -137,7 +176,10 @@ class AnimatedCount extends StatelessWidget {
   final int value;
   final TextStyle? style;
   final Duration duration;
-  const AnimatedCount(this.value, {super.key, this.style, this.duration = const Duration(milliseconds: 700)});
+  const AnimatedCount(this.value,
+      {super.key,
+      this.style,
+      this.duration = const Duration(milliseconds: 700)});
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +197,8 @@ class RiseIn extends StatelessWidget {
   final Widget child;
   final int index;
   final bool enabled;
-  const RiseIn({super.key, required this.child, this.index = 0, this.enabled = true});
+  const RiseIn(
+      {super.key, required this.child, this.index = 0, this.enabled = true});
 
   @override
   Widget build(BuildContext context) {
@@ -175,15 +218,22 @@ class RiseIn extends StatelessWidget {
 }
 
 /// Confetti + sparkle burst for achievements. Shows once, then fades.
-Future<void> showCelebration(BuildContext context, {required String title, String? subtitle, bool big = true}) async {
+Future<void> showCelebration(BuildContext context,
+    {required String title, String? subtitle, bool big = true}) async {
   await showGeneralDialog(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'celebration',
     barrierColor: Colors.black54,
     transitionDuration: const Duration(milliseconds: 260),
-    pageBuilder: (ctx, a1, a2) => _Celebration(title: title, subtitle: subtitle, big: big),
-    transitionBuilder: (ctx, anim, _, child) => FadeTransition(opacity: anim, child: ScaleTransition(scale: Tween(begin: 0.92, end: 1.0).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutBack)), child: child)),
+    pageBuilder: (ctx, a1, a2) =>
+        _Celebration(title: title, subtitle: subtitle, big: big),
+    transitionBuilder: (ctx, anim, _, child) => FadeTransition(
+        opacity: anim,
+        child: ScaleTransition(
+            scale: Tween(begin: 0.92, end: 1.0).animate(
+                CurvedAnimation(parent: anim, curve: Curves.easeOutBack)),
+            child: child)),
   );
 }
 
@@ -197,8 +247,11 @@ class _Celebration extends StatefulWidget {
   State<_Celebration> createState() => _CelebrationState();
 }
 
-class _CelebrationState extends State<_Celebration> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..forward();
+class _CelebrationState extends State<_Celebration>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1600))
+    ..forward();
 
   @override
   void dispose() {
@@ -213,7 +266,11 @@ class _CelebrationState extends State<_Celebration> with SingleTickerProviderSta
         width: 320,
         height: 380,
         child: Stack(alignment: Alignment.center, children: [
-          Positioned.fill(child: AnimatedBuilder(animation: _c, builder: (_, __) => CustomPaint(painter: _ConfettiPainter(_c.value)))),
+          Positioned.fill(
+              child: AnimatedBuilder(
+                  animation: _c,
+                  builder: (_, __) =>
+                      CustomPaint(painter: _ConfettiPainter(_c.value)))),
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: Container(
@@ -222,18 +279,37 @@ class _CelebrationState extends State<_Celebration> with SingleTickerProviderSta
               decoration: BoxDecoration(
                 gradient: AppColors.heroGradient,
                 borderRadius: BorderRadius.circular(26),
-                boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 30, offset: Offset(0, 14))],
+                boxShadow: const [
+                  BoxShadow(
+                      color: Colors.black54,
+                      blurRadius: 30,
+                      offset: Offset(0, 14))
+                ],
               ),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(widget.big ? Icons.emoji_events_rounded : Icons.auto_awesome_rounded, color: const Color(0xFFFDE68A), size: 52),
+                Icon(
+                    widget.big
+                        ? Icons.emoji_events_rounded
+                        : Icons.auto_awesome_rounded,
+                    color: const Color(0xFFFDE68A),
+                    size: 52),
                 const SizedBox(height: 10),
-                Text(widget.title, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900)),
+                Text(widget.title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900)),
                 if (widget.subtitle != null) ...[
                   const SizedBox(height: 6),
-                  Text(widget.subtitle!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.4)),
+                  Text(widget.subtitle!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 12.5, height: 1.4)),
                 ],
                 const SizedBox(height: 14),
-                const Text('tap to continue', style: TextStyle(color: Colors.white38, fontSize: 10.5)),
+                const Text('tap to continue',
+                    style: TextStyle(color: Colors.white38, fontSize: 10.5)),
               ]),
             ),
           ),
@@ -251,18 +327,33 @@ class _ConfettiPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (t <= 0 || t >= 1) return;
     final rnd = math.Random(7);
-    const colors = [Color(0xFFFBBF24), Color(0xFF2DD4BF), Color(0xFFA855F7), Color(0xFFF472B6), Color(0xFF60A5FA), Color(0xFF34D399)];
+    const colors = [
+      Color(0xFFFBBF24),
+      Color(0xFF2DD4BF),
+      Color(0xFFA855F7),
+      Color(0xFFF472B6),
+      Color(0xFF60A5FA),
+      Color(0xFF34D399)
+    ];
     final center = Offset(size.width / 2, size.height / 2);
     for (var i = 0; i < 64; i++) {
       final angle = rnd.nextDouble() * math.pi * 2;
       final speed = 90 + rnd.nextDouble() * 170;
       final life = Curves.easeOut.transform((t * 1.5).clamp(0.0, 1.0));
-      final p = center + Offset(math.cos(angle), math.sin(angle)) * speed * life + Offset(0, 60 * t * t);
-      final paint = Paint()..color = colors[i % colors.length].withOpacity((1 - t).clamp(0.0, 1.0));
+      final p = center +
+          Offset(math.cos(angle), math.sin(angle)) * speed * life +
+          Offset(0, 60 * t * t);
+      final paint = Paint()
+        ..color =
+            colors[i % colors.length].withOpacity((1 - t).clamp(0.0, 1.0));
       canvas.save();
       canvas.translate(p.dx, p.dy);
       canvas.rotate(angle + t * 6);
-      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset.zero, width: 7, height: 4), const Radius.circular(1.5)), paint);
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(
+              Rect.fromCenter(center: Offset.zero, width: 7, height: 4),
+              const Radius.circular(1.5)),
+          paint);
       canvas.restore();
     }
   }
@@ -278,11 +369,14 @@ class PageTransition {
         reverseTransitionDuration: const Duration(milliseconds: 240),
         pageBuilder: (context, anim, secondary) => page,
         transitionsBuilder: (context, anim, secondary, child) {
-          final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+          final curved =
+              CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
           return FadeTransition(
             opacity: curved,
             child: SlideTransition(
-              position: Tween<Offset>(begin: const Offset(0, 0.035), end: Offset.zero).animate(curved),
+              position:
+                  Tween<Offset>(begin: const Offset(0, 0.035), end: Offset.zero)
+                      .animate(curved),
               child: child,
             ),
           );
@@ -296,14 +390,24 @@ class GradientText extends StatelessWidget {
   final double size;
   final FontWeight weight;
   final Gradient? gradient;
-   GradientText(this.text, {super.key, this.size = 22, this.weight = FontWeight.w900, this.gradient});
+  GradientText(this.text,
+      {super.key,
+      this.size = 22,
+      this.weight = FontWeight.w900,
+      this.gradient});
 
   @override
   Widget build(BuildContext context) {
     return ShaderMask(
       blendMode: BlendMode.srcIn,
-      shaderCallback: (rect) => (gradient ?? AppColors.heroGradient).createShader(Rect.fromLTWH(0, 0, rect.width, rect.height)),
-      child: Text(text, style: TextStyle(fontSize: size, fontWeight: weight, color: Colors.white, letterSpacing: -0.2)),
+      shaderCallback: (rect) => (gradient ?? AppColors.heroGradient)
+          .createShader(Rect.fromLTWH(0, 0, rect.width, rect.height)),
+      child: Text(text,
+          style: TextStyle(
+              fontSize: size,
+              fontWeight: weight,
+              color: Colors.white,
+              letterSpacing: -0.2)),
     );
   }
 }
@@ -322,8 +426,16 @@ class GlowIcon extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size * 0.30),
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [color.withOpacity(0.90), color.withOpacity(0.45)]),
-        boxShadow: [BoxShadow(color: color.withOpacity(0.42), blurRadius: 16, offset: const Offset(0, 6))],
+        gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [color.withOpacity(0.90), color.withOpacity(0.45)]),
+        boxShadow: [
+          BoxShadow(
+              color: color.withOpacity(0.42),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
+        ],
       ),
       child: Icon(icon, color: Colors.white, size: size * 0.52),
     );

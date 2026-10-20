@@ -14,10 +14,15 @@ class StudyStats {
   static Future<void> recordActivity({int scenes = 0, int seconds = 0}) async {
     final p = await SharedPreferences.getInstance();
     final today = _dayKey(DateTime.now());
-    final days = (p.getStringList('study_days') ?? <String>[]).toSet()..add(today);
+    final days = (p.getStringList('study_days') ?? <String>[]).toSet()
+      ..add(today);
     await p.setStringList('study_days', days.toList());
-    if (scenes > 0) await p.setInt('study_scenes_$today', (p.getInt('study_scenes_$today') ?? 0) + scenes);
-    if (seconds > 0) await p.setInt('study_secs_$today', (p.getInt('study_secs_$today') ?? 0) + seconds);
+    if (scenes > 0)
+      await p.setInt('study_scenes_$today',
+          (p.getInt('study_scenes_$today') ?? 0) + scenes);
+    if (seconds > 0)
+      await p.setInt(
+          'study_secs_$today', (p.getInt('study_secs_$today') ?? 0) + seconds);
     // keep only 400 days
     if (days.length > 400) {
       final sorted = days.toList()..sort();
@@ -73,7 +78,8 @@ class StudyStats {
 
   static Future<int> minutesToday() async {
     final p = await SharedPreferences.getInstance();
-    return ((p.getInt('study_secs_${_dayKey(DateTime.now())}') ?? 0) / 60).floor();
+    return ((p.getInt('study_secs_${_dayKey(DateTime.now())}') ?? 0) / 60)
+        .floor();
   }
 
   /// Total XP across every textbook on this phone.
@@ -89,7 +95,18 @@ class StudyStats {
   static int levelForXp(int xp) => 1 + (xp ~/ 250);
 
   static String levelName(int level) {
-    const names = ['Starter', 'Learner', 'Explorer', 'Achiever', 'Scholar', 'Thinker', 'Topper', 'Master', 'Genius', 'Legend'];
+    const names = [
+      'Starter',
+      'Learner',
+      'Explorer',
+      'Achiever',
+      'Scholar',
+      'Thinker',
+      'Topper',
+      'Master',
+      'Genius',
+      'Legend'
+    ];
     return names[(level - 1).clamp(0, names.length - 1).toInt()];
   }
 
@@ -102,27 +119,38 @@ class StudyStats {
     final quizPerfect = p.getInt('study_quiz_perfect') ?? 0;
     final passed = exams.contains('"passed":true') || exams.contains('passed');
     return [
-      BadgeInfo('first_class', 'First Class', 'Finish your first class', Icons2.school, classes >= 1),
-      BadgeInfo('five_classes', 'On a Roll', 'Finish 5 classes', Icons2.fire, classes >= 5),
-      BadgeInfo('twenty_classes', 'Chapter Explorer', 'Finish 20 classes', Icons2.explore, classes >= 20),
-      BadgeInfo('streak3', 'Warming Up', 'Study 3 days in a row', Icons2.calendar, streak >= 3),
-      BadgeInfo('streak7', 'Week Warrior', 'Study 7 days in a row', Icons2.bolt, streak >= 7),
-      BadgeInfo('streak30', 'Streak Legend', 'Study 30 days in a row', Icons2.trophy, streak >= 30),
-      BadgeInfo('flash25', 'Word Collector', 'Review 25 flashcards', Icons2.cards, flash >= 25),
-      BadgeInfo('flash100', 'Memory Master', 'Review 100 flashcards', Icons2.brain, flash >= 100),
-      BadgeInfo('perfect', 'Perfect Score', 'Score 100% in a test', Icons2.star, quizPerfect >= 1),
+      BadgeInfo('first_class', 'First Class', 'Finish your first class',
+          Icons2.school, classes >= 1),
+      BadgeInfo('five_classes', 'On a Roll', 'Finish 5 classes', Icons2.fire,
+          classes >= 5),
+      BadgeInfo('twenty_classes', 'Chapter Explorer', 'Finish 20 classes',
+          Icons2.explore, classes >= 20),
+      BadgeInfo('streak3', 'Warming Up', 'Study 3 days in a row',
+          Icons2.calendar, streak >= 3),
+      BadgeInfo('streak7', 'Week Warrior', 'Study 7 days in a row', Icons2.bolt,
+          streak >= 7),
+      BadgeInfo('streak30', 'Streak Legend', 'Study 30 days in a row',
+          Icons2.trophy, streak >= 30),
+      BadgeInfo('flash25', 'Word Collector', 'Review 25 flashcards',
+          Icons2.cards, flash >= 25),
+      BadgeInfo('flash100', 'Memory Master', 'Review 100 flashcards',
+          Icons2.brain, flash >= 100),
+      BadgeInfo('perfect', 'Perfect Score', 'Score 100% in a test', Icons2.star,
+          quizPerfect >= 1),
       BadgeInfo('exam', 'Exam Ready', 'Pass a part test', Icons2.check, passed),
     ];
   }
 
   static Future<void> bumpPerfectQuiz() async {
     final p = await SharedPreferences.getInstance();
-    await p.setInt('study_quiz_perfect', (p.getInt('study_quiz_perfect') ?? 0) + 1);
+    await p.setInt(
+        'study_quiz_perfect', (p.getInt('study_quiz_perfect') ?? 0) + 1);
   }
 
   static Future<void> bumpFlashcards([int n = 1]) async {
     final p = await SharedPreferences.getInstance();
-    await p.setInt('study_flash_reviewed', (p.getInt('study_flash_reviewed') ?? 0) + n);
+    await p.setInt(
+        'study_flash_reviewed', (p.getInt('study_flash_reviewed') ?? 0) + n);
   }
 
   // ---------- backup ----------
@@ -161,7 +189,8 @@ class StudyStats {
   /// Returns how many keys were restored.
   static Future<int> importJson(String raw) async {
     final decoded = jsonDecode(raw);
-    if (decoded is! Map || decoded['data'] is! Map) throw const FormatException('Not a classroom backup file');
+    if (decoded is! Map || decoded['data'] is! Map)
+      throw const FormatException('Not a classroom backup file');
     final data = decoded['data'] as Map;
     final p = await SharedPreferences.getInstance();
     var n = 0;
@@ -192,7 +221,8 @@ class BadgeInfo {
   final String description;
   final String icon;
   final bool unlocked;
-  const BadgeInfo(this.id, this.title, this.description, this.icon, this.unlocked);
+  const BadgeInfo(
+      this.id, this.title, this.description, this.icon, this.unlocked);
 }
 
 /// Tiny icon-name constants so this file stays free of Flutter imports.

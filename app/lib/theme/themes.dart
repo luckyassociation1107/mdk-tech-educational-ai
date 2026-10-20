@@ -161,7 +161,8 @@ class AppPalette {
     required Color accent,
   }) {
     final isLight = bg.computeLuminance() > 0.5;
-    Color mix(Color a, Color b, double t) => Color.lerp(a, b, t.clamp(0.0, 1.0))!;
+    Color mix(Color a, Color b, double t) =>
+        Color.lerp(a, b, t.clamp(0.0, 1.0))!;
     return AppPalette(
       id: id,
       name: name,
@@ -169,7 +170,8 @@ class AppPalette {
       bg: bg,
       bg2: mix(bg, card, 0.45),
       card: card,
-      cardLight: isLight ? mix(card, text, 0.06) : mix(card, Colors.white, 0.07),
+      cardLight:
+          isLight ? mix(card, text, 0.06) : mix(card, Colors.white, 0.07),
       stroke: isLight ? mix(card, text, 0.16) : mix(card, Colors.white, 0.16),
       text: text,
       muted: isLight ? mix(text, bg, 0.45) : mix(text, bg, 0.50),
@@ -337,7 +339,8 @@ class ThemeManager {
       if (raw != null && raw.isNotEmpty) {
         final list = jsonDecode(raw);
         if (list is List) {
-          _customs = list.whereType<Map>().map((m) => AppPalette.fromJson(m)).toList();
+          _customs =
+              list.whereType<Map>().map((m) => AppPalette.fromJson(m)).toList();
         }
       }
     } catch (_) {
@@ -397,7 +400,8 @@ class ThemeManager {
 
   static Future<void> _persistCustoms() async {
     final p = await SharedPreferences.getInstance();
-    await p.setString(_kCustoms, jsonEncode(_customs.map((e) => e.toJson()).toList()));
+    await p.setString(
+        _kCustoms, jsonEncode(_customs.map((e) => e.toJson()).toList()));
     revision.value++;
   }
 
@@ -408,7 +412,12 @@ class ThemeManager {
       'app': 'AI Textbook Classroom',
       'kind': 'theme',
       'version': 1,
-      'theme': {...t.toJson(), 'id': t.isCustom ? t.id : 'imported_${DateTime.now().millisecondsSinceEpoch}'},
+      'theme': {
+        ...t.toJson(),
+        'id': t.isCustom
+            ? t.id
+            : 'imported_${DateTime.now().millisecondsSinceEpoch}'
+      },
     });
   }
 

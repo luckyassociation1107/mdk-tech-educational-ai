@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Student-only app: no accounts, no roles — one learner, their PDFs.
 class AppSettings {
   String language; // en-IN | te-IN  (voice sample / UI language)
-  String explainLanguage; // ISO code: explanation is translated into this language
+  String
+      explainLanguage; // ISO code: explanation is translated into this language
   String voiceName; // chosen Android TTS voice ('' = system default)
   double speechRate; // 0.5 .. 1.5
   double speechPitch; // 0.7 .. 1.3
@@ -70,10 +71,14 @@ class ProgressStore {
 
   static Future<Set<int>> completedParts(String sessionId) async {
     final p = await SharedPreferences.getInstance();
-    return (p.getStringList(_doneKey(sessionId)) ?? const []).map(int.tryParse).whereType<int>().toSet();
+    return (p.getStringList(_doneKey(sessionId)) ?? const [])
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet();
   }
 
-  static Future<void> setPartCompleted(String sessionId, int part, bool done) async {
+  static Future<void> setPartCompleted(
+      String sessionId, int part, bool done) async {
     final p = await SharedPreferences.getInstance();
     final cur = await completedParts(sessionId);
     done ? cur.add(part) : cur.remove(part);

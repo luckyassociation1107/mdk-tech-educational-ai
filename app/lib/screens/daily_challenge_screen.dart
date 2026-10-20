@@ -15,7 +15,11 @@ class DailyChallengeScreen extends StatefulWidget {
   final EngineGateway gateway;
   final AppSettings settings;
   final List<TextbookItem> books;
-  const DailyChallengeScreen({super.key, required this.gateway, required this.settings, required this.books});
+  const DailyChallengeScreen(
+      {super.key,
+      required this.gateway,
+      required this.settings,
+      required this.books});
 
   @override
   State<DailyChallengeScreen> createState() => _DailyChallengeScreenState();
@@ -54,11 +58,16 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
           brain: widget.settings.brain,
           brainServerUrl: widget.settings.brainServerUrl,
         );
-        final parts = ((s['parts'] as List?) ?? const []).whereType<Map>().map(SeriesPart.fromMap).toList();
+        final parts = ((s['parts'] as List?) ?? const [])
+            .whereType<Map>()
+            .map(SeriesPart.fromMap)
+            .toList();
         final pts = parts.expand((p) => p.keyPoints).toList();
         if (pts.isNotEmpty) {
           allPoints.addAll(pts);
-          pickedTitle = pickedTitle.isEmpty ? b.shortTitle : '$pickedTitle • ${b.shortTitle}';
+          pickedTitle = pickedTitle.isEmpty
+              ? b.shortTitle
+              : '$pickedTitle • ${b.shortTitle}';
         }
       } catch (_) {}
     }
@@ -95,13 +104,21 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     if (_i >= _qs.length - 1) {
       final pct = (_right / _qs.length) * 100;
       if (widget.books.isNotEmpty) {
-        await ProgressStore.addXp(widget.books.first.sessionId, pct >= 80 ? 60 : pct >= 40 ? 30 : 10);
+        await ProgressStore.addXp(
+            widget.books.first.sessionId,
+            pct >= 80
+                ? 60
+                : pct >= 40
+                    ? 30
+                    : 10);
       }
       await StudyStats.recordActivity(scenes: 1);
       if (!mounted) return;
       setState(() => _done = true);
       if (pct >= 80) {
-        await showCelebration(context, title: 'Daily challenge cleared!', subtitle: '+60 XP — come back tomorrow for a new set.');
+        await showCelebration(context,
+            title: 'Daily challenge cleared!',
+            subtitle: '+60 XP — come back tomorrow for a new set.');
       }
       return;
     }
@@ -118,7 +135,8 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Daily challenge', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        title: const Text('Daily challenge',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -126,7 +144,8 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
               ? const EmptyState(
                   icon: Icons.bolt_rounded,
                   title: 'Nothing to challenge yet',
-                  message: 'Add a textbook and watch one class — the daily challenge is built from your own key points.',
+                  message:
+                      'Add a textbook and watch one class — the daily challenge is built from your own key points.',
                 )
               : _done
                   ? _result()
@@ -140,99 +159,164 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(children: [
-                            const Icon(Icons.bolt_rounded, color: Colors.white, size: 30),
+                            const Icon(Icons.bolt_rounded,
+                                color: Colors.white, size: 30),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                const Text("Today's 5 questions",
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
-                                Text(_bookTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
-                              ]),
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text("Today's 5 questions",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 15)),
+                                    Text(_bookTitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 11.5)),
+                                  ]),
                             ),
                             Text('${_i + 1}/${_qs.length}',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15)),
                           ]),
                         ),
                         const SizedBox(height: 14),
                         GradientCard(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Row(children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(color: AppColors.indigo.withOpacity(0.18), borderRadius: BorderRadius.circular(99)),
-                                child: Text(_qs[_i].type.label,
-                                    style: TextStyle(color: AppColors.teal, fontSize: 10, fontWeight: FontWeight.w900)),
-                              ),
-                              const Spacer(),
-                              Text('$_right right', style: TextStyle(color: AppColors.muted, fontSize: 11.5, fontWeight: FontWeight.w700)),
-                            ]),
-                            const SizedBox(height: 10),
-                            Text(_qs[_i].prompt,
-                                style: TextStyle(color: AppColors.text, fontSize: 16, height: 1.45, fontWeight: FontWeight.w700)),
-                            const SizedBox(height: 14),
-                            if (_qs[_i].type == QuestionType.mcq)
-                              ..._qs[_i].options.map((o) {
-                                final isAnswer = o.trim().toLowerCase() == _qs[_i].answer.trim().toLowerCase();
-                                final chosen = _picked?.trim().toLowerCase() == o.trim().toLowerCase();
-                                final color = _revealed && isAnswer
-                                    ? AppColors.green
-                                    : (_revealed && chosen ? AppColors.red : AppColors.stroke);
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(12),
-                                    onTap: _revealed ? null : () => _answer(o),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        color: _revealed && isAnswer
-                                            ? AppColors.green.withOpacity(0.12)
-                                            : (_revealed && chosen ? AppColors.red.withOpacity(0.12) : AppColors.cardLight),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                        color:
+                                            AppColors.indigo.withOpacity(0.18),
+                                        borderRadius:
+                                            BorderRadius.circular(99)),
+                                    child: Text(_qs[_i].type.label,
+                                        style: TextStyle(
+                                            color: AppColors.teal,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w900)),
+                                  ),
+                                  const Spacer(),
+                                  Text('$_right right',
+                                      style: TextStyle(
+                                          color: AppColors.muted,
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w700)),
+                                ]),
+                                const SizedBox(height: 10),
+                                Text(_qs[_i].prompt,
+                                    style: TextStyle(
+                                        color: AppColors.text,
+                                        fontSize: 16,
+                                        height: 1.45,
+                                        fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 14),
+                                if (_qs[_i].type == QuestionType.mcq)
+                                  ..._qs[_i].options.map((o) {
+                                    final isAnswer = o.trim().toLowerCase() ==
+                                        _qs[_i].answer.trim().toLowerCase();
+                                    final chosen =
+                                        _picked?.trim().toLowerCase() ==
+                                            o.trim().toLowerCase();
+                                    final color = _revealed && isAnswer
+                                        ? AppColors.green
+                                        : (_revealed && chosen
+                                            ? AppColors.red
+                                            : AppColors.stroke);
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: InkWell(
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: color),
+                                        onTap:
+                                            _revealed ? null : () => _answer(o),
+                                        child: Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 14, vertical: 12),
+                                          decoration: BoxDecoration(
+                                            color: _revealed && isAnswer
+                                                ? AppColors.green
+                                                    .withOpacity(0.12)
+                                                : (_revealed && chosen
+                                                    ? AppColors.red
+                                                        .withOpacity(0.12)
+                                                    : AppColors.cardLight),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(color: color),
+                                          ),
+                                          child: Text(o,
+                                              style: TextStyle(
+                                                  color: AppColors.text,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600)),
+                                        ),
                                       ),
-                                      child: Text(o, style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.w600)),
+                                    );
+                                  })
+                                else
+                                  _FillAnswer(
+                                    revealed: _revealed,
+                                    onCheck: _answer,
+                                  ),
+                                if (_revealed) ...[
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.amber.withOpacity(0.10),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                          color:
+                                              AppColors.amber.withOpacity(0.4)),
+                                    ),
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Answer: ${_qs[_i].answer}',
+                                              style: TextStyle(
+                                                  color: AppColors.amber,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 12.5)),
+                                          const SizedBox(height: 4),
+                                          Text(_qs[_i].explanation,
+                                              style: TextStyle(
+                                                  color: AppColors.text,
+                                                  fontSize: 12.5,
+                                                  height: 1.45)),
+                                        ]),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.icon(
+                                      onPressed: _next,
+                                      icon: Icon(_i >= _qs.length - 1
+                                          ? Icons.flag_rounded
+                                          : Icons.arrow_forward_rounded),
+                                      label: Text(_i >= _qs.length - 1
+                                          ? 'See result'
+                                          : 'Next'),
+                                      style: FilledButton.styleFrom(
+                                          backgroundColor: AppColors.indigo,
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 13)),
                                     ),
                                   ),
-                                );
-                              })
-                            else
-                              _FillAnswer(
-                                revealed: _revealed,
-                                onCheck: _answer,
-
-                              ),
-                            if (_revealed) ...[
-                              const SizedBox(height: 6),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.amber.withOpacity(0.10),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.amber.withOpacity(0.4)),
-                                ),
-                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                  Text('Answer: ${_qs[_i].answer}',
-                                      style: TextStyle(color: AppColors.amber, fontWeight: FontWeight.w900, fontSize: 12.5)),
-                                  const SizedBox(height: 4),
-                                  Text(_qs[_i].explanation, style: TextStyle(color: AppColors.text, fontSize: 12.5, height: 1.45)),
-                                ]),
-                              ),
-                              const SizedBox(height: 10),
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  onPressed: _next,
-                                  icon: Icon(_i >= _qs.length - 1 ? Icons.flag_rounded : Icons.arrow_forward_rounded),
-                                  label: Text(_i >= _qs.length - 1 ? 'See result' : 'Next'),
-                                  style: FilledButton.styleFrom(backgroundColor: AppColors.indigo, padding: const EdgeInsets.symmetric(vertical: 13)),
-                                ),
-                              ),
-                            ],
-                          ]),
+                                ],
+                              ]),
                         ),
                       ],
                     ),
@@ -246,12 +330,24 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(22)),
+          decoration: BoxDecoration(
+              gradient: AppColors.heroGradient,
+              borderRadius: BorderRadius.circular(22)),
           child: Column(children: [
-            Icon(pct >= 80 ? Icons.emoji_events_rounded : Icons.bolt_rounded, color: Colors.white, size: 46),
+            Icon(pct >= 80 ? Icons.emoji_events_rounded : Icons.bolt_rounded,
+                color: Colors.white, size: 46),
             const SizedBox(height: 8),
-            Text('$_right / ${_qs.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 26)),
-            Text(pct >= 80 ? 'Excellent! +60 XP' : pct >= 40 ? 'Good — +30 XP' : 'Keep going — +10 XP',
+            Text('$_right / ${_qs.length}',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 26)),
+            Text(
+                pct >= 80
+                    ? 'Excellent! +60 XP'
+                    : pct >= 40
+                        ? 'Good — +30 XP'
+                        : 'Keep going — +10 XP',
                 style: const TextStyle(color: Colors.white70, fontSize: 13)),
           ]),
         ),
@@ -298,7 +394,9 @@ class _FillAnswerState extends State<_FillAnswer> {
         const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
-          child: FilledButton(onPressed: () => widget.onCheck(_c.text), child: const Text('Check')),
+          child: FilledButton(
+              onPressed: () => widget.onCheck(_c.text),
+              child: const Text('Check')),
         ),
       ],
     ]);

@@ -17,14 +17,20 @@ class ReaderScreen extends StatefulWidget {
   final TextbookItem book;
   final int startPage;
   final List<int>? highlightPages;
-  const ReaderScreen({super.key, required this.settings, required this.book, this.startPage = 1, this.highlightPages});
+  const ReaderScreen(
+      {super.key,
+      required this.settings,
+      required this.book,
+      this.startPage = 1,
+      this.highlightPages});
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
 class _ReaderScreenState extends State<ReaderScreen> {
-  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
+  static const MethodChannel _ttsCh =
+      MethodChannel('com.mdk.textbook_video/engine');
   DartPdfIndex? _index;
   String _dir = '';
   PageController? _pc;
@@ -44,7 +50,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Future<void> _loadBookmarks() async {
     final p = await SharedPreferences.getInstance();
-    final list = (p.getStringList(_bmKey) ?? const <String>[]).map(int.tryParse).whereType<int>().toSet();
+    final list = (p.getStringList(_bmKey) ?? const <String>[])
+        .map(int.tryParse)
+        .whereType<int>()
+        .toSet();
     if (mounted) setState(() => _bookmarks = list);
   }
 
@@ -56,39 +65,56 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (!mounted) return;
     setState(() => _bookmarks = set);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(set.contains(_page) ? 'Page $_page bookmarked' : 'Bookmark removed'),
+      content: Text(
+          set.contains(_page) ? 'Page $_page bookmarked' : 'Bookmark removed'),
       duration: const Duration(milliseconds: 1200),
     ));
   }
 
   Future<void> _openBookmarks() async {
     if (_bookmarks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No bookmarks yet — tap the bookmark icon on any page.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('No bookmarks yet — tap the bookmark icon on any page.')));
       return;
     }
     final pages = _bookmarks.toList()..sort();
     final chosen = await showModalBottomSheet<int>(
       context: context,
       backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 12),
-          Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(99))),
-          const Padding(
+          Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(99))),
+          Padding(
             padding: EdgeInsets.all(14),
-            child: Text('Bookmarks', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16)),
+            child: Text('Bookmarks',
+                style: TextStyle(
+                    color: AppColors.text,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16)),
           ),
           ...pages.map((pg) => ListTile(
                 leading: Icon(Icons.bookmark_rounded, color: AppColors.amber),
-                title: Text('Page $pg', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700)),
+                title: Text('Page $pg',
+                    style: TextStyle(
+                        color: AppColors.text, fontWeight: FontWeight.w700)),
                 trailing: IconButton(
-                  icon: Icon(Icons.close_rounded, size: 18, color: AppColors.muted),
+                  icon: Icon(Icons.close_rounded,
+                      size: 18, color: AppColors.muted),
                   onPressed: () async {
                     Navigator.of(ctx).pop();
                     final p = await SharedPreferences.getInstance();
                     final set = {..._bookmarks}..remove(pg);
-                    await p.setStringList(_bmKey, set.map((e) => '$e').toList());
+                    await p.setStringList(
+                        _bmKey, set.map((e) => '$e').toList());
                     if (mounted) setState(() => _bookmarks = set);
                   },
                 ),
@@ -125,7 +151,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => _SearchSheet(index: index, controller: ctrl),
     );
     if (page != null && mounted) {
@@ -150,7 +177,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final text = _index?.pageText(_page) ?? '';
     if (text.trim().isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This page has no readable text — it may be a picture page.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'This page has no readable text — it may be a picture page.')));
       return;
     }
     final clipped = text.length > 1400 ? text.substring(0, 1400) : text;
@@ -178,16 +207,29 @@ class _ReaderScreenState extends State<ReaderScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF070B14),
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(widget.book.shortTitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style:  TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 15)),
-          Text('Page $_page of $total', style:  TextStyle(color: AppColors.muted, fontSize: 11.5)),
+          Text(widget.book.shortTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.text,
+                  fontSize: 15)),
+          Text('Page $_page of $total',
+              style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
         ]),
         actions: [
-          IconButton(tooltip: 'Search this book', onPressed: _loading ? null : _search, icon:  Icon(Icons.search_rounded, color: AppColors.teal)),
+          IconButton(
+              tooltip: 'Search this book',
+              onPressed: _loading ? null : _search,
+              icon: Icon(Icons.search_rounded, color: AppColors.teal)),
           IconButton(
             tooltip: _speaking ? 'Stop reading' : 'Read this page to me',
             onPressed: _loading ? null : () => _readPage(stop: _speaking),
-            icon: Icon(_speaking ? Icons.stop_circle_rounded : Icons.record_voice_over_rounded, color: AppColors.teal),
+            icon: Icon(
+                _speaking
+                    ? Icons.stop_circle_rounded
+                    : Icons.record_voice_over_rounded,
+                color: AppColors.teal),
           ),
         ],
       ),
@@ -214,11 +256,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           child: EmptyState(
                             icon: Icons.image_not_supported_rounded,
                             title: 'Page not rendered',
-                            message: 'Open a class for this part once — the pages render on the phone and stay available here.',
+                            message:
+                                'Open a class for this part once — the pages render on the phone and stay available here.',
                           ),
                         );
                       }
-                      final marked = widget.highlightPages?.contains(i + 1) ?? false;
+                      final marked =
+                          widget.highlightPages?.contains(i + 1) ?? false;
                       return Stack(children: [
                         Positioned.fill(
                           child: InteractiveViewer(
@@ -236,9 +280,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             left: 10,
                             top: 10,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.95), borderRadius: BorderRadius.circular(99)),
-                              child: const Icon(Icons.bookmark_rounded, size: 13, color: Colors.black),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                  color: AppColors.amber.withOpacity(0.95),
+                                  borderRadius: BorderRadius.circular(99)),
+                              child: const Icon(Icons.bookmark_rounded,
+                                  size: 13, color: Colors.black),
                             ),
                           ),
                         if (marked)
@@ -246,9 +294,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             right: 10,
                             top: 10,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                              decoration: BoxDecoration(color: AppColors.amber.withOpacity(0.9), borderRadius: BorderRadius.circular(99)),
-                              child: const Text('PART PAGE', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.7)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 9, vertical: 4),
+                              decoration: BoxDecoration(
+                                  color: AppColors.amber.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(99)),
+                              child: const Text('PART PAGE',
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.7)),
                             ),
                           ),
                       ]);
@@ -259,27 +315,50 @@ class _ReaderScreenState extends State<ReaderScreen> {
               if (_chrome)
                 Container(
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
-                  decoration: const BoxDecoration(color: Color(0xFF0B1020), border: Border(top: BorderSide(color: Color(0xFF1E293B)))),
+                  decoration: const BoxDecoration(
+                      color: Color(0xFF0B1020),
+                      border:
+                          Border(top: BorderSide(color: Color(0xFF1E293B)))),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Row(children: [
-                      Text('$_page', style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      Text('$_page',
+                          style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700)),
                       Expanded(
                         child: Slider(
-                          value: total == 0 ? 1.0 : _page.toDouble().clamp(1.0, total.toDouble()).toDouble(),
+                          value: total == 0
+                              ? 1.0
+                              : _page
+                                  .toDouble()
+                                  .clamp(1.0, total.toDouble())
+                                  .toDouble(),
                           min: 1,
                           max: total == 0 ? 1 : total.toDouble(),
-                          onChanged: total <= 1 ? null : (v) => _goTo(v.round()),
+                          onChanged:
+                              total <= 1 ? null : (v) => _goTo(v.round()),
                           activeColor: AppColors.teal,
                         ),
                       ),
-                      Text('$total', style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700)),
+                      Text('$total',
+                          style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700)),
                     ]),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                      _pill(Icons.first_page_rounded, 'Start', () => _goTo(1)),
-                      _pill(Icons.chevron_left_rounded, 'Back', () => _goTo(_page - 1)),
-                      _pill(Icons.chevron_right_rounded, 'Next', () => _goTo(_page + 1)),
-                      _pill(Icons.last_page_rounded, 'End', () => _goTo(total)),
-                    ]),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _pill(Icons.first_page_rounded, 'Start',
+                              () => _goTo(1)),
+                          _pill(Icons.chevron_left_rounded, 'Back',
+                              () => _goTo(_page - 1)),
+                          _pill(Icons.chevron_right_rounded, 'Next',
+                              () => _goTo(_page + 1)),
+                          _pill(Icons.last_page_rounded, 'End',
+                              () => _goTo(total)),
+                        ]),
                   ]),
                 ),
             ]),
@@ -294,7 +373,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, color: AppColors.teal, size: 20),
-          Text(label, style:  TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700)),
         ]),
       ),
     );
@@ -348,21 +431,30 @@ class _SearchSheetState extends State<_SearchSheet> {
       maxChildSize: 0.95,
       builder: (ctx, scroll) => Column(children: [
         const SizedBox(height: 12),
-        Container(width: 42, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(99))),
+        Container(
+            width: 42,
+            height: 4,
+            decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(99))),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: TextField(
             controller: widget.controller,
             autofocus: true,
-            style:  TextStyle(color: AppColors.text),
+            style: TextStyle(color: AppColors.text),
             decoration: InputDecoration(
               hintText: 'Search the whole book…',
-              hintStyle:  TextStyle(color: AppColors.muted),
-              prefixIcon:  Icon(Icons.search_rounded, color: AppColors.muted),
+              hintStyle: TextStyle(color: AppColors.muted),
+              prefixIcon: Icon(Icons.search_rounded, color: AppColors.muted),
               filled: true,
               fillColor: AppColors.cardLight,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide:  BorderSide(color: AppColors.stroke)),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: AppColors.stroke)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: AppColors.stroke)),
             ),
             onChanged: _run,
           ),
@@ -374,7 +466,10 @@ class _SearchSheetState extends State<_SearchSheet> {
               _q.trim().length < 2
                   ? 'Type at least 2 letters.'
                   : '${_results.length}${_results.length >= 40 ? '+' : ''} pages found',
-              style:  TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700),
             ),
           ]),
         ),
@@ -390,20 +485,33 @@ class _SearchSheetState extends State<_SearchSheet> {
                 child: GradientCard(
                   onTap: () => Navigator.of(ctx).pop(r.page),
                   padding: const EdgeInsets.all(13),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(color: AppColors.teal.withOpacity(0.16), borderRadius: BorderRadius.circular(10)),
-                      child: Text('${r.page}', style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w900, fontSize: 13)),
-                    ),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Text(r.snippet, maxLines: 3, overflow: TextOverflow.ellipsis,
-                          style:  TextStyle(color: AppColors.text, fontSize: 12.5, height: 1.4)),
-                    ),
-                  ]),
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                              color: AppColors.teal.withOpacity(0.16),
+                              borderRadius: BorderRadius.circular(10)),
+                          child: Text('${r.page}',
+                              style: TextStyle(
+                                  color: AppColors.teal,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13)),
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Text(r.snippet,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: AppColors.text,
+                                  fontSize: 12.5,
+                                  height: 1.4)),
+                        ),
+                      ]),
                 ),
               );
             },

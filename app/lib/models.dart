@@ -19,14 +19,17 @@ class TextbookItem {
   factory TextbookItem.fromMap(Map<dynamic, dynamic> m) => TextbookItem(
         sessionId: (m['session_id'] ?? m['sessionId'] ?? '').toString(),
         title: (m['title'] ?? 'Textbook').toString(),
-        pageCount: (m['page_count'] as num?)?.toInt() ?? (m['pageCount'] as num?)?.toInt() ?? 0,
+        pageCount: (m['page_count'] as num?)?.toInt() ??
+            (m['pageCount'] as num?)?.toInt() ??
+            0,
         state: (m['state'] ?? 'active').toString(),
         brain: (m['brain'] ?? '').toString(),
         subjectLabel: (m['subject_label'] ?? '').toString(),
       );
 
   String get shortTitle {
-    final t = title.replaceAll(RegExp(r'\.(pdf|pmd)$', caseSensitive: false), '');
+    final t =
+        title.replaceAll(RegExp(r'\.(pdf|pmd)$', caseSensitive: false), '');
     return t.length > 42 ? '${t.substring(0, 42)}…' : t;
   }
 }
@@ -48,13 +51,21 @@ class SeriesPart {
 
   factory SeriesPart.fromMap(Map<dynamic, dynamic> m) => SeriesPart(
         part: (m['part'] as num?)?.toInt() ?? 0,
-        pages: ((m['pages'] as List?) ?? const []).map((e) => (e as num).toInt()).toList(),
-        keyPoints: ((m['key_points'] as List?) ?? const []).map((e) => e.toString()).toList(),
+        pages: ((m['pages'] as List?) ?? const [])
+            .map((e) => (e as num).toInt())
+            .toList(),
+        keyPoints: ((m['key_points'] as List?) ?? const [])
+            .map((e) => e.toString())
+            .toList(),
         unlocked: m['unlocked'] == true,
         completed: m['completed'] == true,
       );
 
-  String get pageLabel => pages.isEmpty ? '' : (pages.length == 1 ? 'Page ${pages.first}' : 'Pages ${pages.first}–${pages.last}');
+  String get pageLabel => pages.isEmpty
+      ? ''
+      : (pages.length == 1
+          ? 'Page ${pages.first}'
+          : 'Pages ${pages.first}–${pages.last}');
 }
 
 class VideoItem {
@@ -64,7 +75,12 @@ class VideoItem {
   final String? file;
   final String? output;
 
-  const VideoItem({required this.videoId, required this.question, required this.status, this.file, this.output});
+  const VideoItem(
+      {required this.videoId,
+      required this.question,
+      required this.status,
+      this.file,
+      this.output});
 
   factory VideoItem.fromMap(Map<dynamic, dynamic> m) => VideoItem(
         videoId: (m['video_id'] ?? '').toString(),
@@ -98,18 +114,25 @@ class CaptionLine {
     final p = s.trim().replaceAll(',', '.').split(':');
     if (p.length != 3) return Duration.zero;
     final sec = double.tryParse(p[2]) ?? 0;
-    return Duration(hours: int.tryParse(p[0]) ?? 0, minutes: int.tryParse(p[1]) ?? 0, milliseconds: (sec * 1000).round());
+    return Duration(
+        hours: int.tryParse(p[0]) ?? 0,
+        minutes: int.tryParse(p[1]) ?? 0,
+        milliseconds: (sec * 1000).round());
   }
 
   static List<CaptionLine> parseSrt(String content) {
     final out = <CaptionLine>[];
     for (final block in content.split(RegExp(r'\r?\n\r?\n'))) {
-      final lines = block.split(RegExp(r'\r?\n')).where((l) => l.trim().isNotEmpty).toList();
+      final lines = block
+          .split(RegExp(r'\r?\n'))
+          .where((l) => l.trim().isNotEmpty)
+          .toList();
       final ti = lines.indexWhere((l) => l.contains('-->'));
       if (ti < 0 || ti + 1 >= lines.length) continue;
       final parts = lines[ti].split('-->');
       if (parts.length != 2) continue;
-      out.add(CaptionLine(_ts(parts[0]), _ts(parts[1]), lines.sublist(ti + 1).join(' ')));
+      out.add(CaptionLine(
+          _ts(parts[0]), _ts(parts[1]), lines.sublist(ti + 1).join(' ')));
     }
     return out;
   }

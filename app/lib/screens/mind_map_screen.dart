@@ -15,14 +15,19 @@ class MindMapScreen extends StatefulWidget {
   final AppSettings settings;
   final TextbookItem book;
   final List<SeriesPart> parts;
-  const MindMapScreen({super.key, required this.settings, required this.book, required this.parts});
+  const MindMapScreen(
+      {super.key,
+      required this.settings,
+      required this.book,
+      required this.parts});
 
   @override
   State<MindMapScreen> createState() => _MindMapScreenState();
 }
 
 class _MindMapScreenState extends State<MindMapScreen> {
-  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
+  static const MethodChannel _ttsCh =
+      MethodChannel('com.mdk.textbook_video/engine');
   int _partIdx = 0;
   List<String> _points = const [];
   bool _loading = true;
@@ -65,29 +70,48 @@ class _MindMapScreenState extends State<MindMapScreen> {
   }
 
   Future<void> _open(String title, String body, Color color) async {
-    _ttsCh.invokeMethod('speak', {'text': body, 'language': 'en-IN', 'rate': 0.9}).catchError((_) => null);
+    _ttsCh.invokeMethod('speak', {
+      'text': body,
+      'language': 'en-IN',
+      'rate': 0.9
+    }).catchError((_) => null);
     await showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 26),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(Icons.bubble_chart_rounded, color: color, size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 15))),
-            IconButton(
-              onPressed: () => _ttsCh.invokeMethod('speak', {'text': body, 'language': 'en-IN', 'rate': 0.9}).catchError((_) => null),
-              icon:  Icon(Icons.volume_up_rounded, color: AppColors.teal),
-            ),
-          ]),
-          const SizedBox(height: 4),
-          Text(body, style:  TextStyle(color: AppColors.text, fontSize: 14, height: 1.5)),
-          const SizedBox(height: 10),
-           Text('Textbook line — read it in your book for the full context.',
-              style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Icon(Icons.bubble_chart_rounded, color: color, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: Text(title,
+                        style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15))),
+                IconButton(
+                  onPressed: () => _ttsCh.invokeMethod('speak', {
+                    'text': body,
+                    'language': 'en-IN',
+                    'rate': 0.9
+                  }).catchError((_) => null),
+                  icon: Icon(Icons.volume_up_rounded, color: AppColors.teal),
+                ),
+              ]),
+              const SizedBox(height: 4),
+              Text(body,
+                  style: TextStyle(
+                      color: AppColors.text, fontSize: 14, height: 1.5)),
+              const SizedBox(height: 10),
+              Text('Textbook line — read it in your book for the full context.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
+            ]),
       ),
     );
     _ttsCh.invokeMethod('stopTts').catchError((_) => null);
@@ -106,24 +130,38 @@ class _MindMapScreenState extends State<MindMapScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title:  Text('Mind map', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title: Text('Mind map',
+            style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AppColors.text,
+                fontSize: 16)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : part == null
-              ? const EmptyState(icon: Icons.hub_rounded, title: 'No parts yet', message: 'Open a textbook first.')
+              ? const EmptyState(
+                  icon: Icons.hub_rounded,
+                  title: 'No parts yet',
+                  message: 'Open a textbook first.')
               : Column(children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
                     child: DropdownButton<int>(
-                      value: _partIdx.clamp(0, math.max(0, widget.parts.length - 1)),
+                      value: _partIdx.clamp(
+                          0, math.max(0, widget.parts.length - 1)),
                       isExpanded: true,
                       dropdownColor: AppColors.card,
                       underline: Container(height: 1, color: AppColors.stroke),
-                      style:  TextStyle(color: AppColors.text, fontWeight: FontWeight.w700, fontSize: 13),
+                      style: TextStyle(
+                          color: AppColors.text,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13),
                       items: [
                         for (var i = 0; i < widget.parts.length; i++)
-                          DropdownMenuItem(value: i, child: Text('Part ${widget.parts[i].part} — ${widget.parts[i].pageLabel}')),
+                          DropdownMenuItem(
+                              value: i,
+                              child: Text(
+                                  'Part ${widget.parts[i].part} — ${widget.parts[i].pageLabel}')),
                       ],
                       onChanged: (v) {
                         if (v != null) _load(v);
@@ -135,7 +173,8 @@ class _MindMapScreenState extends State<MindMapScreen> {
                         ? const EmptyState(
                             icon: Icons.hub_rounded,
                             title: 'No map yet',
-                            message: 'Watch this class once — its key points become your mind map.',
+                            message:
+                                'Watch this class once — its key points become your mind map.',
                           )
                         : InteractiveViewer(
                             minScale: 0.6,
@@ -146,7 +185,9 @@ class _MindMapScreenState extends State<MindMapScreen> {
                               height: 760,
                               child: Stack(children: [
                                 Positioned.fill(
-                                  child: CustomPaint(painter: _MapPainter(count: _points.length)),
+                                  child: CustomPaint(
+                                      painter:
+                                          _MapPainter(count: _points.length)),
                                 ),
                                 _node(
                                   center: true,
@@ -154,7 +195,8 @@ class _MindMapScreenState extends State<MindMapScreen> {
                                   top: 760 / 2 - 42,
                                   label: 'Part ${part.part}\n${part.pageLabel}',
                                   color: AppColors.indigo,
-                                  onTap: () => _open('Part ${part.part}', _points.join('\n\n'), AppColors.indigo),
+                                  onTap: () => _open('Part ${part.part}',
+                                      _points.join('\n\n'), AppColors.indigo),
                                 ),
                                 for (var i = 0; i < _points.length; i++)
                                   _branchNode(i, _points.length, _points[i]),
@@ -166,7 +208,7 @@ class _MindMapScreenState extends State<MindMapScreen> {
                     padding: const EdgeInsets.fromLTRB(18, 4, 18, 14),
                     child: Text(
                       '${_points.length} key-point branches • tap a node to hear it • pinch to zoom',
-                      style:  TextStyle(color: AppColors.muted, fontSize: 11.5),
+                      style: TextStyle(color: AppColors.muted, fontSize: 11.5),
                     ),
                   ),
                 ]),
@@ -178,7 +220,16 @@ class _MindMapScreenState extends State<MindMapScreen> {
     final angle = (2 * math.pi * i / math.max(1, total)) - math.pi / 2;
     final x = cx + r * math.cos(angle) - 88;
     final y = cy + r * math.sin(angle) - 32;
-    final colors = [AppColors.teal, AppColors.violet, AppColors.amber, AppColors.green, const Color(0xFF60A5FA), const Color(0xFFF472B6), const Color(0xFFA3E635), const Color(0xFFFB923C)];
+    final colors = [
+      AppColors.teal,
+      AppColors.violet,
+      AppColors.amber,
+      AppColors.green,
+      const Color(0xFF60A5FA),
+      const Color(0xFFF472B6),
+      const Color(0xFFA3E635),
+      const Color(0xFFFB923C)
+    ];
     final c = colors[i % colors.length];
     return _node(
       center: false,
@@ -190,7 +241,13 @@ class _MindMapScreenState extends State<MindMapScreen> {
     );
   }
 
-  Widget _node({required bool center, required double left, required double top, required String label, required Color color, required VoidCallback onTap}) {
+  Widget _node(
+      {required bool center,
+      required double left,
+      required double top,
+      required String label,
+      required Color color,
+      required VoidCallback onTap}) {
     return Positioned(
       left: left,
       top: top,
@@ -199,12 +256,19 @@ class _MindMapScreenState extends State<MindMapScreen> {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: center ? 14 : 11, vertical: center ? 12 : 9),
+          padding: EdgeInsets.symmetric(
+              horizontal: center ? 14 : 11, vertical: center ? 12 : 9),
           decoration: BoxDecoration(
             color: color.withOpacity(center ? 0.28 : 0.14),
             borderRadius: BorderRadius.circular(center ? 16 : 12),
-            border: Border.all(color: color.withOpacity(0.7), width: center ? 1.6 : 1.1),
-            boxShadow: [BoxShadow(color: color.withOpacity(0.16), blurRadius: 12, spreadRadius: 1)],
+            border: Border.all(
+                color: color.withOpacity(0.7), width: center ? 1.6 : 1.1),
+            boxShadow: [
+              BoxShadow(
+                  color: color.withOpacity(0.16),
+                  blurRadius: 12,
+                  spreadRadius: 1)
+            ],
           ),
           child: Text(
             label,
@@ -232,7 +296,16 @@ class _MapPainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8;
-    final colors = [AppColors.teal, AppColors.violet, AppColors.amber, AppColors.green, const Color(0xFF60A5FA), const Color(0xFFF472B6), const Color(0xFFA3E635), const Color(0xFFFB923C)];
+    final colors = [
+      AppColors.teal,
+      AppColors.violet,
+      AppColors.amber,
+      AppColors.green,
+      const Color(0xFF60A5FA),
+      const Color(0xFFF472B6),
+      const Color(0xFFA3E635),
+      const Color(0xFFFB923C)
+    ];
     for (var i = 0; i < count; i++) {
       final angle = (2 * math.pi * i / math.max(1, count)) - math.pi / 2;
       final x = cx + r * math.cos(angle);
@@ -240,9 +313,11 @@ class _MapPainter extends CustomPainter {
       paint.color = colors[i % colors.length].withOpacity(0.45);
       final path = Path()
         ..moveTo(cx, cy)
-        ..cubicTo(cx + (x - cx) * 0.35, cy + (y - cy) * 0.15, cx + (x - cx) * 0.65, cy + (y - cy) * 0.85, x, y);
+        ..cubicTo(cx + (x - cx) * 0.35, cy + (y - cy) * 0.15,
+            cx + (x - cx) * 0.65, cy + (y - cy) * 0.85, x, y);
       canvas.drawPath(path, paint);
-      canvas.drawCircle(Offset(x, y), 3, Paint()..color = colors[i % colors.length]);
+      canvas.drawCircle(
+          Offset(x, y), 3, Paint()..color = colors[i % colors.length]);
     }
   }
 

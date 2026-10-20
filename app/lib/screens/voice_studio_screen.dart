@@ -16,7 +16,8 @@ class VoiceStudioScreen extends StatefulWidget {
 }
 
 class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
-  static const MethodChannel _ttsCh = MethodChannel('com.mdk.textbook_video/engine');
+  static const MethodChannel _ttsCh =
+      MethodChannel('com.mdk.textbook_video/engine');
   List<Map<String, dynamic>> _voices = const [];
   bool _loading = true;
   bool _noVoices = false;
@@ -33,7 +34,8 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
       _noVoices = false;
     });
     try {
-      final raw = await _ttsCh.invokeMethod<List<dynamic>>('listVoices', {'language': widget.settings.language});
+      final raw = await _ttsCh.invokeMethod<List<dynamic>>(
+          'listVoices', {'language': widget.settings.language});
       final out = <Map<String, dynamic>>[];
       for (final v in raw ?? const []) {
         if (v is Map) out.add(v.map((k, val) => MapEntry(k.toString(), val)));
@@ -77,7 +79,11 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
   String _sub(Map<String, dynamic> v) {
     final bits = <String>[];
     final q = (v['quality'] as num?)?.toInt() ?? 0;
-    bits.add(q >= 400 ? 'high quality' : q >= 300 ? 'normal' : 'basic');
+    bits.add(q >= 400
+        ? 'high quality'
+        : q >= 300
+            ? 'normal'
+            : 'basic');
     if (v['network'] == true) bits.add('needs internet');
     if (v['notInstalled'] == true) bits.add('not installed');
     return bits.join(' • ');
@@ -96,9 +102,16 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title:  Text('Voice Studio', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text, fontSize: 16)),
+        title: Text('Voice Studio',
+            style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: AppColors.text,
+                fontSize: 16)),
         actions: [
-          IconButton(onPressed: () => _preview(), icon:  Icon(Icons.play_circle_rounded, color: AppColors.teal, size: 28)),
+          IconButton(
+              onPressed: () => _preview(),
+              icon: Icon(Icons.play_circle_rounded,
+                  color: AppColors.teal, size: 28)),
         ],
       ),
       body: ListView(
@@ -106,17 +119,28 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
         children: [
           GradientCard(
             gradient: AppColors.heroGradient,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Your teacher’s voice', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Your teacher’s voice',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900)),
               const SizedBox(height: 6),
-              const Text('Speed and pitch change how the voice feels — a slower voice is easier for hard chapters, a fuller pitch sounds warmer.',
-                  style: TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.45)),
+              const Text(
+                  'Speed and pitch change how the voice feels — a slower voice is easier for hard chapters, a fuller pitch sounds warmer.',
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 12.5, height: 1.45)),
               const SizedBox(height: 14),
               Row(children: [
-                const Icon(Icons.speed_rounded, color: Colors.white70, size: 18),
+                const Icon(Icons.speed_rounded,
+                    color: Colors.white70, size: 18),
                 const SizedBox(width: 8),
                 Text('${(s.speechRate * 100).round()}% speed',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5)),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5)),
               ]),
               Slider(
                 value: s.speechRate.clamp(0.5, 1.5).toDouble(),
@@ -132,10 +156,14 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
                 },
               ),
               Row(children: [
-                const Icon(Icons.graphic_eq_rounded, color: Colors.white70, size: 18),
+                const Icon(Icons.graphic_eq_rounded,
+                    color: Colors.white70, size: 18),
                 const SizedBox(width: 8),
                 Text('Pitch ${s.speechPitch.toStringAsFixed(2)}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12.5)),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5)),
               ]),
               Slider(
                 value: s.speechPitch.clamp(0.7, 1.3).toDouble(),
@@ -162,7 +190,9 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
                     },
                     icon: const Icon(Icons.restart_alt_rounded, size: 18),
                     label: const Text('Reset'),
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)),
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white38)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -171,7 +201,9 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
                     onPressed: () => _preview(),
                     icon: const Icon(Icons.volume_up_rounded, size: 18),
                     label: const Text('Test'),
-                    style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.indigo),
+                    style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.indigo),
                   ),
                 ),
               ]),
@@ -179,12 +211,15 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
           ),
           const SectionTitle('Installed voices'),
           if (_loading)
-            const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
+            const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()))
           else if (_noVoices)
-             GradientCard(
+            GradientCard(
               child: Text(
                 'No voices reported by this device. Android → Settings → Language & input → Text-to-speech → install a voice for this language.',
-                style: TextStyle(color: AppColors.muted, height: 1.45, fontSize: 12.5),
+                style: TextStyle(
+                    color: AppColors.muted, height: 1.45, fontSize: 12.5),
               ),
             )
           else ...[
@@ -195,14 +230,26 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
                 _preview(voice: '');
               },
               child: Row(children: [
-                Icon(s.voiceName.isEmpty ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-                    color: AppColors.teal, size: 20),
+                Icon(
+                    s.voiceName.isEmpty
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    color: AppColors.teal,
+                    size: 20),
                 const SizedBox(width: 10),
-                 Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('System default', style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13.5)),
-                    Text('Let Android choose the best voice', style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
-                  ]),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('System default',
+                            style: TextStyle(
+                                color: AppColors.text,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13.5)),
+                        Text('Let Android choose the best voice',
+                            style: TextStyle(
+                                color: AppColors.muted, fontSize: 11.5)),
+                      ]),
                 ),
               ]),
             ),
@@ -224,28 +271,42 @@ class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
                             _preview(voice: name);
                           },
                     child: Row(children: [
-                      Icon(sel ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-                          color: sel ? AppColors.teal : AppColors.muted, size: 20),
+                      Icon(
+                          sel
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color: sel ? AppColors.teal : AppColors.muted,
+                          size: 20),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(_title(v),
-                              maxLines: 1, overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: 13)),
-                          Text(_sub(v), style:  TextStyle(color: AppColors.muted, fontSize: 11)),
-                        ]),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_title(v),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      color: AppColors.text,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13)),
+                              Text(_sub(v),
+                                  style: TextStyle(
+                                      color: AppColors.muted, fontSize: 11)),
+                            ]),
                       ),
-                       Icon(Icons.play_arrow_rounded, color: AppColors.muted, size: 18),
+                      Icon(Icons.play_arrow_rounded,
+                          color: AppColors.muted, size: 18),
                     ]),
                   ),
                 ),
               );
             }),
-             GradientCard(
+            GradientCard(
               child: Text(
                 'Tip: a voice marked “needs internet” sounds better but stops working offline. '
                 'For an offline class, choose a voice without that label.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45),
+                style: TextStyle(
+                    color: AppColors.muted, fontSize: 12, height: 1.45),
               ),
             ),
           ],

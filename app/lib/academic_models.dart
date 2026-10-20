@@ -124,7 +124,8 @@ class ExamResult {
     required this.reviews,
   });
 
-  double get percentage => total == 0 ? 0 : (earned / total * 100).clamp(0, 100);
+  double get percentage =>
+      total == 0 ? 0 : (earned / total * 100).clamp(0, 100);
   bool get passed => percentage >= 40;
 
   String get grade {
@@ -170,7 +171,8 @@ class ExamResult {
         total: (j['total'] as num?)?.toInt() ?? 0,
         reviews: ((j['reviews'] as List?) ?? const [])
             .whereType<Map>()
-            .map((e) => ReviewItem.fromJson(e.map((k, v) => MapEntry(k.toString(), v))))
+            .map((e) =>
+                ReviewItem.fromJson(e.map((k, v) => MapEntry(k.toString(), v))))
             .toList(),
       );
 }
@@ -204,10 +206,15 @@ const _levelThresholds = [0, 25, 75, 150, 250, 400, 600, 850, 1150, 1500];
   for (var i = 0; i < _levelThresholds.length; i++) {
     if (xp >= _levelThresholds[i]) lvl = i + 1;
   }
-  if (lvl >= _levelThresholds.length) return (level: lvl, progress: 1, nextAt: _levelThresholds.last);
+  if (lvl >= _levelThresholds.length)
+    return (level: lvl, progress: 1, nextAt: _levelThresholds.last);
   final cur = _levelThresholds[lvl - 1];
   final next = _levelThresholds[lvl];
-  return (level: lvl, progress: ((xp - cur) / (next - cur)).clamp(0, 1), nextAt: next);
+  return (
+    level: lvl,
+    progress: ((xp - cur) / (next - cur)).clamp(0, 1),
+    nextAt: next
+  );
 }
 
 double roundHalf(double v) => (v * 2).round() / 2;

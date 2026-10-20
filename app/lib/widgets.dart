@@ -32,7 +32,13 @@ class GradientCard extends StatelessWidget {
   final Gradient? gradient;
   final VoidCallback? onTap;
   final double radius;
-  const GradientCard({super.key, required this.child, this.padding = const EdgeInsets.all(18), this.gradient, this.onTap, this.radius = 22});
+  const GradientCard(
+      {super.key,
+      required this.child,
+      this.padding = const EdgeInsets.all(18),
+      this.gradient,
+      this.onTap,
+      this.radius = 22});
 
   @override
   Widget build(BuildContext context) {
@@ -43,11 +49,21 @@ class GradientCard extends StatelessWidget {
         color: gradient == null ? AppColors.card : null,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: AppColors.stroke.withOpacity(0.7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(AppColors.isLight ? 0.10 : 0.35), blurRadius: 18, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(AppColors.isLight ? 0.10 : 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8))
+        ],
       ),
       child: child,
     );
-    return onTap == null ? box : InkWell(borderRadius: BorderRadius.circular(radius), onTap: onTap, child: box);
+    return onTap == null
+        ? box
+        : InkWell(
+            borderRadius: BorderRadius.circular(radius),
+            onTap: onTap,
+            child: box);
   }
 }
 
@@ -61,10 +77,18 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
         child: Row(children: [
-          Text(title, style:  TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.text)),
+          Text(title,
+              style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.text)),
           const Spacer(),
           if (action != null)
-            TextButton(onPressed: onAction, child: Text(action!, style:  TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700))),
+            TextButton(
+                onPressed: onAction,
+                child: Text(action!,
+                    style: TextStyle(
+                        color: AppColors.teal, fontWeight: FontWeight.w700))),
         ]),
       );
 }
@@ -83,11 +107,16 @@ class LockBadge extends StatelessWidget {
             : (Icons.lock_rounded, 'Locked', AppColors.muted);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: color.withOpacity(0.14), borderRadius: BorderRadius.circular(99), border: Border.all(color: color.withOpacity(0.5))),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.14),
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: color.withOpacity(0.5))),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 5),
-        Text(label, style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w800)),
+        Text(label,
+            style: TextStyle(
+                color: color, fontSize: 11.5, fontWeight: FontWeight.w800)),
       ]),
     );
   }
@@ -97,7 +126,8 @@ class ProgressRing extends StatelessWidget {
   final double value; // 0..1
   final double size;
   final String? centerLabel;
-  const ProgressRing({super.key, required this.value, this.size = 58, this.centerLabel});
+  const ProgressRing(
+      {super.key, required this.value, this.size = 58, this.centerLabel});
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -108,10 +138,13 @@ class ProgressRing extends StatelessWidget {
             value: value.clamp(0, 1),
             strokeWidth: 6,
             backgroundColor: AppColors.stroke,
-            valueColor:  AlwaysStoppedAnimation(AppColors.teal),
+            valueColor: AlwaysStoppedAnimation(AppColors.teal),
           ),
           Text(centerLabel ?? '${(value * 100).round()}%',
-              style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w800, fontSize: size * 0.24)),
+              style: TextStyle(
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w800,
+                  fontSize: size * 0.24)),
         ]),
       );
 }
@@ -122,7 +155,13 @@ class EmptyState extends StatelessWidget {
   final String message;
   final String? buttonLabel;
   final VoidCallback? onButton;
-  const EmptyState({super.key, required this.icon, required this.title, required this.message, this.buttonLabel, this.onButton});
+  const EmptyState(
+      {super.key,
+      required this.icon,
+      required this.title,
+      required this.message,
+      this.buttonLabel,
+      this.onButton});
 
   @override
   Widget build(BuildContext context) => Center(
@@ -131,13 +170,22 @@ class EmptyState extends StatelessWidget {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: AppColors.card, shape: BoxShape.circle, border: Border.all(color: AppColors.stroke)),
+              decoration: BoxDecoration(
+                  color: AppColors.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.stroke)),
               child: Icon(icon, size: 40, color: AppColors.muted),
             ),
             const SizedBox(height: 16),
-            Text(title, style:  TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.text)),
+            Text(title,
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.text)),
             const SizedBox(height: 6),
-            Text(message, textAlign: TextAlign.center, style:  TextStyle(color: AppColors.muted, height: 1.45)),
+            Text(message,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted, height: 1.45)),
             if (buttonLabel != null) ...[
               const SizedBox(height: 18),
               FilledButton(onPressed: onButton, child: Text(buttonLabel!)),
@@ -156,7 +204,8 @@ class GenerationProgress extends StatefulWidget {
   State<GenerationProgress> createState() => _GenerationProgressState();
 }
 
-class _GenerationProgressState extends State<GenerationProgress> with SingleTickerProviderStateMixin {
+class _GenerationProgressState extends State<GenerationProgress>
+    with SingleTickerProviderStateMixin {
   static const stages = [
     ('Analyzing your textbook', Icons.document_scanner_rounded),
     ('Planning the lesson', Icons.account_tree_rounded),
@@ -171,7 +220,9 @@ class _GenerationProgressState extends State<GenerationProgress> with SingleTick
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+    _pulse = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1100))
+      ..repeat(reverse: true);
     _advance();
   }
 
@@ -197,15 +248,22 @@ class _GenerationProgressState extends State<GenerationProgress> with SingleTick
             scale: Tween(begin: 0.92, end: 1.05).animate(_pulse),
             child: Container(
               padding: const EdgeInsets.all(26),
-              decoration:  BoxDecoration(gradient: AppColors.heroGradient, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                  gradient: AppColors.heroGradient, shape: BoxShape.circle),
               child: Icon(stages[_stage].$2, size: 52, color: Colors.white),
             ),
           ),
           const SizedBox(height: 26),
-          Text(stages[_stage].$1, style:  TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.text)),
+          Text(stages[_stage].$1,
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.text)),
           const SizedBox(height: 8),
-           Text('Your class is being prepared on this phone.\nDetailed videos can take a few minutes — keep the app open.',
-              textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, height: 1.5)),
+          Text(
+              'Your class is being prepared on this phone.\nDetailed videos can take a few minutes — keep the app open.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted, height: 1.5)),
           const SizedBox(height: 26),
           ...List.generate(stages.length, (i) {
             final done = i < _stage;
@@ -213,18 +271,32 @@ class _GenerationProgressState extends State<GenerationProgress> with SingleTick
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 5),
               child: Row(children: [
-                Icon(done ? Icons.check_circle_rounded : active ? Icons.timelapse_rounded : Icons.circle_outlined,
-                    size: 20, color: done ? AppColors.green : active ? AppColors.amber : AppColors.stroke),
+                Icon(
+                    done
+                        ? Icons.check_circle_rounded
+                        : active
+                            ? Icons.timelapse_rounded
+                            : Icons.circle_outlined,
+                    size: 20,
+                    color: done
+                        ? AppColors.green
+                        : active
+                            ? AppColors.amber
+                            : AppColors.stroke),
                 const SizedBox(width: 12),
                 Text(stages[i].$1,
                     style: TextStyle(
-                        color: done || active ? AppColors.text : AppColors.muted,
-                        fontWeight: active ? FontWeight.w800 : FontWeight.w500)),
+                        color:
+                            done || active ? AppColors.text : AppColors.muted,
+                        fontWeight:
+                            active ? FontWeight.w800 : FontWeight.w500)),
               ]),
             );
           }),
           const SizedBox(height: 22),
-          const LinearProgressIndicator(minHeight: 6, borderRadius: BorderRadius.all(Radius.circular(99))),
+          const LinearProgressIndicator(
+              minHeight: 6,
+              borderRadius: BorderRadius.all(Radius.circular(99))),
         ]),
       );
 }

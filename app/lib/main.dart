@@ -48,50 +48,54 @@ class TextbookClassroomApp extends StatelessWidget {
           foregroundColor: AppColors.text,
           elevation: 0,
           centerTitle: false,
-          titleTextStyle: TextStyle(color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16),
+          titleTextStyle: TextStyle(
+              color: AppColors.text, fontWeight: FontWeight.w900, fontSize: 16),
         ),
         dialogTheme: DialogTheme(backgroundColor: AppColors.card),
         bottomSheetTheme: BottomSheetThemeData(backgroundColor: AppColors.card),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.card,
-          labelStyle:  TextStyle(color: AppColors.muted),
-          hintStyle:  TextStyle(color: AppColors.muted),
+          labelStyle: TextStyle(color: AppColors.muted),
+          hintStyle: TextStyle(color: AppColors.muted),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide:  BorderSide(color: AppColors.stroke),
+            borderSide: BorderSide(color: AppColors.stroke),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide:  BorderSide(color: AppColors.teal, width: 1.6),
+            borderSide: BorderSide(color: AppColors.teal, width: 1.6),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             textStyle: const TextStyle(fontWeight: FontWeight.w800),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            side:  BorderSide(color: AppColors.stroke),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            side: BorderSide(color: AppColors.stroke),
             foregroundColor: AppColors.text,
             textStyle: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
-        floatingActionButtonTheme:  FloatingActionButtonThemeData(
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
           backgroundColor: AppColors.indigo,
           foregroundColor: Colors.white,
         ),
         chipTheme: ChipThemeData(
           backgroundColor: AppColors.card,
           selectedColor: AppColors.indigo,
-          labelStyle:  TextStyle(color: AppColors.text),
-          side:  BorderSide(color: AppColors.stroke),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
+          labelStyle: TextStyle(color: AppColors.text),
+          side: BorderSide(color: AppColors.stroke),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
         ),
         pageTransitionsTheme: const PageTransitionsTheme(builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),
@@ -100,10 +104,14 @@ class TextbookClassroomApp extends StatelessWidget {
           TargetPlatform.linux: ZoomPageTransitionsBuilder(),
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         }),
-        sliderTheme:  SliderThemeData(activeTrackColor: AppColors.teal, thumbColor: AppColors.teal),
+        sliderTheme: SliderThemeData(
+            activeTrackColor: AppColors.teal, thumbColor: AppColors.teal),
         switchTheme: SwitchThemeData(
           thumbColor: WidgetStateProperty.all(AppColors.teal),
-          trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.teal.withOpacity(0.35) : AppColors.stroke),
+          trackColor: WidgetStateProperty.resolveWith((s) =>
+              s.contains(WidgetState.selected)
+                  ? AppColors.teal.withOpacity(0.35)
+                  : AppColors.stroke),
         ),
       ),
       home: const _Splash(),
@@ -123,7 +131,9 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _anim = AnimationController(vsync: this, duration: const Duration(milliseconds: 1300))..forward();
+    _anim = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1300))
+      ..forward();
     _go();
   }
 
@@ -134,7 +144,9 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
     await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => HomeScreen(gateway: EngineGateway(), settings: settings)),
+      MaterialPageRoute(
+          builder: (_) =>
+              HomeScreen(gateway: EngineGateway(), settings: settings)),
       (_) => false,
     );
   }
@@ -160,21 +172,36 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
                 decoration: BoxDecoration(
                   gradient: AppColors.heroGradient,
                   borderRadius: BorderRadius.circular(34),
-                  boxShadow: [BoxShadow(color: AppColors.indigo.withOpacity(0.55), blurRadius: 44, spreadRadius: 4)],
+                  boxShadow: [
+                    BoxShadow(
+                        color: AppColors.indigo.withOpacity(0.55),
+                        blurRadius: 44,
+                        spreadRadius: 4)
+                  ],
                 ),
-                child: const Icon(Icons.auto_stories_rounded, size: 58, color: Colors.white),
+                child: const Icon(Icons.auto_stories_rounded,
+                    size: 58, color: Colors.white),
               ),
             ),
             const SizedBox(height: 24),
             FadeTransition(
-              opacity: CurvedAnimation(parent: _anim, curve: const Interval(0.25, 1, curve: Curves.easeOut)),
-              child:  Column(children: [
+              opacity: CurvedAnimation(
+                  parent: _anim,
+                  curve: const Interval(0.25, 1, curve: Curves.easeOut)),
+              child: Column(children: [
                 GradientText('Textbook Classroom', size: 25),
                 SizedBox(height: 7),
                 Text('Your chapter. Your teacher. Page by page.',
-                    style: TextStyle(color: AppColors.muted, fontSize: 12.5, letterSpacing: 0.2)),
+                    style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12.5,
+                        letterSpacing: 0.2)),
                 SizedBox(height: 30),
-                SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.teal)),
+                SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.4, color: AppColors.teal)),
               ]),
             ),
           ]),
