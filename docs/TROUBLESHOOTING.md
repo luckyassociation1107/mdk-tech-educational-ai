@@ -2,12 +2,15 @@
 
 | Symptom | Cause / fix |
 |---|---|
-| `BrainUnavailableError: Playwright brain server not found` | Start `node server.js` in `pdf-summarizer-automation/`, or set `PDF_SUMMARIZER_PROJECT`. |
-| `browserType.launch … libnspr4.so` | Browser system libs missing: `npx playwright install --with-deps chromium` in the automation project. |
-| `password_protected_pdf` | The PDF needs a password (§22). Use an unlocked copy; the app never guesses passwords. |
-| Video has captions but no voice | No TTS voice on this machine/device. Engine falls back to captions mode and says so in the result (`tts_provider: captions`). On Android, install/enable a te-IN or en-IN voice in system TTS settings. |
-| `Session is not attached in this process` | The app/CLI restarted; provider files are never assumed immortal (§4). Create a new session to re-attach the PDF. |
-| Plan validation failed | The brain's reply could not be parsed into the strict schema after section parsing. Retry; if it persists, inspect `workspace/plans/` and the brain's raw answer. Nothing invalid is ever rendered. |
-| Slow rendering | Lower `--width/--height/--fps`, or use `quick_explanation`. Frames are streamed to FFmpeg, so memory stays bounded; CPU is the limit. |
-| Storage full | Disconnect old sessions (deletes temp files, keeps exports), or lower resolution. The original PDF is never deleted. |
-| Telugu captions show boxes in desktop renders | DejaVu lacks Telugu glyphs; device renders should use a Noto Telugu font. Narration language ≠ caption font — check both. |
+| “Add your AI key first” when adding a book | Settings → AI & Prompts: paste a key and press **Test connection**. |
+| “The AI key was rejected (401)” | Wrong/expired key, or the key belongs to a different provider than the one selected. |
+| “Model not found (404)” | The model name is wrong for that provider (or your account has no access). |
+| “Rate limit or no credit left (429)” | The provider account is out of quota/credit; wait or top up. |
+| “This PDF is 24 MB. The AI upload limit is 18 MB” | Compress the PDF, split the chapter, or use a provider with a larger upload limit. |
+| “The AI could not read any page” | The PDF may be a scan; use a vision model (Gemini / GPT-4.1 / Claude). |
+| “The AI answered pages 13–24 with something that is not JSON” | Another prompt broke the JSON contract — press the reset icon in AI & Prompts, or ask for JSON only at the start of your prompt. |
+| Lessons have no figures | Either the book has no figures, or the extraction prompt's `figures` rule was changed. Re-add the book after resetting prompts. |
+| “Page not rendered” in the reader | Rendering is unavailable or the page is still rendering; open the class once, or on Windows run `dart run pdfx:install_windows` and rebuild. |
+| No voice on Windows | Install a system voice (Settings → Time & Language → Speech), then reopen the lesson. |
+| Lesson generated but text-only | The AI script call failed (quota/offline) — the on-device builder made the lesson instead; the toast still opens it. |
+| Emoji vault restore fails | The code carries its own key; check for missing emojis/line breaks, or use the local vault backup. |

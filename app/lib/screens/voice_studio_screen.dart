@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../store.dart';
 import '../translate_service.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// Voice Studio — picks the exact device voice, tunes speed and pitch and
 /// previews it, so the teacher's voice sounds right for the student.
@@ -16,8 +16,7 @@ class VoiceStudioScreen extends StatefulWidget {
 }
 
 class _VoiceStudioScreenState extends State<VoiceStudioScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   List<Map<String, dynamic>> _voices = const [];
   bool _loading = true;
   bool _noVoices = false;

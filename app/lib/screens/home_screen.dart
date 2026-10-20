@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../ai/ai_config.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
@@ -17,7 +18,7 @@ import 'daily_challenge_screen.dart';
 import 'revision_screen.dart';
 import 'brain_screen.dart';
 import 'profile_screen.dart';
-import 'theme_studio_screen.dart';
+import 'ai_settings_screen.dart';
 import 'settings_screen.dart';
 import 'textbook_screen.dart';
 
@@ -116,14 +117,54 @@ class _HomeScreenState extends State<HomeScreen> {
         .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     final path = picked?.files.single.path;
     if (path == null) return;
+
+    // The PDF is read by the teacher's own AI now — without a key there is
+    // nothing to read it with, so say that plainly instead of failing later.
+    final cfg = AiConfig.current;
+    if (!cfg.ready) {
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.card,
+          title: const Text('Add your AI key first'),
+          content: Text(
+            'This app no longer reads PDFs on the device. The book is uploaded to '
+            'your own AI account, which extracts the text, finds the figures and '
+            'designs the lesson. Paste a key once in AI & Prompts — it is kept in '
+            'the device keystore.',
+            style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Not now')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Open AI settings')),
+          ],
+        ),
+      );
+      if (go == true && mounted) {
+        await Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => const AiSettingsScreen()));
+      }
+      return;
+    }
+
     setState(() => _adding = true);
+    _stage = ValueNotifier('Uploading the PDF to ${cfg.provider.label}…');
+    _showStageDialog();
     try {
       final s = await widget.gateway.createSession(
         pdfPath: path,
         language: widget.settings.language,
         brain: widget.settings.brain,
         brainServerUrl: widget.settings.brainServerUrl,
+        onProgress: (done, total, stage) {
+          _stage?.value = total > 1 ? '$stage  ($done/$total)' : stage;
+        },
       );
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
       final book = TextbookItem(
         sessionId: (s['session_id'] ?? '').toString(),
         title: (s['title'] ?? 'Textbook').toString(),
@@ -139,11 +180,53 @@ class _HomeScreenState extends State<HomeScreen> {
       ));
       _load();
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _adding = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() => _adding = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
+      }
+    } finally {
+      _stage = null;
     }
+  }
+
+  ValueNotifier<String>? _stage;
+
+  /// A blocking "the AI is reading your book" card — the upload can take a
+  /// few seconds per batch, so the teacher can see exactly what is happening.
+  void _showStageDialog() {
+    final stage = _stage;
+    if (stage == null) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        content: ValueListenableBuilder<String>(
+          valueListenable: stage,
+          builder: (_, value, __) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const LinearProgressIndicator(minHeight: 3),
+              const SizedBox(height: 16),
+              Text(value,
+                  style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(
+                'The PDF is uploaded once. Pages and figures are cut and the video is built on this device.',
+                style: TextStyle(
+                    color: AppColors.muted, fontSize: 11, height: 1.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   bool _celebrating = false;

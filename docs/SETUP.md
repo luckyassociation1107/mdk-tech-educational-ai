@@ -1,40 +1,64 @@
 # Setup
 
-## 1. Python engine (desktop prototype)
-```bash
-cd engine
-pip install -r requirements.txt     # PyMuPDF, Pillow, pydantic, imageio-ffmpeg, pytest
-python -m textbook_video.cli demo --brain offline
-pytest -q
-```
+## 1. Get an AI key
 
-## 2. Playwright brain (the AI — no API key)
-```bash
-cd ../../pdf-summarizer-automation
-npm install
-npx playwright install --with-deps chromium
-node server.js                       # serves http://127.0.0.1:3000
-```
-Then in `engine/`: `python -m textbook_video.cli demo --brain playwright`
-Environment (optional): `BRAIN_MODE`, `PDF_SUMMARIZER_SERVER`,
-`PDF_SUMMARIZER_PROJECT`, `TEXTBOOK_VIDEO_DATA`, `TTS_MODE` (`auto|espeak|captions`).
+Reading a textbook requires a model that accepts a PDF file.
 
-No credentials exist anywhere in this codebase: the brain website needs
-no key, and nothing is hardcoded (§3, §23 of the spec).
+| Provider | Where to get a key | Suggested model |
+|---|---|---|
+| Google Gemini | aistudio.google.com → API key | `gemini-2.5-flash` |
+| OpenAI | platform.openai.com → API keys | `gpt-4.1-mini` |
+| Anthropic | console.anthropic.com | `claude-sonnet-4-5` |
+| Custom | your own OpenAI-compatible server | any text model (no PDF upload) |
 
-## 3. Android app
-Requires Flutter SDK + Android Studio (not present in the dev sandbox):
+In the app: **Settings → AI & Prompts → paste key → Test connection → Save.**
+
+## 2. Run on Android
+
 ```bash
 cd app
 flutter pub get
-../tools/sync_engine_to_android.sh
-flutter run          # device/emulator with internet for the brain step
+flutter run            # phone or emulator (Android 8.0+, minSdk 26)
 ```
 
-## 4. Make your own textbook video (CLI)
+## 3. Run on Windows
+
 ```bash
-python -m textbook_video.cli create --pdf MyBook.pdf --brain playwright
-python -m textbook_video.cli ask --session session_xxx --question "Explain photosynthesis with daily-life examples" --mode detailed_teaching
-python -m textbook_video.cli disconnect --session session_xxx   # deletes temp files, keeps exports/
+cd app
+flutter config --enable-windows-desktop
+flutter create --platforms=windows --org com.mdk --project-name textbook_video_classroom .
+dart run pdfx:install_windows      # required once: pins the PDFium build
+flutter pub get
+flutter build windows
 ```
-Modes: `quick_explanation`, `detailed_teaching`, `complete_concept_mastery`.
+
+`pdfx:install_windows` edits the generated `windows/CMakeLists.txt` so the
+bundled PDFium matches the plugin. Without it, page rendering fails on Windows
+(the app still works; pages show "Page not rendered").
+
+## 4. Tests
+
+```bash
+cd app
+flutter analyze      # 0 errors
+flutter test         # 48 tests
+```
+
+The AI tests use a fake transport — no key or network is needed.
+
+## 5. Prompts
+
+All three prompts are editable in the app and stored with the rest of the AI
+settings (key: keystore, prompts: preferences).
+
+| Prompt | Placeholders |
+|---|---|
+| extract | `{start}` `{end}` `{total}` |
+| script | `{title}` `{subject}` `{language}` `{grade}` `{part}` `{pages}` `{teacher_note}` `{content}` `{figures}` |
+| ask | `{title}` `{pages}` `{content}` `{question}` `{language}` |
+
+The extraction prompt **must** return
+`{"title", "subject", "pages":[{"page","text","figures":[{"caption","bbox"}]}]}`.
+The script prompt **must** return `{"scenes":[…]}`, where a scene is one of
+`title | board | figure | quick | daily | summary`. Unknown extras are ignored;
+invalid scenes are dropped (and the on-device builder takes over below 4 scenes).

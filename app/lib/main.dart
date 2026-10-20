@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'ai/ai_config.dart';
 import 'engine_gateway.dart';
 import 'exam_store.dart';
 import 'screens/child_gate_screen.dart';
@@ -7,7 +8,6 @@ import 'screens/home_screen.dart';
 import 'store.dart';
 import 'theme/themes.dart';
 import 'ui/premium_ui.dart';
-import 'updater.dart';
 import 'vault/emoji_vault.dart';
 import 'widgets.dart';
 
@@ -141,6 +141,7 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
 
   Future<void> _go() async {
     await ThemeManager.load();
+    await AiConfig.load();
     final settings = await AppSettings.load();
     await VaultStore.load();
     ExamStore.scopeUserId = 'learner';

@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dart_engine.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// Page-by-page textbook reader with pinch zoom, full-book search and
 /// "read this page to me". Works fully offline from the pages already
@@ -29,12 +29,12 @@ class ReaderScreen extends StatefulWidget {
 }
 
 class _ReaderScreenState extends State<ReaderScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   DartPdfIndex? _index;
   String _dir = '';
   PageController? _pc;
   int _page = 1;
+  final Set<int> _triedRender = {};
   bool _loading = true;
   bool _speaking = false;
   bool _chrome = true;
@@ -199,6 +199,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
     super.dispose();
   }
 
+  /// Pages are rendered locally with PDFium (Android + Windows); the first
+  /// session may still be filling its cache, so ask again when one is missing.
+  Future<void> _ensurePage(int page) async {
+    if (_triedRender.contains(page)) return;
+    _triedRender.add(page);
+    final path = await DartEngine.ensurePageImage(widget.book.sessionId, page);
+    if (!mounted || path == null) return;
+    setState(() => _dir = File(path).parent.path);
+  }
+
   @override
   Widget build(BuildContext context) {
     final total = _index?.pageCount ?? widget.book.pageCount;
@@ -252,6 +262,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     itemBuilder: (ctx, i) {
                       final file = File('$_dir/page_${i + 1}.png');
                       if (!file.existsSync()) {
+                        _ensurePage(i + 1);
                         return const Center(
                           child: EmptyState(
                             icon: Icons.image_not_supported_rounded,

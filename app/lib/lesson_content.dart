@@ -21,6 +21,7 @@ class LessonScene {
   final String? answer; // quick-check correct option
   final int? page;
   final Rect? zone; // normalized focus region for zoom scenes
+  final String? imagePath; // cropped figure PNG written by the AI pipeline
   final String boardTheme;
   final bool formula;
   const LessonScene(this.kind, this.heading, this.narration,
@@ -33,6 +34,7 @@ class LessonScene {
       this.answer,
       this.page,
       this.zone,
+      this.imagePath,
       this.boardTheme = 'green',
       this.formula = false});
 
@@ -47,6 +49,7 @@ class LessonScene {
           answer: answer,
           page: page,
           zone: zone,
+          imagePath: imagePath,
           boardTheme: boardTheme,
           formula: formula);
 
@@ -62,6 +65,53 @@ class LessonScene {
 
   /// The text the voice should speak for this scene.
   String voiceFor(String? translatedExplain) => translatedExplain ?? narration;
+
+  /// Stored in the session so an AI-designed script is generated once and
+  /// then replayed offline, frame for frame.
+  Map<String, dynamic> toJson() => {
+        'kind': kind,
+        'heading': heading,
+        'narration': narration,
+        if (boardText != null) 'boardText': boardText,
+        if (explain != null) 'explain': explain,
+        if (source != null) 'source': source,
+        if (extra != null) 'extra': extra,
+        if (labels.isNotEmpty) 'labels': labels,
+        if (options.isNotEmpty) 'options': options,
+        if (answer != null) 'answer': answer,
+        if (page != null) 'page': page,
+        if (zone != null) 'zone': [zone!.left, zone!.top, zone!.right, zone!.bottom],
+        if (imagePath != null) 'imagePath': imagePath,
+        'boardTheme': boardTheme,
+        'formula': formula,
+      };
+
+  static LessonScene? fromJson(Map<String, dynamic> j) {
+    final kind = (j['kind'] ?? '').toString();
+    final narration = (j['narration'] ?? '').toString();
+    if (kind.isEmpty || narration.isEmpty) return null;
+    final z = (j['zone'] as List?) ?? const [];
+    return LessonScene(
+      kind,
+      (j['heading'] ?? '').toString(),
+      narration,
+      boardText: j['boardText']?.toString(),
+      explain: j['explain']?.toString(),
+      source: j['source']?.toString(),
+      extra: j['extra']?.toString(),
+      labels: ((j['labels'] as List?) ?? const []).map((e) => '$e').toList(),
+      options: ((j['options'] as List?) ?? const []).map((e) => '$e').toList(),
+      answer: j['answer']?.toString(),
+      page: (j['page'] as num?)?.toInt(),
+      zone: z.length == 4
+          ? Rect.fromLTRB((z[0] as num).toDouble(), (z[1] as num).toDouble(),
+              (z[2] as num).toDouble(), (z[3] as num).toDouble())
+          : null,
+      imagePath: j['imagePath']?.toString(),
+      boardTheme: (j['boardTheme'] ?? 'green').toString(),
+      formula: j['formula'] == true,
+    );
+  }
 }
 
 /// Builds the full scene list for one part: textbook-referenced,
@@ -101,6 +151,18 @@ class LessonContent {
   }
 
   static List<Rect> imageZones(DartPage page) {
+    // The AI tells us exactly where each figure is; use it first.
+    if (page.figures.isNotEmpty) {
+      final rects = page.figures
+          .where((f) => f.bbox.length == 4)
+          .map((f) => Rect.fromLTRB(
+              f.bbox[0], f.bbox[1], f.bbox[2], f.bbox[3]))
+          .toList();
+      if (rects.isNotEmpty) {
+        rects.sort((a, b) => b.height.compareTo(a.height));
+        return rects.take(1).toList();
+      }
+    }
     final bands = page.blocks.where((b) => b.bbox.length == 4).toList()
       ..sort((a, b) => a.bbox[1].compareTo(b.bbox[1]));
     if (bands.isEmpty) return const [];
@@ -121,6 +183,17 @@ class LessonContent {
 
   static ({String caption, List<String> labels}) captionNear(
       DartPage page, Rect zone) {
+    if (page.figures.isNotEmpty) {
+      final f = page.figures.firstWhere(
+        (f) => f.bbox.length == 4 &&
+            Rect.fromLTRB(f.bbox[0], f.bbox[1], f.bbox[2], f.bbox[3])
+                .overlaps(zone),
+        orElse: () => page.figures.first,
+      );
+      if (f.caption.trim().isNotEmpty) {
+        return (caption: f.caption.trim(), labels: const <String>[]);
+      }
+    }
     DartBlock? caption;
     DartBlock? after;
     final labels = <String>[];
@@ -295,7 +368,8 @@ class LessonContent {
     var contentCount = 0;
     var diagramAdded = false;
     for (final pg in pages) {
-      final page = index.pages[pg - 1];
+      final page = index.pageOf(pg);
+      if (page == null) continue;
       final sents = sentences(index.pageText(pg))
           .where((s) => s.length > 30)
           .take(2)

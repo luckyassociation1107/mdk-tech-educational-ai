@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
-import '../ui/premium_ui.dart';
 import '../widgets.dart';
 import 'brain_screen.dart';
 import 'chat_screen.dart';
@@ -123,6 +122,7 @@ class _TextbookScreenState extends State<TextbookScreen> {
             next == null ? '' : 'Part ${next.part}: ${next.pageLabel}',
         brain: widget.settings.brain,
         brainServerUrl: widget.settings.brainServerUrl,
+        language: widget.settings.explainLanguage,
       );
       if (!mounted) return;
       setState(() => _generating = false);

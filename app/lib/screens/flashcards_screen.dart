@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models.dart';
@@ -11,6 +10,7 @@ import '../study_stats.dart';
 import '../subject_engine.dart';
 import '../dart_engine.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// Spaced-repetition flashcards (Leitner boxes 0–4).
 /// Cards are made ONLY from the textbook's own key points and glossary
@@ -32,8 +32,7 @@ class FlashcardsScreen extends StatefulWidget {
 
 class _FlashcardsScreenState extends State<FlashcardsScreen>
     with SingleTickerProviderStateMixin {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   static const _intervals = [0, 1, 2, 4, 8, 16]; // days per box
   static const _boxColors = [
     Color(0xFFF87171),
