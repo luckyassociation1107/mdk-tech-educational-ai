@@ -40,6 +40,10 @@ jobs:
         working-directory: app
         run: flutter pub get
 
+      - name: Unit + UI tests
+        working-directory: app
+        run: flutter test
+
       - name: Write android/local.properties
         run: |
           FLUTTER_SDK="$(dirname "$(dirname "$(readlink -f "$(which flutter)")")")"
@@ -47,8 +51,8 @@ jobs:
             echo "sdk.dir=$ANDROID_HOME"
             echo "flutter.sdk=$FLUTTER_SDK"
             echo "flutter.buildMode=release"
-            echo "flutter.versionName=0.22.0"
-            echo "flutter.versionCode=22"
+            echo "flutter.versionName=0.22.1"
+            echo "flutter.versionCode=23"
           } > app/android/local.properties
           cat app/android/local.properties
 

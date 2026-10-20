@@ -41,6 +41,9 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      - name: Unit + UI tests
+        run: flutter test
+
       - name: Build Windows release
         run: flutter build windows --release
 

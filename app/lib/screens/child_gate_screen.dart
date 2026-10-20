@@ -27,7 +27,8 @@ class ChildGateScreen extends StatefulWidget {
   State<ChildGateScreen> createState() => _ChildGateScreenState();
 }
 
-class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProviderStateMixin {
+class _ChildGateScreenState extends State<ChildGateScreen>
+    with SingleTickerProviderStateMixin {
   bool _loading = true;
   String? _error;
   bool _busy = false;
@@ -59,7 +60,11 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => PinPad(title: 'Hi ${p.name}!', avatar: p.avatar, subtitle: 'Enter your PIN', confirm: false),
+      builder: (ctx) => PinPad(
+          title: 'Hi ${p.name}!',
+          avatar: p.avatar,
+          subtitle: 'Enter your PIN',
+          confirm: false),
     );
     if (pin == null) return;
     setState(() {
@@ -109,14 +114,18 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
                   padding: const EdgeInsets.fromLTRB(20, 26, 20, 30),
                   children: [
                     Row(children: [
-                      const GlowIcon(Icons.auto_stories_rounded, color: Color(0xFF6366F1), size: 48),
+                      const GlowIcon(Icons.auto_stories_rounded,
+                          color: Color(0xFF6366F1), size: 48),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          GradientText('Who is learning?', size: 21),
-                          Text('Each child gets a private PIN-locked space',
-                              style: TextStyle(color: AppColors.muted, fontSize: 12)),
-                        ]),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GradientText('Who is learning?', size: 21),
+                              Text('Each child gets a private PIN-locked space',
+                                  style: TextStyle(
+                                      color: AppColors.muted, fontSize: 12)),
+                            ]),
                       ),
                     ]),
                     const SizedBox(height: 22),
@@ -124,7 +133,8 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
                       _emptyState()
                     else ...[
                       const Text('Choose your profile',
-                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 14)),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 12,
@@ -147,12 +157,19 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
                           decoration: BoxDecoration(
                             color: AppColors.red.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.red.withOpacity(0.45)),
+                            border: Border.all(
+                                color: AppColors.red.withOpacity(0.45)),
                           ),
                           child: Row(children: [
-                            Icon(Icons.error_outline_rounded, color: AppColors.red, size: 18),
+                            Icon(Icons.error_outline_rounded,
+                                color: AppColors.red, size: 18),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(_error!, style: TextStyle(color: AppColors.red, fontWeight: FontWeight.w700, fontSize: 12.5))),
+                            Expanded(
+                                child: Text(_error!,
+                                    style: TextStyle(
+                                        color: AppColors.red,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12.5))),
                           ]),
                         ),
                       ),
@@ -167,10 +184,14 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
                     ),
                     const SizedBox(height: 10),
                     OutlinedButton.icon(
-                      onPressed: _busy ? null : () async {
-                        await Navigator.of(context).push(PageTransition.route(VaultTransferScreen(onImported: () {})));
-                        if (mounted) setState(() {});
-                      },
+                      onPressed: _busy
+                          ? null
+                          : () async {
+                              await Navigator.of(context).push(
+                                  PageTransition.route(
+                                      VaultTransferScreen(onImported: () {})));
+                              if (mounted) setState(() {});
+                            },
                       icon: const Icon(Icons.qr_code_2_rounded, size: 19),
                       label: const Text('Restore from emoji code'),
                     ),
@@ -179,7 +200,9 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
                       TextButton(
                         onPressed: _busy ? null : _skip,
                         child: Text('Continue without a profile',
-                            style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+                            style: TextStyle(
+                                color: AppColors.muted,
+                                fontWeight: FontWeight.w700)),
                       ),
                     ],
                     const SizedBox(height: 22),
@@ -196,7 +219,8 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
       child: Column(children: [
         Icon(Icons.child_care_rounded, color: AppColors.teal, size: 44),
         const SizedBox(height: 10),
-        Text('First time here?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+        Text('First time here?',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
         const SizedBox(height: 6),
         Text(
           'Create a profile with a name, a favourite emoji and a 4–6 digit PIN. '
@@ -220,9 +244,12 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
           Text(p.avatar, style: const TextStyle(fontSize: 30)),
           const SizedBox(width: 12),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(p.name, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            Text(p.name,
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
             Text(
-              p.lastLogin == 0 ? 'new profile' : 'last visit ${_ago(p.lastLogin)}',
+              p.lastLogin == 0
+                  ? 'new profile'
+                  : 'last visit ${_ago(p.lastLogin)}',
               style: TextStyle(color: AppColors.muted, fontSize: 10.5),
             ),
           ]),
@@ -234,7 +261,8 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
   }
 
   String _ago(int ms) {
-    final d = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ms));
+    final d =
+        DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ms));
     if (d.inMinutes < 60) return '${d.inMinutes}m ago';
     if (d.inHours < 24) return '${d.inHours}h ago';
     return '${d.inDays}d ago';
@@ -245,11 +273,14 @@ class _ChildGateScreenState extends State<ChildGateScreen> with SingleTickerProv
       padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(Icons.enhanced_encryption_rounded, color: AppColors.amber, size: 18),
+          Icon(Icons.enhanced_encryption_rounded,
+              color: AppColors.amber, size: 18),
           const SizedBox(width: 8),
-          Text('Emoji vault', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+          Text('Emoji vault',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
           const Spacer(),
-          Text('${VaultStore.profiles.length} profile${VaultStore.profiles.length == 1 ? '' : 's'}',
+          Text(
+              '${VaultStore.profiles.length} profile${VaultStore.profiles.length == 1 ? '' : 's'}',
               style: TextStyle(color: AppColors.muted, fontSize: 11)),
         ]),
         const SizedBox(height: 6),
@@ -315,7 +346,8 @@ class _SignupScreenState extends State<SignupScreen> {
       _error = '';
     });
     try {
-      final p = await VaultStore.createProfile(name: _nameCtrl.text, avatar: _avatar, pin: _pin!);
+      final p = await VaultStore.createProfile(
+          name: _nameCtrl.text, avatar: _avatar, pin: _pin!);
       await VaultStore.login(p.id, _pin!);
       await VaultStore.log('signup', 'Profile created with avatar $_avatar');
       if (!mounted) return;
@@ -333,93 +365,156 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
-      appBar: AppBar(backgroundColor: AppColors.bg, title: const Text('New profile', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
+      appBar: AppBar(
+          backgroundColor: AppColors.bg,
+          title: const Text('New profile',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
       body: AuroraBackground(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+        child: Column(
           children: [
-            Center(
-              child: Container(
-                width: 96,
-                height: 96,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: AppColors.heroGradient,
-                  boxShadow: [BoxShadow(color: AppColors.indigo.withOpacity(0.5), blurRadius: 26, offset: const Offset(0, 10))],
-                ),
-                child: Text(_avatar, style: const TextStyle(fontSize: 44)),
-              ),
-            ),
-            const SizedBox(height: 18),
-            TextField(
-              controller: _nameCtrl,
-              textCapitalization: TextCapitalization.words,
-              maxLength: 20,
-              style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700),
-              decoration: const InputDecoration(labelText: 'Your name', hintText: 'e.g. Aarav'),
-            ),
-            const SizedBox(height: 6),
-            Text('Pick your emoji', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final e in _avatarChoices)
-                  GestureDetector(
-                    onTap: () => setState(() => _avatar = e),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      width: 46,
-                      height: 46,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 96,
+                      height: 96,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: _avatar == e ? AppColors.teal.withOpacity(0.22) : AppColors.card,
-                        borderRadius: BorderRadius.circular(13),
-                        border: Border.all(color: _avatar == e ? AppColors.teal : AppColors.stroke, width: _avatar == e ? 2 : 1),
+                        shape: BoxShape.circle,
+                        gradient: AppColors.heroGradient,
+                        boxShadow: [
+                          BoxShadow(
+                              color: AppColors.indigo.withOpacity(0.5),
+                              blurRadius: 26,
+                              offset: const Offset(0, 10))
+                        ],
                       ),
-                      child: Text(e, style: const TextStyle(fontSize: 22)),
+                      child:
+                          Text(_avatar, style: const TextStyle(fontSize: 44)),
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            GradientCard(
-              onTap: _busy ? null : _setPin,
-              child: Row(children: [
-                Icon(_pin == null ? Icons.pin_rounded : Icons.lock_rounded, color: _pin == null ? AppColors.muted : AppColors.green),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(_pin == null ? 'Choose a PIN' : 'PIN set (${_pin!.length} digits)',
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5)),
-                    Text('Used to open your private encrypted space',
-                        style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
-                  ]),
-                ),
-                Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-              ]),
-            ),
-            if (_error.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(_error, style: TextStyle(color: AppColors.red, fontWeight: FontWeight.w700, fontSize: 12.5)),
+                  const SizedBox(height: 18),
+                  TextField(
+                    controller: _nameCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    maxLength: 20,
+                    style: TextStyle(
+                        color: AppColors.text, fontWeight: FontWeight.w700),
+                    decoration: const InputDecoration(
+                        labelText: 'Your name', hintText: 'e.g. Aarav'),
+                  ),
+                  const SizedBox(height: 6),
+                  Text('Pick your emoji',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final e in _avatarChoices)
+                        GestureDetector(
+                          onTap: () => setState(() => _avatar = e),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            width: 46,
+                            height: 46,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: _avatar == e
+                                  ? AppColors.teal.withOpacity(0.22)
+                                  : AppColors.card,
+                              borderRadius: BorderRadius.circular(13),
+                              border: Border.all(
+                                  color: _avatar == e
+                                      ? AppColors.teal
+                                      : AppColors.stroke,
+                                  width: _avatar == e ? 2 : 1),
+                            ),
+                            child:
+                                Text(e, style: const TextStyle(fontSize: 22)),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  GradientCard(
+                    onTap: _busy ? null : _setPin,
+                    child: Row(children: [
+                      Icon(
+                          _pin == null ? Icons.pin_rounded : Icons.lock_rounded,
+                          color:
+                              _pin == null ? AppColors.muted : AppColors.green),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  _pin == null
+                                      ? 'Choose a PIN'
+                                      : 'PIN set (${_pin!.length} digits)',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13.5)),
+                              Text('Used to open your private encrypted space',
+                                  style: TextStyle(
+                                      color: AppColors.muted, fontSize: 11.5)),
+                            ]),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+                    ]),
+                  ),
+                ],
               ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _busy ? null : _create,
-              icon: _busy
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.check_rounded, size: 19),
-              label: const Text('Create my profile'),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.indigo, padding: const EdgeInsets.symmetric(vertical: 15)),
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Your PIN is never stored. Only a slow hash is kept, and your data can only be opened with the PIN.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 11, height: 1.5),
+            // Pinned CTA: always reachable, even on a small 360x640 phone.
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                border: Border(top: BorderSide(color: AppColors.stroke)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
+              child: SafeArea(
+                top: false,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  if (_error.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(_error,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: AppColors.red,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5)),
+                    ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _busy ? null : _create,
+                      icon: _busy
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check_rounded, size: 19),
+                      label: const Text('Create my profile'),
+                      style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.indigo,
+                          padding: const EdgeInsets.symmetric(vertical: 15)),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Your PIN is never stored — only a slow hash is kept.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.muted, fontSize: 10.5),
+                  ),
+                ]),
+              ),
             ),
           ],
         ),
@@ -428,7 +523,22 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   static const _avatarChoices = [
-    '🐼', '🦊', '🐯', '🐨', '🦁', '🐸', '🐧', '🦉', '🐙', '🦄', '🚀', '⭐', '🌈', '🎨', '⚽', '📚'
+    '🐼',
+    '🦊',
+    '🐯',
+    '🐨',
+    '🦁',
+    '🐸',
+    '🐧',
+    '🦉',
+    '🐙',
+    '🦄',
+    '🚀',
+    '⭐',
+    '🌈',
+    '🎨',
+    '⚽',
+    '📚'
   ];
 }
 
@@ -510,27 +620,36 @@ class _PinPadState extends State<PinPad> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(top: BorderSide(color: AppColors.stroke)),
       ),
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 16, 22, 22),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 42, height: 4, decoration: BoxDecoration(color: colors.muted.withOpacity(0.4), borderRadius: BorderRadius.circular(99))),
+            Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: colors.muted.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(99))),
             const SizedBox(height: 16),
             Text(widget.avatar, style: const TextStyle(fontSize: 36)),
             const SizedBox(height: 6),
-            Text(widget.title, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            Text(widget.title,
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
             const SizedBox(height: 3),
             Text(_hint.isEmpty ? widget.subtitle : _hint,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: _hint.isEmpty ? AppColors.muted : AppColors.amber,
                     fontSize: 12,
-                    fontWeight: _hint.isEmpty ? FontWeight.w500 : FontWeight.w800)),
+                    fontWeight:
+                        _hint.isEmpty ? FontWeight.w500 : FontWeight.w800)),
             const SizedBox(height: 16),
             GestureDetector(
               onLongPress: () => setState(() => _show = !_show),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              child:
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 for (var i = 0; i < 6; i++)
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
@@ -539,11 +658,21 @@ class _PinPadState extends State<PinPad> {
                     height: 16,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: i < _pin.length ? AppColors.teal : Colors.transparent,
-                      border: Border.all(color: i < _pin.length ? AppColors.teal : AppColors.stroke, width: 1.6),
+                      color:
+                          i < _pin.length ? AppColors.teal : Colors.transparent,
+                      border: Border.all(
+                          color: i < _pin.length
+                              ? AppColors.teal
+                              : AppColors.stroke,
+                          width: 1.6),
                     ),
                     child: i < _pin.length && _show
-                        ? Center(child: Text(_pin[i], style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: AppColors.bg)))
+                        ? Center(
+                            child: Text(_pin[i],
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.bg)))
                         : null,
                   ),
               ]),
@@ -556,12 +685,17 @@ class _PinPadState extends State<PinPad> {
             ])
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                  for (final d in row) _digit(d, colors),
-                ]),
+                child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      for (final d in row) _digit(d, colors),
+                    ]),
               ),
             Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              _padButton(icon: Icons.fingerprint_rounded, disabled: true, onTap: () {}),
+              _padButton(
+                  icon: Icons.fingerprint_rounded,
+                  disabled: true,
+                  onTap: () {}),
               _digit('0', colors),
               _padButton(icon: Icons.backspace_rounded, onTap: _back),
             ]),
@@ -570,7 +704,9 @@ class _PinPadState extends State<PinPad> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _submit,
-                style: FilledButton.styleFrom(backgroundColor: AppColors.indigo, padding: const EdgeInsets.symmetric(vertical: 14)),
+                style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.indigo,
+                    padding: const EdgeInsets.symmetric(vertical: 14)),
                 child: Text(_pin.length >= 4 ? 'Done' : 'Enter PIN'),
               ),
             ),
@@ -593,12 +729,17 @@ class _PinPadState extends State<PinPad> {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.stroke),
         ),
-        child: Text(d, style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900, color: AppColors.text)),
+        child: Text(d,
+            style: TextStyle(
+                fontSize: 23,
+                fontWeight: FontWeight.w900,
+                color: AppColors.text)),
       ),
     );
   }
 
-  Widget _padButton({IconData? icon, bool disabled = false, required VoidCallback onTap}) {
+  Widget _padButton(
+      {IconData? icon, bool disabled = false, required VoidCallback onTap}) {
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: disabled ? null : onTap,
@@ -609,9 +750,11 @@ class _PinPadState extends State<PinPad> {
         decoration: BoxDecoration(
           color: disabled ? Colors.transparent : AppColors.cardLight,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: disabled ? Colors.transparent : AppColors.stroke),
+          border: Border.all(
+              color: disabled ? Colors.transparent : AppColors.stroke),
         ),
-        child: Icon(icon, color: disabled ? Colors.transparent : AppColors.muted, size: 22),
+        child: Icon(icon,
+            color: disabled ? Colors.transparent : AppColors.muted, size: 22),
       ),
     );
   }
@@ -639,7 +782,8 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: _code));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Emoji code copied — keep it private!')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Emoji code copied — keep it private!')));
   }
 
   Future<void> _import() async {
@@ -650,13 +794,21 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
         backgroundColor: AppColors.card,
         title: const Text('Import emoji code'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('Paste the full emoji code from your other phone. It replaces the current vault.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4)),
+          Text(
+              'Paste the full emoji code from your other phone. It replaces the current vault.',
+              style: TextStyle(
+                  color: AppColors.muted, fontSize: 12.5, height: 1.4)),
           const SizedBox(height: 10),
-          TextField(controller: ctrl, minLines: 4, maxLines: 8, style: const TextStyle(fontSize: 12)),
+          TextField(
+              controller: ctrl,
+              minLines: 4,
+              maxLines: 8,
+              style: const TextStyle(fontSize: 12)),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel')),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(ctrl.text),
             style: FilledButton.styleFrom(backgroundColor: AppColors.indigo),
@@ -675,11 +827,13 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
         _code = VaultStore.exportEmoji();
       });
       widget.onImported();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Restored $n profile${n == 1 ? '' : 's'}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Restored $n profile${n == 1 ? '' : 's'}')));
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not import: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not import: $e')));
     }
   }
 
@@ -689,31 +843,42 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
       backgroundColor: AppColors.bg,
       appBar: AppBar(
         backgroundColor: AppColors.bg,
-        title: const Text('Emoji vault code', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+        title: const Text('Emoji vault code',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
       ),
       body: AuroraBackground(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
           children: [
             GlassCard(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Icon(Icons.enhanced_encryption_rounded, color: AppColors.amber, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Your encrypted backup', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-                ]),
-                const SizedBox(height: 6),
-                Text(
-                  'This emoji code holds every profile in the vault, already encrypted with each child\'s PIN. '
-                  'Save it somewhere safe — without it, deleting the app deletes the accounts.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5),
-                ),
-                const SizedBox(height: 10),
-                Row(children: [
-                  Text('${_code.runes.length} emoji • ${(_code.runes.length * 4 / 1024).toStringAsFixed(1)} KB',
-                      style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.w700)),
-                ]),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Icon(Icons.enhanced_encryption_rounded,
+                          color: AppColors.amber, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Your encrypted backup',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 15)),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text(
+                      'This emoji code holds every profile in the vault, already encrypted with each child\'s PIN. '
+                      'Save it somewhere safe — without it, deleting the app deletes the accounts.',
+                      style: TextStyle(
+                          color: AppColors.muted, fontSize: 12, height: 1.5),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(children: [
+                      Text(
+                          '${_code.runes.length} emoji • ${(_code.runes.length * 4 / 1024).toStringAsFixed(1)} KB',
+                          style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)),
+                    ]),
+                  ]),
             ),
             const SizedBox(height: 12),
             Container(
@@ -727,7 +892,8 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
               child: SingleChildScrollView(
                 child: SelectableText(
                   _code,
-                  style: const TextStyle(fontSize: 15, height: 1.7, letterSpacing: 0.5),
+                  style: const TextStyle(
+                      fontSize: 15, height: 1.7, letterSpacing: 0.5),
                 ),
               ),
             ),
@@ -738,7 +904,9 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
                   onPressed: _copy,
                   icon: const Icon(Icons.copy_rounded, size: 18),
                   label: const Text('Copy code'),
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.indigo, padding: const EdgeInsets.symmetric(vertical: 13)),
+                  style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.indigo,
+                      padding: const EdgeInsets.symmetric(vertical: 13)),
                 ),
               ),
               const SizedBox(width: 10),
@@ -753,15 +921,20 @@ class _VaultTransferScreenState extends State<VaultTransferScreen> {
             const SizedBox(height: 14),
             GlassCard(
               padding: const EdgeInsets.all(14),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Why emojis?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                const SizedBox(height: 5),
-                Text(
-                  'The vault is encrypted bytes; emojis are simply a friendly alphabet for those bytes. '
-                  'Anyone who receives the code still needs the child\'s PIN to open anything.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.5),
-                ),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Why emojis?',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w900, fontSize: 13)),
+                    const SizedBox(height: 5),
+                    Text(
+                      'The vault is encrypted bytes; emojis are simply a friendly alphabet for those bytes. '
+                      'Anyone who receives the code still needs the child\'s PIN to open anything.',
+                      style: TextStyle(
+                          color: AppColors.muted, fontSize: 11.5, height: 1.5),
+                    ),
+                  ]),
             ),
           ],
         ),

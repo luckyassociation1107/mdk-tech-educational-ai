@@ -1,3 +1,30 @@
+## v0.22.1 — stability pass: 21 automated tests, three real UI bugs fixed
+
+Everything below was run for real (Flutter 3.24.5 in a clean sandbox), not assumed.
+
+**Static check.** `flutter analyze` over the whole app: **0 errors** (113 infos/warnings).
+
+**21 automated tests** (`app/test/`), all green:
+- unit: emoji codec round-trip, seal/open, wrong-key and tamper rejection, PBKDF2 salt
+  uniqueness, signup → wrong PIN → right PIN, data surviving logout, PIN change keeping
+  data, PIN validation, JSON→tables→JSON, emoji packet round-trip, Nostr event signature
+  and tamper rejection.
+- UI on a 360×640 canvas: gate renders, full sign-up flow (name → avatar → PIN typed
+  twice → profile listed), wrong PIN refused, profile screen + tablet-free layout, cloud
+  vault screen fits, emoji code export → wipe → import restores both profiles.
+
+**Three real bugs the tests caught and we fixed**
+1. `vault_sync_screen`: the "Copy emoji / Paste emoji" row **overflowed by ~10 px** on a
+   360 dp phone → text now flexes with ellipsis.
+2. `child_gate_screen` (sign-up): "Create my profile" sat **below the fold** on a 640 dp
+   tall phone → the button is now pinned to the bottom of the screen (always visible).
+3. Sign-up validation text ("Please type your name.") was rendered **inside the scroll
+   area**, so a child tapping Create could see nothing happen → the message now appears
+   directly above the pinned button.
+
+**CI now runs the tests** on every push, for both the Android and Windows builds, so a
+future feature cannot silently break the gate, the vault or the relay backup.
+
 ## v0.22.0 — Emoji cloud vault: tables → encrypted emojis → free Nostr relays
 
 **What you asked for.** An encryption/decryption path where the vault JSON is kept as a

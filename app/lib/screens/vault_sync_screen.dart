@@ -474,8 +474,13 @@ class _VaultSyncScreenState extends State<VaultSyncScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(icon, size: 15, color: AppColors.muted),
-        const SizedBox(width: 7),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5)),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5)),
+        ),
       ]),
     );
   }
