@@ -3,7 +3,7 @@
 Everything below is the project's own running log, newest first.
 The current architecture is described in README.md.
 
-## v0.24.0 — free website AI by default, local figure finding, APK/EXE verified
+## v0.25.0 — free website AI by default, local figure finding, APK/EXE verified
 
 **The app now reads PDFs for free.** The public PDF-teacher website is driven
 inside the app's own WebView: the PDF goes into the page's file input through a
@@ -26,10 +26,15 @@ key, no account, no cost.
   WebView.
 - **Scene parser hardened** for what the free model actually returns (mangled
   keys, missing `kind`, prose around JSON, trailing commas).
+- **Replayed the live answers through the real parsers** and fixed what the
+  free model actually does: the site's error modal is a `<dialog>` (no
+  `role=dialog`), the send button enables a frame after the input event, boards
+  arrive as a list of lines, and options arrive lettered (`a) Sunlight` with
+  `answer: "a"`). All four are handled now.
 - Tests: **59** (26 AI pipeline + 9 figure finder + vault + UI), `flutter
   analyze` **0 errors**; Android APK and Windows EXE built green in CI.
 
-### What v0.24.0 also removed
+### What v0.25.0 also removed
 
 The Syncfusion parser and the Android-only Kotlin `PdfRenderer` are gone. The
 PDF is read by the AI, pages and figures are rendered with PDFium on both

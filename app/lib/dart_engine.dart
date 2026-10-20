@@ -16,12 +16,13 @@ import 'subject_engine.dart';
 
 /// The whole classroom engine, in Dart — no Python anywhere in the app.
 ///
-/// Since v0.24.0 the textbook is read by the teacher's own AI: the PDF is
-/// uploaded with a custom prompt and the model returns the page text plus
-/// the bounding box of every figure. Nothing parses the PDF on the device
-/// any more. Page pictures and figure crops are rendered locally with
-/// PDFium (`pdfx`), which works on Android and Windows alike, and the
-/// lesson video is still painted, spoken and animated entirely on-device.
+/// Since v0.25.0 the textbook is read by an AI — the free website mode by
+/// default, or the teacher's own key. The PDF is uploaded with a custom
+/// prompt and the model returns the page text and says where each figure
+/// is; nothing parses the PDF on the device any more. Page pictures and
+/// figure crops are rendered locally with PDFium (`pdfx`), which works on
+/// Android and Windows alike, and the lesson video is still painted, spoken
+/// and animated entirely on-device.
 class DartBlock {
   final String text;
   final List<double> bbox; // normalised [x0, y0, x1, y1]
