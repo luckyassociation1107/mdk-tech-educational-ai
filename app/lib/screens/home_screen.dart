@@ -8,11 +8,14 @@ import '../store.dart';
 import '../study_stats.dart';
 import '../ui/premium_ui.dart';
 import '../updater.dart';
+import '../vault/emoji_vault.dart';
 import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
+import 'child_gate_screen.dart';
 import 'daily_challenge_screen.dart';
 import 'revision_screen.dart';
+import 'profile_screen.dart';
 import 'theme_studio_screen.dart';
 import 'settings_screen.dart';
 import 'textbook_screen.dart';
@@ -167,9 +170,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning — ready to learn?';
-    if (h < 17) return 'Good afternoon — keep the streak alive';
-    return 'Good evening — one class a day wins';
+    final name = VaultStore.current?.name;
+    final who = (name == null || name.isEmpty) ? '' : ' $name';
+    if (h < 12) return 'Good morning$who — ready to learn?';
+    if (h < 17) return 'Good afternoon$who — keep the streak alive';
+    return 'Good evening$who — one class a day wins';
   }
 
   /// "Continue learning" — the single most useful action on Home.
@@ -507,6 +512,43 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: AppColors.muted, fontSize: 12.5)),
                         ]),
                   ),
+                  GlassCard(
+                    padding: const EdgeInsets.all(4),
+                    radius: 14,
+                    onTap: () async {
+                      await Navigator.of(context).push(PageTransition.route(
+                        ProfileScreen(
+                          settings: widget.settings,
+                          onSignedOut: () {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (_) => ChildGateScreen(
+                                  settings: widget.settings,
+                                  onLoggedIn: () {
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute(
+                                          builder: (_) => HomeScreen(
+                                              gateway: widget.gateway,
+                                              settings: widget.settings)),
+                                      (_) => false,
+                                    );
+                                  },
+                                ),
+                              ),
+                              (_) => false,
+                            );
+                          },
+                        ),
+                      ));
+                      if (mounted) setState(() {});
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Text(VaultStore.current?.avatar ?? '🙂',
+                          style: const TextStyle(fontSize: 17)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   GlassCard(
                     padding: const EdgeInsets.all(4),
                     radius: 14,

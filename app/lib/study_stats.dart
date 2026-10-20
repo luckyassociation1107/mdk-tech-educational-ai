@@ -5,6 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Streaks, daily goal, XP level, badges and a full on-device backup.
 /// Everything is stored in SharedPreferences on this phone only.
 class StudyStats {
+  /// Set by the child gate: keeps each child's streak/XP separate.
+  static String scope = '';
+
+  static String _k(String key) => scope.isEmpty ? key : '${scope}_$key';
+
   static String _dayKey(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -14,38 +19,38 @@ class StudyStats {
   static Future<void> recordActivity({int scenes = 0, int seconds = 0}) async {
     final p = await SharedPreferences.getInstance();
     final today = _dayKey(DateTime.now());
-    final days = (p.getStringList('study_days') ?? <String>[]).toSet()
+    final days = (p.getStringList(_k('study_days')) ?? <String>[]).toSet()
       ..add(today);
-    await p.setStringList('study_days', days.toList());
+    await p.setStringList(_k('study_days'), days.toList());
     if (scenes > 0)
-      await p.setInt('study_scenes_$today',
-          (p.getInt('study_scenes_$today') ?? 0) + scenes);
+      await p.setInt(_k('study_scenes_$today'),
+          (p.getInt(_k('study_scenes_$today')) ?? 0) + scenes);
     if (seconds > 0)
       await p.setInt(
-          'study_secs_$today', (p.getInt('study_secs_$today') ?? 0) + seconds);
+          'study_secs_$today', (p.getInt(_k('study_secs_$today')) ?? 0) + seconds);
     // keep only 400 days
     if (days.length > 400) {
       final sorted = days.toList()..sort();
-      await p.setStringList('study_days', sorted.sublist(sorted.length - 400));
+      await p.setStringList(_k('study_days'), sorted.sublist(sorted.length - 400));
     }
   }
 
   static Future<void> recordClassFinished() async {
     final p = await SharedPreferences.getInstance();
-    await p.setInt('study_classes', (p.getInt('study_classes') ?? 0) + 1);
+    await p.setInt(_k('study_classes'), (p.getInt(_k('study_classes')) ?? 0) + 1);
     await recordActivity(scenes: 1);
   }
 
   static Future<int> classesFinished() async {
     final p = await SharedPreferences.getInstance();
-    return p.getInt('study_classes') ?? 0;
+    return p.getInt(_k('study_classes')) ?? 0;
   }
 
   /// Consecutive study days ending today (or yesterday, so a day is never
   /// lost just because the app was opened late at night).
   static Future<int> streak() async {
     final p = await SharedPreferences.getInstance();
-    final days = (p.getStringList('study_days') ?? const <String>[]).toSet();
+    final days = (p.getStringList(_k('study_days')) ?? const <String>[]).toSet();
     if (days.isEmpty) return 0;
     var cursor = _dateOnly(DateTime.now());
     if (!days.contains(_dayKey(cursor))) {
@@ -63,7 +68,7 @@ class StudyStats {
   /// Last 7 days, oldest first, as booleans (did the student study).
   static Future<List<bool>> last7() async {
     final p = await SharedPreferences.getInstance();
-    final days = (p.getStringList('study_days') ?? const <String>[]).toSet();
+    final days = (p.getStringList(_k('study_days')) ?? const <String>[]).toSet();
     final now = _dateOnly(DateTime.now());
     return List<bool>.generate(7, (i) {
       final d = now.subtract(Duration(days: 6 - i));
@@ -87,7 +92,7 @@ class StudyStats {
     final p = await SharedPreferences.getInstance();
     var sum = 0;
     for (final k in p.getKeys()) {
-      if (k.startsWith('xp_')) sum += p.getInt(k) ?? 0;
+      if (k.startsWith(_k('xp_'))) sum += p.getInt(k) ?? 0;
     }
     return sum;
   }
@@ -113,10 +118,10 @@ class StudyStats {
   static Future<List<BadgeInfo>> badges() async {
     final p = await SharedPreferences.getInstance();
     final streak = await StudyStats.streak();
-    final classes = p.getInt('study_classes') ?? 0;
-    final flash = p.getInt('study_flash_reviewed') ?? 0;
+    final classes = p.getInt(_k('study_classes')) ?? 0;
+    final flash = p.getInt(_k('study_flash_reviewed')) ?? 0;
     final exams = p.getString('exam_results_learner') ?? '';
-    final quizPerfect = p.getInt('study_quiz_perfect') ?? 0;
+    final quizPerfect = p.getInt(_k('study_quiz_perfect')) ?? 0;
     final passed = exams.contains('"passed":true') || exams.contains('passed');
     return [
       BadgeInfo('first_class', 'First Class', 'Finish your first class',
@@ -144,13 +149,13 @@ class StudyStats {
   static Future<void> bumpPerfectQuiz() async {
     final p = await SharedPreferences.getInstance();
     await p.setInt(
-        'study_quiz_perfect', (p.getInt('study_quiz_perfect') ?? 0) + 1);
+        'study_quiz_perfect', (p.getInt(_k('study_quiz_perfect')) ?? 0) + 1);
   }
 
   static Future<void> bumpFlashcards([int n = 1]) async {
     final p = await SharedPreferences.getInstance();
     await p.setInt(
-        'study_flash_reviewed', (p.getInt('study_flash_reviewed') ?? 0) + n);
+        'study_flash_reviewed', (p.getInt(_k('study_flash_reviewed')) ?? 0) + n);
   }
 
   // ---------- backup ----------

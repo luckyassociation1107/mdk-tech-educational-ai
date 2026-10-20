@@ -1,3 +1,40 @@
+## v0.21.0 — emoji vault: encrypted child accounts, PIN login and activity logs
+
+**What it is.** A fully on-device, encrypted "database" for children's accounts, written
+as an **emoji code**. Free, unlimited (phone storage), stable and 100% offline. It is not
+a cloud service — copying it to another phone means sharing the emoji code — and that
+limit is stated plainly in the UI.
+
+**How it protects data**
+
+- Each child profile: name, an avatar emoji, and a **4–6 digit PIN**.
+- The PIN is never stored. A **PBKDF2-HMAC-SHA256** (120 000 rounds) key is derived from
+  the PIN + a random per-child salt; only a 60 000-round verifier hash is kept for the
+  fast PIN check.
+- The child's data (marks, activity log, profile info) is sealed with a **SHA-256 HMAC
+  keystream + HMAC tag**: a wrong PIN fails the tag check, and any edited byte in the
+  ciphertext is rejected. Salt and verifier live outside the payload.
+- The whole vault (all profiles + sealed payloads) is base64-encoded and mapped onto a
+  **64-emoji alphabet** — the "emoji database". The code starts with 🎒 so it is easy to
+  recognise, and can be copied or saved as a backup and restored on any phone.
+
+**In the app**
+
+- **Child gate at launch**: pick a profile → numeric PIN pad (long-press the dots to peek
+  at the digits) → home. New children sign up with a name, an emoji avatar and a PIN typed
+  twice. "Continue without a profile" keeps the old single-learner mode.
+- **Per-child scoping**: exam results, XP, completed parts, streaks, daily-goal counters and
+  activity logs are namespaced per profile, so two children on one phone never mix data.
+- **My space** (avatar button on Home): change name, change avatar, change PIN (old PIN
+  required, data is re-sealed with the new key), switch child, sign out.
+- **Activity log** (encrypted): sign-up, sign-in, sign-out, PIN change, profile edits,
+  every finished class and every finished test.
+- **Emoji vault code**: copy the code / import a code to restore all profiles.
+
+**Verified offline (plain Dart test, `--enable-asserts`)** — emoji round-trip of UTF-8 bytes,
+seal/open with the right PIN, rejection with a wrong PIN, tamper rejection, PIN-hash
+uniqueness, and 64 unique emojis in the alphabet.
+
 ## v0.20.0 — animated diagrams, listening exam, daily challenge, bookmarks, word bank, certificate
 
 **Animated diagrams inside the class.** One diagram per part is drawn live while the

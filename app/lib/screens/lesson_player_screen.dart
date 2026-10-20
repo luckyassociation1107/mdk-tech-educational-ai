@@ -11,6 +11,7 @@ import '../lesson_content.dart';
 import '../store.dart';
 import '../study_stats.dart';
 import '../translate_service.dart';
+import '../vault/emoji_vault.dart';
 import '../word_bank.dart';
 import '../widgets.dart';
 import 'voice_studio_screen.dart';
@@ -361,6 +362,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     _ttsCh.invokeMethod('stopTts').catchError((_) => null);
     await ProgressStore.addXp(widget.sessionId, 20);
     await StudyStats.recordClassFinished();
+    await VaultStore.log('class', 'Finished part ${widget.partNumber} — ${widget.title}');
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }

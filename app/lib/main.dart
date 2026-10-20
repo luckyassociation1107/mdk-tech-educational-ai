@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'engine_gateway.dart';
 import 'exam_store.dart';
+import 'screens/child_gate_screen.dart';
 import 'screens/home_screen.dart';
 import 'store.dart';
 import 'theme/themes.dart';
 import 'ui/premium_ui.dart';
 import 'updater.dart';
+import 'vault/emoji_vault.dart';
 import 'widgets.dart';
 
 void main() {
@@ -140,13 +142,24 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
   Future<void> _go() async {
     await ThemeManager.load();
     final settings = await AppSettings.load();
+    await VaultStore.load();
     ExamStore.scopeUserId = 'learner';
-    await Future.delayed(const Duration(milliseconds: 1500));
+    await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
+    // Child profiles live in the encrypted emoji vault.
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-          builder: (_) =>
-              HomeScreen(gateway: EngineGateway(), settings: settings)),
+        builder: (_) => ChildGateScreen(
+          settings: settings,
+          onLoggedIn: () {
+            if (!mounted) return;
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => HomeScreen(gateway: EngineGateway(), settings: settings)),
+              (_) => false,
+            );
+          },
+        ),
+      ),
       (_) => false,
     );
   }

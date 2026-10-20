@@ -66,8 +66,14 @@ class AppSettings {
 /// Per-textbook learning progress (mirrors the engine's unlock state so
 /// the UI stays truthful even before the series is re-fetched).
 class ProgressStore {
-  static String _doneKey(String sessionId) => 'completed_parts_$sessionId';
-  static String _posKey(String videoPath) => 'watch_pos_$videoPath';
+  /// When a child profile is logged in, progress keys are namespaced so
+  /// two children on the same phone never see each other's XP/parts.
+  static String scope = '';
+
+  static String _scoped(String key) => scope.isEmpty ? key : '${scope}_$key';
+
+  static String _doneKey(String sessionId) => _scoped('completed_parts_$sessionId');
+  static String _posKey(String videoPath) => _scoped('watch_pos_$videoPath');
 
   static Future<Set<int>> completedParts(String sessionId) async {
     final p = await SharedPreferences.getInstance();
@@ -96,7 +102,7 @@ class ProgressStore {
   }
 
   // --- learning XP (fun & interactive) ---
-  static String _xpKey(String sessionId) => 'xp_$sessionId';
+  static String _xpKey(String sessionId) => _scoped('xp_$sessionId');
 
   static Future<int> xpOf(String sessionId) async {
     final p = await SharedPreferences.getInstance();
