@@ -84,7 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 fontSize: 14)),
                         const SizedBox(height: 2),
                         Text(
-                            'Provider, API key and the custom prompts that read the PDF and design the video',
+                            'Free website AI or your own key, plus the custom prompts that read the PDF',
                             style: TextStyle(
                                 color: AppColors.muted, fontSize: 11.5)),
                       ]),

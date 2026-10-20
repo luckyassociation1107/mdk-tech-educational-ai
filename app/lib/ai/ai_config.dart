@@ -1,9 +1,21 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai_prompts.dart';
+
+/// How the AI is reached.
+enum AiMode {
+  /// Free: the public PDF-teacher website is automated inside the app's
+  /// WebView. No key, no account, no cost. Android only.
+  webview,
+
+  /// The teacher's own API key, called directly. Works on Windows too.
+  api,
+}
 
 /// Which AI service is used. Everything the classroom needs — reading the
 /// PDF, designing the lesson script — goes through this one setting.
@@ -46,6 +58,7 @@ extension AiProviderInfo on AiProvider {
 /// prompts. The API key lives in the platform keystore (flutter_secure_storage);
 /// the rest is ordinary preferences.
 class AiConfig {
+  AiMode mode;
   AiProvider provider;
   String apiKey;
   String model;
@@ -55,6 +68,7 @@ class AiConfig {
   String askPrompt;
 
   AiConfig({
+    this.mode = AiMode.webview,
     this.provider = AiProvider.gemini,
     this.apiKey = '',
     String? model,
@@ -72,15 +86,28 @@ class AiConfig {
         scriptPrompt = scriptPrompt ?? AiPrompts.script,
         askPrompt = askPrompt ?? AiPrompts.ask;
 
-  bool get ready => apiKey.trim().isNotEmpty;
+  /// Free mode is always "ready" on a platform that can host the WebView;
+  /// API mode needs a key.
+  bool get ready {
+    if (mode == AiMode.webview) {
+      return kIsWeb || Platform.isAndroid;
+    }
+    return apiKey.trim().isNotEmpty;
+  }
 
   /// Shown in the UI so a teacher can see what the app is about to use.
   String get summary {
+    if (mode == AiMode.webview) {
+      return ready
+          ? 'Free website AI · no key, no cost'
+          : 'Free mode needs Android — add a key for Windows';
+    }
     if (!ready) return 'No AI key yet — add one to read PDFs';
     return '${provider.label} · ${model.isEmpty ? provider.defaultModel : model}';
   }
 
   AiConfig copyWith({
+    AiMode? mode,
     AiProvider? provider,
     String? apiKey,
     String? model,
@@ -91,6 +118,7 @@ class AiConfig {
     bool resetPrompts = false,
   }) =>
       AiConfig(
+        mode: mode ?? this.mode,
         provider: provider ?? this.provider,
         apiKey: apiKey ?? this.apiKey,
         model: model ?? this.model,
@@ -101,6 +129,7 @@ class AiConfig {
       );
 
   Map<String, dynamic> toJson() => {
+        'mode': mode.name,
         'provider': provider.name,
         'model': model,
         'base_url': baseUrl,
@@ -114,7 +143,12 @@ class AiConfig {
       (e) => e.name == (j['provider'] ?? ''),
       orElse: () => AiProvider.gemini,
     );
+    final m = AiMode.values.firstWhere(
+      (e) => e.name == (j['mode'] ?? ''),
+      orElse: () => AiMode.webview,
+    );
     return AiConfig(
+      mode: m,
       provider: p,
       apiKey: key,
       model: (j['model'] ?? '').toString(),

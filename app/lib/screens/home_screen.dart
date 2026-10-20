@@ -126,12 +126,18 @@ class _HomeScreenState extends State<HomeScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.card,
-          title: const Text('Add your AI key first'),
+          title: Text(cfg.mode == AiMode.webview
+              ? 'Free mode needs Android'
+              : 'Add your AI key first'),
           content: Text(
-            'This app no longer reads PDFs on the device. The book is uploaded to '
-            'your own AI account, which extracts the text, finds the figures and '
-            'designs the lesson. Paste a key once in AI & Prompts — it is kept in '
-            'the device keystore.',
+            cfg.mode == AiMode.webview
+                ? 'The free mode drives the classroom website inside the app, and '
+                    'that needs Android WebView. On this device, switch to your own '
+                    'API key in AI & Prompts.'
+                : 'This app no longer reads PDFs on the device. The book is sent to '
+                    'your own AI account, which extracts the text, says where the '
+                    'figures are and designs the lesson. Paste a key once in '
+                    'AI & Prompts — it is kept in the device keystore.',
             style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
           ),
           actions: [
@@ -152,7 +158,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() => _adding = true);
-    _stage = ValueNotifier('Uploading the PDF to ${cfg.provider.label}…');
+    _stage = ValueNotifier(cfg.mode == AiMode.webview
+        ? 'Opening the free classroom AI…'
+        : 'Uploading the PDF to ${cfg.provider.label}…');
     _showStageDialog();
     try {
       final s = await widget.gateway.createSession(
@@ -218,7 +226,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               Text(
-                'The PDF is uploaded once. Pages and figures are cut and the video is built on this device.',
+                'The PDF is read once. Figures are cut out of the book and the '
+                'lesson is built on this device — nothing is rendered elsewhere.',
                 style: TextStyle(
                     color: AppColors.muted, fontSize: 11, height: 1.5),
               ),
@@ -736,7 +745,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.green.withOpacity(0.16),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Text('online',
+                              child: Text(
+                                  AiConfig.current.mode == AiMode.webview
+                                      ? 'free'
+                                      : 'online',
                                   style: TextStyle(
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.w900,

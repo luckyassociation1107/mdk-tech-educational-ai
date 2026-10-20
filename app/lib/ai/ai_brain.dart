@@ -1,6 +1,7 @@
 import 'ai_client.dart';
 import 'ai_config.dart';
 import 'ai_prompts.dart';
+import 'ai_service.dart';
 
 /// Raised for anything the teacher can fix (key, quota, internet).
 class BrainException implements Exception {
@@ -69,17 +70,14 @@ class AiBrain {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
       throw BrainException(
-          'No AI key yet. Open Settings → AI & Prompts and paste your key.');
+          'The AI is not set up yet. Open Settings → AI & Prompts.');
     }
     final prompt = '${levelInstruction(level)}\n\n$classroomHint\n\n'
-        'Summarise ONLY the textbook text below. Do not add outside facts.\n\n'
+        'Summarise ONLY the textbook text below. Do not add outside facts.\n'
+        'Reply with the summary only.\n\n'
         '---8<---\n${clip(pdfText)}\n---8<---';
     try {
-      final out = await AiClient().generate(
-        cfg,
-        parts: [AiPart.text(prompt)],
-        maxTokens: 3000,
-      );
+      final out = await AiService.generate(cfg, prompt: prompt, maxTokens: 3000);
       if (cancel?.cancelled == true) return '';
       onChunk?.call(out);
       return out.trim();
@@ -101,7 +99,7 @@ class AiBrain {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
       throw BrainException(
-          'No AI key yet. Open Settings → AI & Prompts and paste your key.');
+          'The AI is not set up yet. Open Settings → AI & Prompts.');
     }
     final prompt = AiPrompts.fill(cfg.askPrompt, {
       'title': 'this textbook',
@@ -113,11 +111,7 @@ class AiBrain {
           'Textbook text:\n$pdfText'),
     });
     try {
-      final out = await AiClient().generate(
-        cfg,
-        parts: [AiPart.text(prompt)],
-        maxTokens: 2000,
-      );
+      final out = await AiService.generate(cfg, prompt: prompt, maxTokens: 2000);
       if (cancel?.cancelled == true) return '';
       onChunk?.call(out);
       return out.trim();

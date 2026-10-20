@@ -32,7 +32,12 @@ class FakeAi extends AiClient {
 }
 
 AiConfig cfgFor(AiProvider p, {String key = 'test-key', String? script}) =>
-    AiConfig(provider: p, apiKey: key, model: '', scriptPrompt: script);
+    AiConfig(
+        mode: AiMode.api,
+        provider: p,
+        apiKey: key,
+        model: '',
+        scriptPrompt: script);
 
 final Uint8List fakePdf = Uint8List.fromList(utf8.encode('%PDF-1.4 fake'));
 
@@ -256,7 +261,8 @@ void main() {
   group('script designer', () {
     final pages = [
       const ExtractedPage(1, 'Photosynthesis is how plants make food.', [
-        ExtractedFigure(1, 'Leaf cross section', [0.1, 0.2, 0.9, 0.6])
+        ExtractedFigure(1, 'Leaf cross section',
+            where: 'middle', bbox: [0.1, 0.2, 0.9, 0.6])
       ]),
     ];
 
@@ -280,7 +286,8 @@ void main() {
         indexPages: pages,
         teacherNote: 'Explain simply',
         client: fake,
-        crop: (page, bbox) async => '/tmp/f_${page}_${bbox.first}.png',
+        crop: (page, bbox, where) async =>
+            '/tmp/f_${page}_${bbox == null ? where : bbox.first}.png',
       );
       expect(scenes, isNotNull);
       expect(scenes!.length, 5);
@@ -315,7 +322,7 @@ void main() {
         indexPages: pages,
         teacherNote: '',
         client: fake,
-        crop: (p, b) async => null,
+        crop: (p, b, w) async => null,
       );
       expect(scenes, isNotNull);
       expect(scenes!.any((s) => s.kind == 'figure'), isFalse);

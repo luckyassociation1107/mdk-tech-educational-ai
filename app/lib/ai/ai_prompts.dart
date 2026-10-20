@@ -14,11 +14,12 @@
 ///   {part}            part number of the lesson being designed
 ///   {pages}           pages covered by this lesson
 ///   {content}         the extracted textbook text of those pages
-///   {figures}         the figure catalogue (page + caption + bbox)
+///   {figures}         the figure catalogue (page + caption + where)
 class AiPrompts {
   static const String extract = '''
 You are a textbook digitiser for a school classroom app.
 Read the attached PDF and return ONE JSON object — no prose, no markdown fences.
+Reply with the JSON only: no explanation before or after it.
 
 Pages to return: {start} to {end} of {total}.
 
@@ -31,6 +32,7 @@ Pages to return: {start} to {end} of {total}.
       "text": "ALL readable body text of the page in reading order, cleaned",
       "figures": [
         {"caption": "short caption or what the figure shows",
+         "where": "top|middle|bottom",
          "bbox": [0.08, 0.22, 0.94, 0.61]}
       ]
     }
@@ -43,10 +45,13 @@ Rules
   numbers. Keep the original words exactly — never paraphrase.
 - "figures": only real diagrams, photos, maps, charts, graphs or tables
   that a teacher would point at. Skip logos, rules and decorations.
-  "bbox" is the tight box around the figure as fractions of the page
-  width/height (0..1, origin at the TOP-LEFT corner).
-  Example: a figure occupying the middle half of the page is
-  [0.10, 0.30, 0.90, 0.70].
+- "where": roughly where the figure sits on the page — top, middle or
+  bottom. This is required; it is how a text-only reader locates it.
+- "bbox": OPTIONAL. Include it only if you can actually see the page
+  layout. It is the tight box around the figure as fractions of the page
+  width/height (0..1, origin at the TOP-LEFT corner); a figure filling the
+  middle half is [0.10, 0.30, 0.90, 0.70]. Never guess these numbers —
+  when in doubt, send "where" only.
 - Never invent text or figures. If a page carries no readable text,
   return "" and an empty figures list.
 - Return every page in the range, in order, even when it is empty.
@@ -71,7 +76,7 @@ TEXTBOOK CONTENT (extracted from the PDF — the only source of facts)
 {content}
 ---8<---
 
-FIGURES YOU MAY USE (page + tight bbox as fractions of the page, 0..1)
+FIGURES YOU MAY USE (page + caption + where it sits on the page)
 {figures}
 
 Return ONE JSON object, no markdown fences:
@@ -80,8 +85,9 @@ Return ONE JSON object, no markdown fences:
   "scenes": [
     {"kind": "title",   "heading": "short title", "narration": "what the teacher says"},
     {"kind": "board",   "heading": "board heading", "boardText": "3-6 short lines", "narration": "..."},
-    {"kind": "figure",  "heading": "figure heading", "page": 12, "bbox": [0.1,0.3,0.9,0.7],
-                        "caption": "what it shows", "narration": "..."},
+    {"kind": "figure",  "heading": "figure heading", "page": 12,
+                        "caption": "the caption printed in the book",
+                        "where": "top|middle|bottom", "narration": "..."},
     {"kind": "quick",   "heading": "quick check", "question": "...", "options": ["a","b","c"],
                         "answer": "a", "narration": "..."},
     {"kind": "daily",   "heading": "in daily life", "narration": "..."},
@@ -95,8 +101,9 @@ Rules
   keep technical words in English, explain them in the same breath.
 - boardText: at most 6 short lines (under 60 characters each), never a
   paragraph — it is written on a board while the teacher speaks.
-- Use "figure" only for a figure that appears in the catalogue above,
-  and copy its page and bbox EXACTLY. Never invent coordinates.
+- Use "figure" only for a figure that appears in the catalogue above, and
+  copy its page, caption and "where" exactly. Never invent coordinates —
+  the app cuts the picture out of the PDF itself.
 - Use at least one "quick" scene with three options and one correct answer.
 - Teach ONLY what the textbook content says. Never add outside facts.
 ''';

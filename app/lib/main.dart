@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'ai/ai_config.dart';
+import 'ui/web_ai_host.dart';
 import 'engine_gateway.dart';
 import 'exam_store.dart';
 import 'screens/child_gate_screen.dart';
@@ -33,6 +34,7 @@ class TextbookClassroomApp extends StatelessWidget {
     final p = AppColors.palette;
     return MaterialApp(
       title: 'AI Textbook Classroom',
+      builder: (context, child) => WebAiHost(child: child ?? const SizedBox()),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

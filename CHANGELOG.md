@@ -3,11 +3,38 @@
 Everything below is the project's own running log, newest first.
 The current architecture is described in README.md.
 
-## v0.24.0 — AI reads the PDF (no on-device parser)
+## v0.24.0 — free website AI by default, local figure finding, APK/EXE verified
 
-See README.md for the new pipeline; v0.24.0 replaces the Syncfusion parser with
-PDF upload to the teacher's own AI, AI-designed lesson scripts and local
-figure cropping.
+**The app now reads PDFs for free.** The public PDF-teacher website is driven
+inside the app's own WebView: the PDF goes into the page's file input through a
+`DataTransfer` (no native picker, no root, no automation service), the prompts
+are typed into its "Ask PDF" box, and the answers are read back as text. No API
+key, no account, no cost.
+
+- **Two modes**, same prompts, same pipeline: *Free — automate the website*
+  (default, Android) and *My own API key* (OpenAI / Gemini / Claude, also on
+  Windows, can see page images).
+- **Figures without a vision model.** The model can only say *what* a figure is
+  and roughly *where* (top / middle / bottom). The new `FigureFinder` renders
+  the page with PDFium, finds the large coloured/dense blobs (charts, photos,
+  boxed diagrams) on a coarse grid, picks the one in the requested band and
+  hands the exact box to the cropper. Verified against the live site: the model
+  returned the JSON contract, page text and figure captions for a real PDF.
+- **Live progress panel** (`WebAiHost`) shows the site working, so nothing
+  happens invisibly; one session is reused for the extraction and every lesson
+  script, and prompts are uploaded in chunks so a 20 MB book cannot blow up the
+  WebView.
+- **Scene parser hardened** for what the free model actually returns (mangled
+  keys, missing `kind`, prose around JSON, trailing commas).
+- Tests: **56** (24 AI pipeline + 8 figure finder + vault + UI), `flutter
+  analyze` **0 errors**; Android APK and Windows EXE built green in CI.
+
+### What v0.24.0 also removed
+
+The Syncfusion parser and the Android-only Kotlin `PdfRenderer` are gone. The
+PDF is read by the AI, pages and figures are rendered with PDFium on both
+platforms, and narration falls back to `flutter_tts` where the native bridge is
+not available.
 
 ## v0.23.0 — The AI brain works natively (no WebView scraping)
 

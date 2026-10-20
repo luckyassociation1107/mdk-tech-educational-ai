@@ -6,51 +6,57 @@
 │  Home · Lesson player · Reader · Exams · Vault · Theme Studio         │
 └───────────────┬──────────────────────────────────────────────────────┘
                 │
-    ┌───────────▼────────────┐      ┌──────────────────────────────────┐
-    │ AiConfig               │      │ PdfRaster (pdfx / PDFium)        │
-    │ provider · key · model │      │ page → PNG, bbox → cropped PNG   │
-    │ 3 editable prompts     │      │ Android ✓  Windows ✓             │
-    └───────────┬────────────┘      └──────────────┬───────────────────┘
-                │                                  │
-    ┌───────────▼────────────┐                     │
-    │ AiClient               │                     │
-    │ OpenAI · Gemini ·      │                     │
-    │ Claude · custom        │                     │
-    │ PDF as file, JSON mode │                     │
-    └───────┬────────┬───────┘                     │
-            │        │                             │
-   ┌────────▼──┐  ┌──▼──────────────┐              │
-   │ Textbook  │  │ ScriptDesigner  │              │
-   │ Extractor │  │ scenes + bboxes │              │
-   │ batches   │  └──┬──────────────┘              │
-   └────┬──────┘     │                             │
-        │            │                             │
-        ▼            ▼                             ▼
-   index.json    scenes.json                 pages/*.png
-   (AI text +    (per part, cached)          figures/*.png
-    figures)          │
-                      ▼
-              Lesson player (on-device)
-              board · voice · highlights · diagrams · quick checks
+      ┌─────────▼─────────┐
+      │ AiService         │  picks the mode from AiConfig
+      ├───────────────────┼──────────────────────────────────────────┐
+      │ AiMode.webview    │ AiMode.api                               │
+      │ WebAiEngine       │ AiClient (OpenAI/Gemini/Claude/custom)   │
+      │ drives the public │ PDF as a file, JSON mode, retries        │
+      │ site in a WebView │                                          │
+      └─────────┬─────────┴───────────────┬──────────────────────────┘
+                │                         │
+                └──────────┬──────────────┘
+                           ▼
+             ┌───────────────────────────┐   ┌────────────────────────┐
+             │ TextbookExtractor         │   │ PdfRaster (PDFium)     │
+             │ page text + caption/where │   │ page PNG, box → crop   │
+             └──────────┬────────────────┘   │ Android ✓ Windows ✓    │
+                        │                    └───────────┬────────────┘
+             ┌──────────▼────────────────┐               │
+             │ ScriptDesigner            │               │
+             │ scenes (validated)        │               │
+             └──────────┬────────────────┘               │
+                        │                                │
+                        ▼                                ▼
+                 scenes (per part, cached)      pages/*.png  figures/*.png
+                        │                                ▲
+                        └───────────────┬────────────────┘
+                                        ▼
+                        Lesson player (on-device): board · voice ·
+                        highlights · figures · diagrams · quick checks
+                                        ▲
+                        FigureFinder: page pixels → exact figure box
 ```
 
 ## Invariants
 
-1. **No PDF text parser on the device.** Page text and figure boxes come from
-   the AI. The device only rasterises pages and crops rectangles.
+1. **No PDF text parser on the device.** Page text comes from the AI. The
+   device only rasterises pages, measures figure boxes and crops rectangles.
 2. **AI designs, the device renders.** The model returns text + coordinates,
    never media. Video, audio and animation are produced locally.
 3. **Prompts are data.** Extraction, scripting and doubt-answering are stored in
    `AiConfig`, editable in Settings and covered by placeholders; the code never
    hardcodes a prompt body.
-4. **Coordinates are validated.** Boxes are clamped to the page, corners are
-   ordered, tiny boxes are dropped, and a figure scene whose crop fails is
-   removed rather than shown empty.
+4. **Coordinates are measured, not invented.** A text-only model may say *what*
+   a figure is and roughly *where*; `FigureFinder` then finds the exact box in
+   the rendered page. Any box the model does return is clamped, ordered,
+   size-checked, and a figure scene whose crop fails is dropped.
 5. **Everything is cached per session.** `book.pdf`, `index.json`,
    `scenes[part]`, `pages/*.png`, `figures/*.png` — a generated lesson replays
    offline, byte for byte.
-6. **One key, one account.** All AI traffic goes to the teacher's provider; there
-   is no shared or borrowed endpoint in the codebase.
+6. **Two doors, one pipeline.** `AiService` is the only way AI is reached:
+   the free WebView automation or the teacher's key. No endpoint, key or model
+   name is hardcoded anywhere else.
 7. **Failures degrade, never block.** No AI script → the on-device scene builder
    composes a lesson from the AI-extracted text. No crop → the board explains
    the figure instead. No TTS → captions.
@@ -63,7 +69,7 @@
   index.json          AI extraction: title, subject, pages[text, figures[bbox]]
   scenes (in meta)    AI script per part
   pages/page_N.png     rendered on demand (PDFium)
-  figures/f_<hash>.png cropped by AI coordinates
+  figures/f_<hash>.png cropped by measured coordinates
   brain.json          summary + saved Q&A
 ```
 

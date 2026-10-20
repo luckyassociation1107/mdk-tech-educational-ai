@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'dart:ui' show Rect;
 
 import 'package:pdfx/pdfx.dart';
+
+import 'figure_finder.dart';
 
 /// Page pictures and figure crops, rendered by the PDFium engine through
 /// `pdfx`, which works on Android **and** Windows (the old build could only
@@ -112,6 +115,42 @@ class PdfRaster {
       await pdfPage?.close();
       await doc?.close();
     }
+  }
+
+  /// Decode a rendered page (PNG) into raw RGBA + size for [FigureFinder].
+  static Future<(Uint8List, int, int)?> decodeRgba(String pngPath) async {
+    try {
+      final bytes = await File(pngPath).readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final data =
+          await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final out = data == null
+          ? null
+          : (data.buffer.asUint8List(), image.width, image.height);
+      image.dispose();
+      codec.dispose();
+      return out;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Find the figure on a rendered page: the AI says *what* it is and
+  /// roughly *where*; this measures the exact box from the pixels.
+  static Future<List<double>?> findFigureBox(
+    String pngPath, {
+    String? where,
+    List<double>? hint,
+  }) async {
+    final decoded = await decodeRgba(pngPath);
+    if (decoded == null) return hint;
+    final (rgba, w, h) = decoded;
+    final boxes = FigureFinder.detect(rgba, w, h);
+    final chosen = FigureFinder.choose(boxes, where: where, hint: hint);
+    if (chosen == null) return hint;
+    return FigureFinder.pad(chosen).bbox;
   }
 
   /// Convenience used by tests and callers that already hold bytes.

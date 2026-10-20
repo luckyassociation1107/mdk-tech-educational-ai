@@ -3,6 +3,7 @@ import 'dart:ui' show Rect;
 import '../lesson_content.dart';
 import 'ai_client.dart';
 import 'ai_config.dart';
+import 'ai_service.dart';
 import 'ai_prompts.dart';
 import 'json_utils.dart';
 import 'textbook_extractor.dart';
@@ -28,7 +29,7 @@ class ScriptDesigner {
     required List<ExtractedPage> indexPages,
     required String teacherNote,
     AiClient? client,
-    Future<String?> Function(int page, List<double> bbox)? crop,
+    Future<String?> Function(int page, List<double>? bbox, String where)? crop,
   }) async {
     if (!cfg.ready) return null;
     final wanted = pages.isEmpty
@@ -58,8 +59,8 @@ class ScriptDesigner {
         ? 'No figures were detected on these pages — do not use any figure scene.'
         : figures
             .map((f) =>
-                '- page ${f.$1}, bbox ${f.$2.bbox.map((n) => n.toStringAsFixed(3)).toList()}, '
-                'caption "${f.$2.caption.isEmpty ? 'figure' : f.$2.caption}"')
+                '- page ${f.$1}, caption "${f.$2.caption}", '
+                'sits at the ${f.$2.where.isEmpty ? 'middle' : f.$2.where} of the page')
             .join('\n');
 
     final prompt = AiPrompts.fill(cfg.scriptPrompt, {
@@ -76,12 +77,12 @@ class ScriptDesigner {
       'figures': figCatalog,
     });
 
-    final ai = client ?? AiClient();
-    final raw = await ai.generate(
+    final raw = await AiService.generate(
       cfg,
-      parts: [AiPart.text(prompt)],
+      prompt: prompt,
       json: true,
       maxTokens: 6144,
+      client: client,
     );
     final obj = JsonUtils.object(raw);
     if (obj == null) return null;
@@ -117,9 +118,25 @@ class ScriptDesigner {
 
   static Future<LessonScene?> _scene(
     Map raw,
-    Future<String?> Function(int page, List<double> bbox)? crop,
+    Future<String?> Function(int page, List<double>? bbox, String where)? crop,
   ) async {
-    final kind = JsonUtils.str(raw['kind']).toLowerCase();
+    var kind = JsonUtils.str(raw['kind']).toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+    if (kind.isEmpty) {
+      // Some models mangle the key; infer the type from what came back.
+      if (JsonUtils.str(raw['caption']).isNotEmpty &&
+          (raw['page'] != null || raw['bbox'] != null)) {
+        kind = 'figure';
+      } else if ((raw['options'] as List?)?.isNotEmpty == true) {
+        kind = 'quick';
+      } else if (JsonUtils.str(raw['boardText']).isNotEmpty) {
+        kind = 'board';
+      } else {
+        kind = 'board';
+      }
+    }
+    if (kind == 'figure' || kind == 'fig') {
+      kind = 'figure';
+    }
     final heading = JsonUtils.str(raw['heading']);
     final narration = JsonUtils.speech(JsonUtils.str(raw['narration']));
     if (narration.length < 20 || narration.length > 1200) return null;
@@ -147,18 +164,24 @@ class ScriptDesigner {
 
       case 'figure':
         final page = JsonUtils.integer(raw['page']);
+        if (page <= 0) return null;
         final box = JsonUtils.bbox(raw['bbox']);
-        if (page <= 0 || box == null) return null;
+        final where = JsonUtils.str(raw['where']).toLowerCase();
         String? imagePath;
         if (crop != null) {
-          imagePath = await crop(page, box);
+          imagePath = await crop(page, box, where);
         }
         if (imagePath == null) return null; // no picture → the board teaches it
         return LessonScene(
             'figure', heading.isEmpty ? 'Look at this figure' : heading, narration,
-            labels: [JsonUtils.str(raw['caption'])].where((s) => s.isNotEmpty).toList(),
+            labels: [
+              JsonUtils.str(raw['caption']),
+              if (where.isNotEmpty) 'from the ${where} of the page',
+            ].where((s) => s.isNotEmpty).toList(),
             page: page,
-            zone: Rect.fromLTRB(box[0], box[1], box[2], box[3]),
+            zone: box == null
+                ? null
+                : Rect.fromLTRB(box[0], box[1], box[2], box[3]),
             imagePath: imagePath,
             explain: narration);
 

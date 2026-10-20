@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../ai/ai_client.dart';
 import '../ai/ai_config.dart';
 import '../ai/ai_prompts.dart';
+import '../ai/ai_service.dart';
+import '../ai/web_ai_engine.dart';
 import '../widgets.dart';
 
 /// Where the teacher plugs in the AI that reads the textbook.
@@ -91,7 +93,9 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     if (!cfg.ready) {
       setState(() {
         _testOk = false;
-        _testResult = 'Paste an API key first.';
+        _testResult = cfg.mode == AiMode.webview
+            ? 'Free mode runs on Android only — on Windows add your own key.'
+            : 'Paste an API key first.';
       });
       return;
     }
@@ -101,13 +105,15 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
       _testOk = false;
     });
     try {
-      final out = await AiClient().testConnection(cfg);
+      final out = await AiService.test(cfg);
       if (!mounted) return;
       setState(() {
         _testOk = out.toUpperCase().contains('READY');
         _testResult = _testOk
-            ? 'Connected to ${cfg.provider.label} — the model replied "READY".'
-            : 'The key worked but the model answered: "${out.length > 80 ? out.substring(0, 80) : out}"';
+            ? (cfg.mode == AiMode.webview
+                ? 'The free website answered "READY". Nothing to pay.'
+                : 'Connected to ${cfg.provider.label} — the model replied "READY".')
+            : 'The AI answered something unexpected: "${out.length > 80 ? out.substring(0, 80) : out}"';
         _busy = false;
       });
     } catch (e) {
@@ -169,16 +175,47 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                   ]),
                   const SizedBox(height: 8),
                   Text(
-                    'Nothing is parsed on the device any more. When you add a textbook, '
-                    'the PDF is uploaded to this account with the prompt below; the AI '
-                    'returns the page text, the box of every figure and the lesson script. '
-                    'Pages and figures are then rendered and cut locally, so the video is '
-                    'still produced on this device.',
+                    'Nothing is parsed on the device. The PDF goes to the AI with the '
+                    'extraction prompt below; it answers with the page text and where each '
+                    'figure sits. The app then finds the figure box from the page pixels, '
+                    'cuts it out with PDFium and paints the lesson locally.',
                     style: TextStyle(color: AppColors.muted, fontSize: 12.3, height: 1.5),
                   ),
                 ]),
               ),
               const SizedBox(height: 12),
+              _card(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('HOW TO REACH THE AI', style: _label()),
+                  const SizedBox(height: 8),
+                  _modeTile(
+                    AiMode.webview,
+                    'Free — automate the website',
+                    'No key, no account, no cost. Drives the public PDF-teacher '
+                        'website inside the app (Android).',
+                    Icons.credit_card_off_rounded,
+                  ),
+                  const SizedBox(height: 8),
+                  _modeTile(
+                    AiMode.api,
+                    'My own API key',
+                    'OpenAI / Gemini / Claude. Works on Windows too and can see '
+                        'the page images. Costs per book on your account.',
+                    Icons.key_rounded,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _cfg.mode == AiMode.webview
+                        ? 'Free mode uses the same prompts below and the same lesson '
+                            'pipeline — only the AI behind them changes.'
+                        : 'Your key is stored in the device keystore.',
+                    style: TextStyle(
+                        color: AppColors.muted, fontSize: 11, height: 1.4),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              if (_cfg.mode == AiMode.api)
               _card(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('PROVIDER', style: _label()),
@@ -305,6 +342,49 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                 style: TextStyle(color: AppColors.muted, fontSize: 11.5, height: 1.5),
               ),
             ]),
+    );
+  }
+
+  Widget _modeTile(AiMode mode, String title, String help, IconData icon) {
+    final on = _cfg.mode == mode;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => setState(() {
+        _cfg = _cfg.copyWith(mode: mode);
+        _testResult = null;
+      }),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: on ? AppColors.palette.primary.withOpacity(0.14) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: on ? AppColors.palette.primary : AppColors.stroke,
+              width: on ? 1.6 : 1),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon,
+              size: 18,
+              color: on ? AppColors.palette.primary : AppColors.muted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title,
+                  style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900)),
+              const SizedBox(height: 3),
+              Text(help,
+                  style: TextStyle(
+                      color: AppColors.muted, fontSize: 11, height: 1.4)),
+            ]),
+          ),
+          if (on)
+            Icon(Icons.check_circle_rounded,
+                size: 17, color: AppColors.palette.primary),
+        ]),
+      ),
     );
   }
 

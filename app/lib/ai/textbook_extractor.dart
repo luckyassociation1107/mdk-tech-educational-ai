@@ -2,17 +2,30 @@ import 'dart:typed_data';
 
 import 'ai_client.dart';
 import 'ai_config.dart';
+import 'ai_service.dart';
 import 'ai_prompts.dart';
 import 'json_utils.dart';
 
 class ExtractedFigure {
   final int page;
   final String caption;
-  final List<double> bbox;
-  const ExtractedFigure(this.page, this.caption, this.bbox);
 
-  Map<String, dynamic> toJson() =>
-      {'page': page, 'caption': caption, 'bbox': bbox};
+  /// Where on the page the figure sits: top / middle / bottom. The free
+  /// website mode can only give this; the exact box is found locally.
+  final String where;
+
+  /// Only present when the model could actually see the page layout.
+  final List<double>? bbox;
+
+  const ExtractedFigure(this.page, this.caption,
+      {this.where = '', this.bbox});
+
+  Map<String, dynamic> toJson() => {
+        'page': page,
+        'caption': caption,
+        if (where.isNotEmpty) 'where': where,
+        if (bbox != null) 'bbox': bbox,
+      };
 }
 
 class ExtractedPage {
@@ -98,14 +111,14 @@ class TextbookExtractor {
       });
       String raw;
       try {
-        raw = await ai.generate(
+        raw = await AiService.generate(
           cfg,
-          parts: [
-            AiPart.text(prompt),
-            AiPart.pdf(pdfBytes, filename),
-          ],
+          prompt: prompt,
+          pdf: pdfBytes,
+          pdfName: filename,
           json: true,
           maxTokens: 8192,
+          client: client,
         );
       } on AiException catch (e) {
         throw AiException('Reading $label failed: ${e.message}');
@@ -134,9 +147,15 @@ class TextbookExtractor {
             for (final f in rf) {
               if (f is! Map) continue;
               final box = JsonUtils.bbox(f['bbox']);
-              if (box == null) continue;
+              final where = JsonUtils.str(f['where']).toLowerCase();
+              final caption = JsonUtils.str(f['caption']);
+              if (box == null && where.isEmpty && caption.isEmpty) continue;
               figures.add(ExtractedFigure(
-                  no, JsonUtils.str(f['caption']), box));
+                no,
+                caption.isEmpty ? 'figure' : caption,
+                where: where,
+                bbox: box,
+              ));
             }
           }
           if (text.isEmpty && figures.isEmpty) {

@@ -1,8 +1,14 @@
 # Setup
 
-## 1. Get an AI key
+## 1. Choose the AI
 
-Reading a textbook requires a model that accepts a PDF file.
+**Free (default)** — nothing to configure. The app drives the public
+PDF-teacher website inside its own WebView; the PDF is uploaded there and the
+prompts are typed into its chat. Android only.
+
+**Your own key** — needed on Windows, and better for scans (a vision model can
+see the page images). Reading a textbook then requires a model that accepts a
+PDF file.
 
 | Provider | Where to get a key | Suggested model |
 |---|---|---|
@@ -11,7 +17,9 @@ Reading a textbook requires a model that accepts a PDF file.
 | Anthropic | console.anthropic.com | `claude-sonnet-4-5` |
 | Custom | your own OpenAI-compatible server | any text model (no PDF upload) |
 
-In the app: **Settings → AI & Prompts → paste key → Test connection → Save.**
+In the app: **Settings → AI & Prompts → How to reach the AI → My own API key →
+paste key → Test connection → Save.** In free mode just press **Test
+connection** — it should answer `READY`.
 
 ## 2. Run on Android
 

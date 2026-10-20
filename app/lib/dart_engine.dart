@@ -37,15 +37,29 @@ class DartBlock {
 
 class DartFigure {
   final String caption;
-  final List<double> bbox; // normalised [x0, y0, x1, y1], top-left origin
-  const DartFigure(this.caption, this.bbox);
-  Map<String, dynamic> toJson() => {'caption': caption, 'bbox': bbox};
-  factory DartFigure.fromJson(Map<String, dynamic> j) => DartFigure(
-        (j['caption'] ?? '').toString(),
-        ((j['bbox'] as List?) ?? const [])
-            .map((e) => (e as num).toDouble())
-            .toList(),
-      );
+
+  /// top / middle / bottom — what a text-only model can tell us.
+  final String where;
+
+  /// Exact box, when something could actually see the page.
+  final List<double>? bbox; // normalised [x0, y0, x1, y1], top-left origin
+
+  const DartFigure(this.caption, this.where, {this.bbox});
+
+  Map<String, dynamic> toJson() => {
+        'caption': caption,
+        if (where.isNotEmpty) 'where': where,
+        if (bbox != null) 'bbox': bbox,
+      };
+
+  factory DartFigure.fromJson(Map<String, dynamic> j) {
+    final b = (j['bbox'] as List?) ?? const [];
+    return DartFigure(
+      (j['caption'] ?? '').toString(),
+      (j['where'] ?? '').toString(),
+      bbox: b.length == 4 ? b.map((e) => (e as num).toDouble()).toList() : null,
+    );
+  }
 }
 
 class DartPage {
@@ -319,13 +333,19 @@ class DartEngine {
 
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
-      throw StateError(
-          'Add your AI key first — Settings → AI & Prompts. This app reads the PDF with your AI now, not on the device.');
+      throw StateError(cfg.mode == AiMode.webview
+          ? 'The free website mode runs on Android. On this device, add your own API key in Settings → AI & Prompts.'
+          : 'Add your AI key first — Settings → AI & Prompts. The PDF is read by the AI now, not on the device.');
     }
 
     final devicePageCount = await PdfRaster.pageCount(src.path);
 
-    onProgress?.call(0, 1, 'Uploading the PDF to ${cfg.provider.label}');
+    onProgress?.call(
+        0,
+        1,
+        cfg.mode == AiMode.webview
+            ? 'Uploading the PDF to the free classroom AI…'
+            : 'Uploading the PDF to ${cfg.provider.label}…');
     final ExtractionResult extraction;
     try {
       extraction = await TextbookExtractor.extract(
@@ -351,7 +371,7 @@ class DartEngine {
               p.text,
               const [],
               figures: p.figures
-                  .map((f) => DartFigure(f.caption, f.bbox))
+                  .map((f) => DartFigure(f.caption, f.where, bbox: f.bbox))
                   .toList(),
             ))
         .toList();
@@ -431,6 +451,28 @@ class DartEngine {
     final ok = await PdfRaster.renderPage(
         pdfPath: pdf.path, page: page, outPath: out.path, targetWidth: 1240);
     return ok;
+  }
+
+  /// Resolve the figure a lesson wants: the AI says *which page* and roughly
+  /// *where* (top / middle / bottom); the exact box is measured from the
+  /// rendered page, so this works without any vision model and without a
+  /// key. A box returned by the model is used when it looks sane.
+  static Future<String?> figureFor(
+    String sessionId,
+    int page, {
+    List<double>? bbox,
+    String where = '',
+  }) async {
+    if (bbox != null && bbox.length == 4) {
+      final direct = await figurePath(sessionId, page, bbox);
+      if (direct != null) return direct;
+    }
+    final pagePng = await ensurePageImage(sessionId, page);
+    if (pagePng == null) return null;
+    final box = await PdfRaster.findFigureBox(pagePng,
+        where: where, hint: bbox);
+    if (box == null) return null;
+    return figurePath(sessionId, page, box);
   }
 
   /// Cut one figure out of the PDF using the AI's coordinates.
@@ -614,12 +656,15 @@ class DartEngine {
                       p.page,
                       p.text,
                       p.figures
-                          .map((f) => ExtractedFigure(p.page, f.caption, f.bbox))
+                          .map((f) => ExtractedFigure(p.page,
+                              f.caption.isEmpty ? 'figure' : f.caption,
+                              where: f.where, bbox: f.bbox))
                           .toList(),
                     ))
                 .toList(),
             teacherNote: question,
-            crop: (page, bbox) => figurePath(sessionId, page, bbox),
+            crop: (page, bbox, where) =>
+                figureFor(sessionId, page, bbox: bbox, where: where),
           );
         } catch (_) {
           scenes = null; // offline / quota → the on-device builder takes over

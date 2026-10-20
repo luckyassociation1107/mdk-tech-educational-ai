@@ -154,9 +154,9 @@ class LessonContent {
     // The AI tells us exactly where each figure is; use it first.
     if (page.figures.isNotEmpty) {
       final rects = page.figures
-          .where((f) => f.bbox.length == 4)
+          .where((f) => (f.bbox?.length ?? 0) == 4)
           .map((f) => Rect.fromLTRB(
-              f.bbox[0], f.bbox[1], f.bbox[2], f.bbox[3]))
+              f.bbox![0], f.bbox![1], f.bbox![2], f.bbox![3]))
           .toList();
       if (rects.isNotEmpty) {
         rects.sort((a, b) => b.height.compareTo(a.height));
@@ -185,8 +185,8 @@ class LessonContent {
       DartPage page, Rect zone) {
     if (page.figures.isNotEmpty) {
       final f = page.figures.firstWhere(
-        (f) => f.bbox.length == 4 &&
-            Rect.fromLTRB(f.bbox[0], f.bbox[1], f.bbox[2], f.bbox[3])
+        (f) => (f.bbox?.length ?? 0) == 4 &&
+            Rect.fromLTRB(f.bbox![0], f.bbox![1], f.bbox![2], f.bbox![3])
                 .overlaps(zone),
         orElse: () => page.figures.first,
       );
