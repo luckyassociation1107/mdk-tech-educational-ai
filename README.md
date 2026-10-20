@@ -1,3 +1,48 @@
+## v0.22.0 — Emoji cloud vault: tables → encrypted emojis → free Nostr relays
+
+**What you asked for.** An encryption/decryption path where the vault JSON is kept as a
+table database, encrypted, written as emojis, stored on **free Nostr relays**, and on the
+way back the emojis are turned into tables again.
+
+**The pipeline (both directions)**
+
+| Step | Forward (backup) | Reverse (restore) |
+| --- | --- | --- |
+| 1 | vault JSON + progress keys | emoji string from relay / clipboard |
+| 2 | split into **tables** (profiles, sealed cells, settings, progress, activity) | base64 |
+| 3 | `gzip` | decrypt (HMAC-SHA256 keystream + tag) |
+| 4 | seal with PBKDF2/`HMAC-SHA256` key from the device secret | `gunzip` |
+| 5 | base64 → **64-emoji alphabet** | JSON → **tables** |
+| 6 | signed **NIP-01** event `kind 30078`, d-tag `emoji-vault` | tables → vault JSON + progress rows |
+
+**Free cloud database.** No account, no API key, no paid plan: public relays keep the signed
+event. The same `d`-tag is re-published on every backup, so a relay always holds exactly one
+row per child device. Six relays are used by default (damus, nos.lol, nostr.mom, primal,
+snort, wellorder) — a backup is confirmed as soon as three of them store it (~1.5 s in
+testing) and a restore returns the first relay that answers (~0.8 s).
+
+**Crypto.** The payload is encrypted *before* it is signed, so a relay only ever sees
+emojis. Key = PBKDF2-HMAC-SHA256(device secret, 30 000 rounds) → 32 bytes; each save uses a
+fresh 16-byte nonce, an HMAC-SHA256 counter keystream and a truncated HMAC tag, so a wrong
+key or one flipped emoji fails the tag check.
+
+**Schnorr signatures, pure Dart.** Nostr needs BIP-340 signatures; the app now has a
+self-contained secp256k1 implementation. It is checked against the official BIP-340 test
+vectors 0 and 1 (public key, signature, verification) and corrupt signatures are rejected.
+
+**In the app.** *My space → Emoji cloud vault*: backup now, restore, copy/paste the emoji
+code, edit the relay list, auto-backup after every finished class/test, per-relay status
+lines, and a **decrypted table view** (rows × columns) of exactly what the emojis contain.
+
+**Verified live, end to end:** fake vault + progress → backup (6/6 relays, 2 564 emoji
+chars) → fetch → decrypt → tables `profiles(1×8) sealed(1×4) settings(2) progress(3)
+activity(0)` → progress restored (XP 250) and profiles restored (`Kiran`).
+
+**Honest limits (stated in the UI too).** Public relays are free, so they may prune old
+events — therefore: several relays, a local vault, and the emoji code backup. Anyone can
+read the emojis, but only this device key can decrypt them; the emoji code carries that key,
+so treat it like a password.
+
 ## v0.21.0 — emoji vault: encrypted child accounts, PIN login and activity logs
 
 **What it is.** A fully on-device, encrypted "database" for children's accounts, written

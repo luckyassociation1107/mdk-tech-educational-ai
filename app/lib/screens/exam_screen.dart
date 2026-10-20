@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../academic_models.dart';
 import '../exam_store.dart';
 import '../vault/emoji_vault.dart';
+import '../vault/nostr_sync.dart';
 import '../question_bank.dart';
 import '../widgets.dart';
 import 'exam_result_screen.dart';
@@ -149,6 +150,7 @@ class _ExamScreenState extends State<ExamScreen> {
     );
     await ExamStore.addResult(result);
     await VaultStore.log('test', 'Test finished — ${result.earned.toStringAsFixed(0)} of ${result.total} marks');
+    NostrSync.autoAfterActivity();
     if (result.passed && widget.onPassed != null) {
       try {
         await widget.onPassed!();
