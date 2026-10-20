@@ -10,6 +10,7 @@ import '../translate_service.dart';
 import '../ui/premium_ui.dart';
 import '../updater.dart';
 import '../widgets.dart';
+import 'ai_settings_screen.dart';
 import 'theme_studio_screen.dart';
 import 'voice_studio_screen.dart';
 
@@ -53,6 +54,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 30),
           children: [
+            const SectionTitle('AI'),
+            GradientCard(
+              padding: const EdgeInsets.all(16),
+              onTap: () async {
+                await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const AiSettingsScreen()));
+                if (mounted) setState(() {});
+              },
+              child: Row(children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                      gradient: AppColors.accentGradient,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.auto_awesome_rounded,
+                      color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('AI & Prompts',
+                            style: TextStyle(
+                                color: AppColors.text,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14)),
+                        const SizedBox(height: 2),
+                        Text(
+                            'Free website AI or your own key, plus the custom prompts that read the PDF',
+                            style: TextStyle(
+                                color: AppColors.muted, fontSize: 11.5)),
+                      ]),
+                ),
+                Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+              ]),
+            ),
+            const SizedBox(height: 14),
             const SectionTitle('Appearance'),
             GradientCard(
               padding: const EdgeInsets.all(16),

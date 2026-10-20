@@ -12,10 +12,10 @@ import '../store.dart';
 import '../study_stats.dart';
 import '../translate_service.dart';
 import '../vault/emoji_vault.dart';
-import '../vault/nostr_sync.dart';
 import '../word_bank.dart';
 import '../widgets.dart';
 import 'voice_studio_screen.dart';
+import '../speech/speech_channel.dart';
 
 const _boards = <String, ({Color bg, Color fg, Color accent})>{
   'green': (
@@ -74,8 +74,7 @@ class LessonPlayerScreen extends StatefulWidget {
 
 class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     with SingleTickerProviderStateMixin {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   DartPdfIndex? _index;
   String _pageDir = '';
   List<LessonScene> _scenes = [];
@@ -138,10 +137,16 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
         _ttsDone = true;
       }
     });
+    // The AI designs the lesson script (custom prompt); when it is not
+    // available the on-device builder still produces a lesson from the AI's
+    // own extracted text.
+    final aiScenes = await DartEngine.loadScenes(widget.sessionId, widget.partNumber);
     if (!mounted) return;
-    final scenes = index == null
-        ? <LessonScene>[]
-        : LessonContent.build(
+    final scenes = aiScenes.isNotEmpty
+        ? aiScenes
+        : index == null
+            ? <LessonScene>[]
+            : LessonContent.build(
             index: index,
             pages: widget.pages,
             partNumber: widget.partNumber,
@@ -364,7 +369,6 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     await ProgressStore.addXp(widget.sessionId, 20);
     await StudyStats.recordClassFinished();
     await VaultStore.log('class', 'Finished part ${widget.partNumber} — ${widget.title}');
-    NostrSync.autoAfterActivity();
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }
@@ -570,6 +574,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
   Widget _pageImage(LessonScene s, {Rect? zone, double zoomT = 0}) {
     final img = File('$_pageDir/page_${s.page}.png');
     if (!img.existsSync()) {
+      _ensurePage(s.page);
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(18),
@@ -604,6 +609,66 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     });
   }
 
+  /// A figure that the AI located on the page and the app cut out of the
+  /// PDF with those coordinates — used only when a scene needs a picture.
+  Widget _figureView(LessonScene s) {
+    final path = s.imagePath;
+    final file = path == null ? null : File(path);
+    if (file == null || !file.existsSync()) {
+      return _pageImage(s, zone: s.zone);
+    }
+    return Container(
+      decoration: BoxDecoration(
+          color: const Color(0xFF0B1220),
+          borderRadius: BorderRadius.circular(18)),
+      padding: const EdgeInsets.all(10),
+      child: Stack(children: [
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: InteractiveViewer(
+              minScale: 1,
+              maxScale: 5,
+              child: Image.file(file, fit: BoxFit.contain),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 10,
+          top: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.66),
+                borderRadius: BorderRadius.circular(99)),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.crop_free_rounded, size: 14, color: Colors.white),
+              SizedBox(width: 5),
+              Text('FIGURE • FROM YOUR BOOK',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1)),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  final Set<int> _pageTried = {};
+
+  /// Ask the engine to render this page (PDFium works on Android & Windows).
+  Future<void> _ensurePage(int? page) async {
+    if (page == null || _pageTried.contains(page)) return;
+    _pageTried.add(page);
+    final path =
+        await DartEngine.ensurePageImage(widget.sessionId, page);
+    if (!mounted || path == null) return;
+    setState(() => _pageDir = File(path).parent.path);
+  }
+
   Widget _diagramView(LessonScene s) {
     return Container(
       decoration: BoxDecoration(
@@ -633,7 +698,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
 
   Widget _readingView(LessonScene s) {
     final blocks = (_index != null && s.page != null)
-        ? _index!.pages[s.page! - 1].blocks
+        ? (_index!.pageOf(s.page!)?.blocks ?? const <DartBlock>[])
         : const <DartBlock>[];
     return Container(
       decoration: BoxDecoration(
@@ -839,6 +904,8 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
   String _kindLabel(LessonScene s) => switch (s.kind) {
         'reading' => 'Reading the textbook',
         'zoom' => 'Looking at the figure',
+        'figure' => 'Figure from your book',
+        'summary' => 'What we learnt',
         'vocab' => 'New word',
         'practice' => 'Your turn',
         'steps' => 'Step by step',
@@ -1088,9 +1155,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
                               ? _readingView(s)
                               : s.kind == 'zoom'
                                   ? _zoomView(s)
-                                  : s.kind == 'diagram'
-                                      ? _diagramView(s)
-                                      : _boardView(s),
+                                  : s.kind == 'figure'
+                                      ? _figureView(s)
+                                      : s.kind == 'diagram'
+                                          ? _diagramView(s)
+                                          : _boardView(s),
                         ),
                       ),
                     ),
@@ -1246,7 +1315,7 @@ class WordHelpSheet extends StatefulWidget {
   final List<String> words;
   final String pageText;
   final String lang;
-  final MethodChannel tts;
+  final SpeechChannel tts;
   final String sessionId;
   final String page;
   final VoidCallback onExit;

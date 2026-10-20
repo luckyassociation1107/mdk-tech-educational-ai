@@ -1,11 +1,12 @@
 import 'dart_engine.dart';
+import 'lesson_content.dart';
 
 /// The app-facing engine API. Everything now runs in Dart on the device
 /// (see dart_engine.dart): PDF parsing, chapter series, offline doubt
 /// clearing and interactive lessons — no Python, no native engine.
-/// (The online "playwright" brain label is accepted for compatibility;
-/// lesson content is composed locally from the extracted textbook, and
-/// page pictures come from Android PdfRenderer.)
+/// The textbook is read by the teacher's own AI (Settings → AI & Prompts);
+/// page pictures and figure crops are rendered locally with PDFium, so the
+/// same build works on Android and Windows.
 class EngineGateway {
   /// The online brain receives the student's actual PDF, so it must
   /// never be a plaintext endpoint out on the internet. Plain HTTP is
@@ -28,12 +29,15 @@ class EngineGateway {
     }
   }
 
+  /// Uploads the PDF to the teacher's AI and builds the session.
+  /// [onProgress] reports stages like "AI is reading pages 13–24".
   Future<Map<String, dynamic>> createSession({
     required String pdfPath,
     required String language,
     int? grade,
     String brain = 'offline',
     String brainServerUrl = '',
+    void Function(int done, int total, String stage)? onProgress,
   }) {
     guardBrainUrl(brain, brainServerUrl);
     return DartEngine.createSession(
@@ -41,7 +45,8 @@ class EngineGateway {
         language: language,
         grade: grade,
         brain: brain,
-        brainServerUrl: brainServerUrl);
+        brainServerUrl: brainServerUrl,
+        onProgress: onProgress);
   }
 
   Future<Map<String, dynamic>> generateVideo({
@@ -56,12 +61,16 @@ class EngineGateway {
     String nextPartLabel = '',
     String brain = 'offline',
     String brainServerUrl = '',
+    String language = 'en',
+    int? grade,
   }) =>
       DartEngine.generateLesson(
           sessionId: sessionId,
           question: question,
           pageRange: pageRange,
-          partLabel: partLabel);
+          partLabel: partLabel,
+          language: language,
+          grade: grade);
 
   /// Chat with the textbook inside the SAME session — answer only.
   Future<Map<String, dynamic>> askChat({
@@ -90,6 +99,19 @@ class EngineGateway {
 
   Future<Map<String, dynamic>> disconnect(String sessionId) =>
       DartEngine.disconnect(sessionId);
+
+  /// The AI-designed scene list for a part (empty when the on-device
+  /// builder was used instead).
+  Future<List<LessonScene>> loadScenes(String sessionId, int part) =>
+      DartEngine.loadScenes(sessionId, part);
+
+  /// Renders a page on demand (Android + Windows) and returns its file.
+  Future<String?> ensurePageImage(String sessionId, int page) =>
+      DartEngine.ensurePageImage(sessionId, page);
+
+  /// Crops a figure using the AI's normalised box.
+  Future<String?> figurePath(String sessionId, int page, List<double> bbox) =>
+      DartEngine.figurePath(sessionId, page, bbox);
 
   // Website-brain results, stored locally per session (see DartEngine).
   Future<String> sessionPdfPath(String sessionId) =>

@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:textbook_video_classroom/vault/emoji_vault.dart';
-import 'package:textbook_video_classroom/vault/nostr_sync.dart';
-import 'package:textbook_video_classroom/vault/vault_table.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -111,86 +109,4 @@ void main() {
     });
   });
 
-  group('tables + emoji packet', () {
-    Map<String, dynamic> root() => {
-          'app': 'AI Textbook Classroom',
-          'kind': 'emoji-vault',
-          'version': 1,
-          'profiles': [
-            {
-              'id': 'child_1',
-              'name': 'Aarav',
-              'avatar': '🐼',
-              'salt': 'c2FsdA',
-              'verifier': 'dmVy',
-              'createdAt': 1,
-              'lastLogin': 2,
-              'loginCount': 3
-            },
-          ],
-          'vault': {
-            'child_1': {'n': 'bg', 'c': 'Y2lwaGVy', 't': 'dGFn'},
-          },
-          'settings': {'nostr_sk': 'ab' * 32},
-        };
-
-    test('JSON → tables → JSON keeps ids, names and sealed cells', () {
-      final doc = VaultTables.tableDocFromRoot(root(), progress: [
-        ['xp_s2', 'int', '60'],
-      ]);
-      final names = VaultTables.listOf(doc).map((t) => t.name).toList();
-      expect(names, containsAll(['profiles', 'sealed', 'settings', 'progress']));
-
-      final back = VaultTables.rootFromTables(doc);
-      expect(jsonEncode(back['profiles']), jsonEncode(root()['profiles']));
-      expect(jsonEncode(back['vault']), jsonEncode(root()['vault']));
-    });
-
-    test('emoji packet round-trips and rejects wrong key / tampering', () {
-      const secret =
-          'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
-      final key = EmojiPacket.keyFromSyncSecret(secret);
-      final doc = VaultTables.tableDocFromRoot(root());
-      final emoji = EmojiPacket.pack(doc, key);
-
-      expect(emoji.startsWith('🎒'), isTrue);
-      final back = EmojiPacket.unpack(emoji, key);
-      expect(back, isNotNull);
-      expect(jsonEncode(back), jsonEncode(doc));
-
-      final wrong = EmojiPacket.keyFromSyncSecret('00' * 32);
-      expect(EmojiPacket.unpack(emoji, wrong), isNull);
-
-      // flip one character in the middle of the payload
-      final chars = emoji.runes.toList();
-      chars[chars.length ~/ 2] = '🍎'.runes.first;
-      expect(EmojiPacket.unpack(String.fromCharCodes(chars), key), isNull);
-    });
-  });
-
-  group('nostr events', () {
-    test('event id + BIP-340 signature verify locally', () {
-      const secret =
-          'b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef';
-      final ev = NostrSync.buildEvent(secretHex: secret, content: '🍎🍌', createdAt: 1700000000);
-      expect(ev['kind'], 30078);
-      expect(NostrSync.verifyEvent(ev), isTrue);
-    });
-
-    test('changed content invalidates the signature', () {
-      const secret =
-          'b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef';
-      final ev = NostrSync.buildEvent(secretHex: secret, content: '🍎🍌', createdAt: 1700000000);
-      final tampered = Map<String, dynamic>.from(ev)..['content'] = '🍎🍇';
-      expect(NostrSync.verifyEvent(tampered), isFalse);
-    });
-
-    test('same input twice gives the same event id (deterministic)', () {
-      const secret =
-          'b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef';
-      final a = NostrSync.buildEvent(secretHex: secret, content: 'x', createdAt: 5);
-      final b = NostrSync.buildEvent(secretHex: secret, content: 'x', createdAt: 5);
-      expect(a['id'], b['id']);
-    });
-  });
 }

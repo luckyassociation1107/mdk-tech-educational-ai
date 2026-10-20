@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:textbook_video_classroom/screens/child_gate_screen.dart';
+import 'package:textbook_video_classroom/screens/home_screen.dart';
 import 'package:textbook_video_classroom/screens/profile_screen.dart';
-import 'package:textbook_video_classroom/screens/vault_sync_screen.dart';
+import 'package:textbook_video_classroom/engine_gateway.dart';
 import 'package:textbook_video_classroom/store.dart';
 import 'package:textbook_video_classroom/vault/emoji_vault.dart';
 
-/// Real UI smoke tests: the gate, the sign-up flow, the PIN pad, the
-/// profile screen and the emoji cloud vault screen are built on a small
-/// phone canvas (360×640). Any exception — including a RenderFlex
-/// overflow — makes these tests fail, which is exactly what we want to
-/// know before calling a build "usable".
+/// Real UI smoke tests. There is **no sign-up and no login** in this app: the
+/// learner is opened silently, so these tests prove the app is usable without
+/// a single credential — and that the screens that remain (home, profile,
+/// cloud vault) fit a small phone without a RenderFlex overflow.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -30,122 +29,59 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  Future<void> tapPin(WidgetTester tester, String digits) async {
-    for (final d in digits.split('')) {
-      final key = find.descendant(
-        of: find.byType(PinPad),
-        matching: find.text(d),
-      );
-      expect(key, findsWidgets, reason: 'PIN digit $d must be on screen');
-      await tester.tap(key.first);
-      await tester.pump();
-    }
-    final done = find.widgetWithText(FilledButton, 'Done');
-    if (done.evaluate().isNotEmpty) {
-      await tester.tap(done.first);
-      await settle(tester);
-    }
-  }
-
-  testWidgets('gate renders with no profiles (small phone)', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await setPhone(tester);
-    await tester.pumpWidget(MaterialApp(
-      home: ChildGateScreen(settings: AppSettings(), onLoggedIn: () {}),
-    ));
-    await settle(tester);
-
-    expect(find.text('Create a new profile'), findsOneWidget);
-    expect(find.text('Restore from emoji code'), findsOneWidget);
-    expect(find.text('Continue without a profile'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('full flow: create profile → PIN twice → listed on the gate',
+  testWidgets('the app opens one learner without any sign-up or login',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
-    await setPhone(tester);
-    bool loggedIn = false;
+    final profile = await VaultStore.openLocal();
+    expect(profile.name, isNotEmpty);
+    expect(VaultStore.current?.id, profile.id);
+    expect(VaultStore.profiles.length, 1);
 
-    await tester.pumpWidget(MaterialApp(
-      home: ChildGateScreen(
-        settings: AppSettings(),
-        onLoggedIn: () => loggedIn = true,
-      ),
-    ));
-    await settle(tester);
-
-    await tester.tap(find.text('Create a new profile'));
-    await settle(tester);
-    expect(find.text('New profile'), findsOneWidget);
-
-    // No name yet → the app must explain, not crash.
-    await tester.tap(find.text('Create my profile'));
-    await settle(tester);
-    expect(find.text('Please type your name.'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField).first, 'Aarav');
-    await tester.pump();
-
-    // Choose avatar.
-    await tester.tap(find.text('🦊').first);
-    await tester.pump();
-
-    // Choose the PIN twice.
-    await tester.tap(find.text('Choose a PIN'));
-    await settle(tester);
-    expect(find.byType(PinPad), findsOneWidget);
-    await tapPin(tester, '1234');
-    await tapPin(tester, '1234');
-
-    expect(find.text('PIN set (4 digits)'), findsOneWidget);
-
-    await tester.tap(find.text('Create my profile'));
-    await settle(tester);
-
-    expect(loggedIn, isTrue, reason: 'sign-up must log the child in');
-    expect(VaultStore.current?.name, 'Aarav');
-    expect(find.text('Aarav'), findsOneWidget,
-        reason: 'the new profile should be listed on the gate');
+    // A second launch reopens the same learner — no new profile, no screen.
+    final again = await VaultStore.openLocal();
+    expect(again.id, profile.id);
+    expect(VaultStore.profiles.length, 1);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('wrong PIN on the gate is refused, right PIN opens', (tester) async {
+  testWidgets('home screen builds straight away (small phone)', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await setPhone(tester);
-    final p = await VaultStore.createProfile(name: 'Meera', avatar: '🐼', pin: '4321');
-    await VaultStore.logout();
+    await VaultStore.openLocal();
 
-    bool loggedIn = false;
     await tester.pumpWidget(MaterialApp(
-      home: ChildGateScreen(
-        settings: AppSettings(),
-        onLoggedIn: () => loggedIn = true,
-      ),
+      home: HomeScreen(gateway: EngineGateway(), settings: AppSettings()),
     ));
     await settle(tester);
-
-    expect(find.text('Meera'), findsOneWidget);
-    await tester.tap(find.text('Meera'));
     await settle(tester);
-    await tapPin(tester, '0000');
-    expect(loggedIn, isFalse, reason: 'wrong PIN must not sign in');
 
-    // Sheet closes on failure; open it again and type the real PIN.
-    if (find.byType(PinPad).evaluate().isNotEmpty) {
-      await tester.tapAt(const Offset(180, 40));
-      await settle(tester);
-    }
-    if (find.text('Meera').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Meera').first);
-      await settle(tester);
-      await tapPin(tester, '4321');
-    }
-    expect(VaultStore.current?.id, p.id);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.textContaining('Good '), findsWidgets,
+        reason: 'the greeting greets the local learner');
+    expect(find.text('Sign in'), findsNothing);
+    expect(find.text('Sign up'), findsNothing);
+    expect(find.text('Create a new profile'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('profile screen builds and links to the cloud vault',
+  testWidgets('the vault still seals and reopens the learner data',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await VaultStore.openLocal();
+    await VaultStore.log('class', 'Finished part 1 — Plants');
+
+    // Simulate a cold start: nothing in memory, the same device storage.
+    VaultStore.current = null;
+    await VaultStore.load();
+    expect(VaultStore.current, isNull);
+    final reopened = await VaultStore.openLocal();
+    expect(reopened.id, isNotNull);
+    expect(VaultStore.logs.any((l) => '${l['msg']}'.contains('Finished part 1')),
+        isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('profile screen builds and links to the emoji backup',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await setPhone(tester);
@@ -154,63 +90,48 @@ void main() {
     await VaultStore.log('class', 'Finished part 1 — Plants');
 
     await tester.pumpWidget(MaterialApp(
-      home: ProfileScreen(settings: AppSettings(), onSignedOut: () {}),
+      home: ProfileScreen(settings: AppSettings()),
     ));
     await settle(tester);
 
     expect(find.text('My space'), findsOneWidget);
-    expect(find.text('Emoji cloud vault (free Nostr relays)'), findsOneWidget);
+    expect(find.text('Emoji backup'), findsOneWidget);
+    expect(find.textContaining('cloud'), findsNothing,
+        reason: 'there is no cloud sync any more');
     expect(find.textContaining('Finished part 1'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Emoji cloud vault (free Nostr relays)'));
+    await tester.tap(find.text('Emoji backup'));
     await settle(tester);
-    expect(find.text('Backup now'), findsOneWidget);
-    expect(find.text('Restore'), findsOneWidget);
+    expect(find.text('Your encrypted backup'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('vault sync screen fits a small phone and lists 6 relays',
+  testWidgets('emoji backup restores the learner on a fresh phone',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     await setPhone(tester);
-
-    await tester.pumpWidget(const MaterialApp(home: VaultSyncScreen()));
-    await settle(tester);
-
-    expect(find.text('Backup now'), findsOneWidget);
-    expect(find.text('Copy emoji'), findsOneWidget);
-    expect(find.text('Paste emoji'), findsOneWidget);
-
-    // Relay list lives further down the page — scroll like a real user.
-    await tester.drag(find.byType(ListView).first, const Offset(0, -900));
-    await settle(tester);
-    await tester.drag(find.byType(ListView).first, const Offset(0, -900));
-    await settle(tester);
-    expect(find.text('relay.damus.io'), findsOneWidget);
-    expect(find.text('nos.lol'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('emoji code export/import keeps every profile', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await setPhone(tester);
-    final a = await VaultStore.createProfile(name: 'Aarav', avatar: '🐼', pin: '1111');
-    final b = await VaultStore.createProfile(name: 'Meera', avatar: '🦊', pin: '2222');
+    final me = await VaultStore.openLocal();
+    await VaultStore.updateProfile(name: 'Aarav');
+    await VaultStore.log('class', 'Finished part 1 — Plants');
     final code = VaultStore.exportEmoji();
     expect(code.startsWith('🎒'), isTrue);
 
-    // Wipe the device and restore from the emoji code.
+    // A new phone: no prefs, nothing in memory, no login screen to help.
     SharedPreferences.setMockInitialValues({});
+    VaultStore.current = null;
     await VaultStore.load();
     expect(VaultStore.profiles, isEmpty);
-    final n = await VaultStore.importEmoji(code);
-    expect(n, 2);
-    final ids = VaultStore.profiles.map((p) => p.id).toList();
-    expect(ids, containsAll([a.id, b.id]));
 
-    final back = await VaultStore.login(b.id, '2222');
-    expect(back, isNotNull, reason: 'PIN must still work after a restore');
+    final n = await VaultStore.importEmoji(code);
+    expect(n, 1);
+    final reopened = await VaultStore.openLocal();
+    expect(reopened.id, me.id, reason: 'the same learner must come back');
+    expect(reopened.name, 'Aarav');
+    expect(
+        VaultStore.logs.any((l) => '${l['msg']}'.contains('Finished part 1')),
+        isTrue,
+        reason: 'the encrypted log must survive the round trip');
     expect(tester.takeException(), isNull);
   });
 }

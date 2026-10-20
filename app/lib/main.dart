@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'ai/ai_config.dart';
+import 'ui/web_ai_host.dart';
 import 'engine_gateway.dart';
 import 'exam_store.dart';
-import 'screens/child_gate_screen.dart';
 import 'screens/home_screen.dart';
 import 'store.dart';
 import 'theme/themes.dart';
 import 'ui/premium_ui.dart';
-import 'updater.dart';
 import 'vault/emoji_vault.dart';
 import 'widgets.dart';
 
@@ -33,6 +33,7 @@ class TextbookClassroomApp extends StatelessWidget {
     final p = AppColors.palette;
     return MaterialApp(
       title: 'AI Textbook Classroom',
+      builder: (context, child) => WebAiHost(child: child ?? const SizedBox()),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -141,25 +142,18 @@ class _SplashState extends State<_Splash> with SingleTickerProviderStateMixin {
 
   Future<void> _go() async {
     await ThemeManager.load();
+    await AiConfig.load();
     final settings = await AppSettings.load();
-    await VaultStore.load();
+    // One learner lives on this device: the vault opens itself, so there is
+    // no sign-up and no login screen anywhere in the app.
+    await VaultStore.openLocal();
     ExamStore.scopeUserId = 'learner';
     await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
-    // Child profiles live in the encrypted emoji vault.
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => ChildGateScreen(
-          settings: settings,
-          onLoggedIn: () {
-            if (!mounted) return;
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => HomeScreen(gateway: EngineGateway(), settings: settings)),
-              (_) => false,
-            );
-          },
-        ),
-      ),
+          builder: (_) =>
+              HomeScreen(gateway: EngineGateway(), settings: settings)),
       (_) => false,
     );
   }

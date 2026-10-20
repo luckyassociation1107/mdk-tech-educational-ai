@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../brain/ai_brain.dart';
+import '../ai/ai_brain.dart';
 import '../dart_engine.dart';
 import '../engine_gateway.dart';
 import '../store.dart';
@@ -102,7 +102,7 @@ class _BrainScreenState extends State<BrainScreen> {
       _loading = false;
       _status = online
           ? 'Brain ready · ${_chars()} of textbook text'
-          : 'No internet — the brain needs a connection. Lessons still work offline.';
+          : 'No AI key yet — add one in Settings → AI & Prompts. Lessons still work offline.';
     });
   }
 
@@ -137,9 +137,11 @@ class _BrainScreenState extends State<BrainScreen> {
       _status = 'Asking the brain for a summary…';
     });
     try {
+      final book = await DartEngine.bookBytes(widget.sessionId);
       final result = await AiBrain.summarize(
         _bookText,
         level: _level,
+        pdf: book,
         cancel: cancel,
         onChunk: (c) {
           if (!mounted) return;
@@ -190,10 +192,12 @@ class _BrainScreenState extends State<BrainScreen> {
       _status = 'Asking: “$q”';
     });
     try {
+      final book = await DartEngine.bookBytes(widget.sessionId);
       final answer = await AiBrain.ask(
         pdfText: _bookText,
         question: q,
         summary: _summary.isEmpty ? null : _summary,
+        pdf: book,
         cancel: cancel,
         onChunk: (c) {
           if (!mounted) return;

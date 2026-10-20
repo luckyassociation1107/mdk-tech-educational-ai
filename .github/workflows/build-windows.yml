@@ -41,12 +41,15 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      - name: Point PDFium at the Windows build (pdfx)
+        run: dart run pdfx:install_windows
+
       - name: Unit + UI tests
         # flutter create writes its own template test (test/widget_test.dart);
         # run only the real classroom tests.
         run: |
           if (Test-Path test/widget_test.dart) { Remove-Item test/widget_test.dart }
-          flutter test test/vault_unit_test.dart test/ui_smoke_test.dart
+          flutter test test/vault_unit_test.dart test/ui_smoke_test.dart test/ai_pipeline_test.dart
 
       - name: Build Windows release
         run: flutter build windows --release

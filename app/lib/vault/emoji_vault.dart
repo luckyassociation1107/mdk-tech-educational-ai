@@ -223,6 +223,11 @@ class VaultStore {
   static ChildProfile? current;
   static Uint8List? _currentKey;
 
+  /// The device key of the single local learner (see [openLocal]). It travels
+  /// inside the backup so a new phone can reopen the same data — the emoji
+  /// code is the password, exactly as the UI says.
+  static String? _localPin;
+
   static String get emojiBlob => _emojiBlob ?? '';
   static List<ChildProfile> get profiles => _profilesMeta.map((m) => ChildProfile.fromMeta(m)).toList();
   static bool get hasProfiles => _profilesMeta.isNotEmpty;
@@ -234,10 +239,36 @@ class VaultStore {
         'kind': 'emoji-vault',
         'version': 1,
         'profiles': _profilesMeta,
-        'vault': _sealedData, // id -> sealed child data
-        'settings': _settings,
+        'vault': _sealedData, // id -> sealed data
+        'settings': {
+          ..._settings,
+          if (_localPin != null) 'local_pin': _localPin,
+          if (current != null) 'local_id': current!.id,
+        },
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
+
+  /// After a restore, make the imported data *this* device's learner again:
+  /// keep its id and its device key so [openLocal] reopens it as-is.
+  static Future<void> _adoptLocal(Map root) async {
+    final st = root['settings'];
+    if (st is! Map) return;
+    final prefs = await SharedPreferences.getInstance();
+    final pin = '${st['local_pin'] ?? ''}';
+    if (pinLooksValid(pin)) {
+      _localPin = pin;
+      await prefs.setString(_kLocalPin, pin);
+    }
+    var id = '${st['local_id'] ?? ''}';
+    if (id.isEmpty || !_profilesMeta.any((m) => '${m['id']}' == id)) {
+      // Older backups carry no id: take the most recently used learner.
+      final sorted = [..._profilesMeta]..sort((a, b) =>
+          ((b['lastLogin'] as num?)?.toInt() ?? 0)
+              .compareTo((a['lastLogin'] as num?)?.toInt() ?? 0));
+      id = sorted.isEmpty ? '' : '${sorted.first['id']}';
+    }
+    if (id.isNotEmpty) await prefs.setString(_kLocalId, id);
+  }
 
   static Future<void> load() async {
     final p = await SharedPreferences.getInstance();
@@ -284,6 +315,36 @@ class VaultStore {
   }
 
   static bool pinLooksValid(String pin) => RegExp(r'^\d{4,6}$').hasMatch(pin);
+
+  static const _kLocalPin = 'local_learner_pin';
+  static const _kLocalId = 'local_learner_id';
+
+  /// Opens **the** learner on this device — no sign-up, no login, no PIN
+  /// screen. On first launch a local profile is created silently; afterwards
+  /// the same one is reopened with a key that never leaves the device.
+  ///
+  /// The vault keeps sealing the data, so an emoji backup/restore still works
+  /// and the notes/XP/logs are still encrypted at rest.
+  static Future<ChildProfile> openLocal() async {
+    await load();
+    final prefs = await SharedPreferences.getInstance();
+    var pin = prefs.getString(_kLocalPin);
+    if (pin == null || !pinLooksValid(pin)) {
+      final rnd = math.Random.secure();
+      pin = List<String>.generate(6, (_) => '${rnd.nextInt(10)}').join();
+      await prefs.setString(_kLocalPin, pin);
+    }
+    _localPin = pin;
+    final saved = prefs.getString(_kLocalId);
+    if (saved != null) {
+      final back = await login(saved, pin);
+      if (back != null) return back;
+    }
+    final created = await createProfile(name: 'Learner', avatar: '🐼', pin: pin);
+    await prefs.setString(_kLocalId, created.id);
+    final opened = await login(created.id, pin);
+    return opened ?? created;
+  }
 
   static Future<ChildProfile> createProfile({
     required String name,
@@ -480,85 +541,14 @@ class VaultStore {
     }
     _profilesMeta = profiles;
     _sealedData = sealed;
+    await _adoptLocal(root);
     await _save();
     return profiles.length;
   }
 
-  // ---------- root access (for the emoji table packet / Nostr sync) ----------
+  // ---------- backup / transfer ----------
 
-  static Map<String, dynamic> exportRoot() => _root();
-
-  static Future<void> applyRoot(Map root) async {
-    _profilesMeta = ((root['profiles'] as List?) ?? const [])
-        .whereType<Map>()
-        .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
-        .toList();
-    final vault = root['vault'];
-    _sealedData = {};
-    if (vault is Map) {
-      for (final e in vault.entries) {
-        if (e.value is Map) {
-          _sealedData['${e.key}'] =
-              (e.value as Map).map((k, v) => MapEntry(k.toString(), v));
-        }
-      }
-    }
-    final st = root['settings'];
-    _settings = st is Map
-        ? st.map((k, v) => MapEntry(k.toString(), v))
-        : <String, dynamic>{};
-    await _save();
-  }
-
-  /// The Nostr identity key of this device, generated once and then kept
-  /// INSIDE the vault — so the emoji backup code also carries it and a new
-  /// phone can find the same relay events again.
-  static Future<String> nostrSecret() async {
-    final existing = _settings['nostr_sk'];
-    if (existing is String && existing.length == 64) return existing;
-    final rnd = math.Random.secure();
-    final hex = List<int>.generate(32, (_) => rnd.nextInt(256))
-        .map((b) => b.toRadixString(16).padLeft(2, '0'))
-        .join();
-    _settings['nostr_sk'] = hex;
-    await _save();
-    return hex;
-  }
-
-  static String? get nostrSecretCached {
-    final v = _settings['nostr_sk'];
-    return v is String && v.length == 64 ? v : null;
-  }
-
-  static Future<void> setRelays(List<String> relays) async {
-    _settings['nostr_relays'] = relays;
-    await _save();
-  }
-
-  static List<String> get savedRelays {
-    final r = _settings['nostr_relays'];
-    if (r is List) return r.map((e) => '$e').toList();
-    return const [];
-  }
-
-  /// Auto-backup switch (relay sync after each finished class/test).
-  static bool get autoBackup => '${_settings['nostr_auto'] ?? 'true'}' == 'true';
-
-  static Future<void> setAutoBackup(bool on) async {
-    _settings['nostr_auto'] = on ? 'true' : 'false';
-    await _save();
-  }
-
-  static Future<void> setLastSync(int ms, String eventId) async {
-    _settings['last_sync'] = ms;
-    _settings['last_event'] = eventId;
-    await _save();
-  }
-
-  static int get lastSync => (_settings['last_sync'] as num?)?.toInt() ?? 0;
-  static String get lastEventId => '${_settings['last_event'] ?? ''}';
-
-  /// Unlocked data of the logged-in child (for the activity screen).
+  /// Unlocked data of the learner (for the activity screen).
   static List<Map<String, dynamic>> get logs {
     final c = current;
     if (c == null) return [];

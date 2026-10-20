@@ -4,15 +4,14 @@ import '../store.dart';
 import '../ui/premium_ui.dart';
 import '../vault/emoji_vault.dart';
 import '../widgets.dart';
-import 'child_gate_screen.dart';
-import 'vault_sync_screen.dart';
+import 'vault_transfer_screen.dart';
 
-/// The logged-in child's space: avatar, activity log (encrypted),
-/// PIN change, emoji backup and sign-out.
+/// The learner's space: avatar, activity log (encrypted) and the local emoji
+/// backup. There is nothing to sign in to, out of, or to sync to a server —
+/// one learner lives on this device.
 class ProfileScreen extends StatefulWidget {
   final AppSettings settings;
-  final VoidCallback onSignedOut;
-  const ProfileScreen({super.key, required this.settings, required this.onSignedOut});
+  const ProfileScreen({super.key, required this.settings});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -20,20 +19,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _busy = false;
-
-  Future<String?> _askPin(String title) async {
-    return showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => PinPad(
-        title: title,
-        avatar: VaultStore.current?.avatar ?? '🐼',
-        subtitle: '4–6 digits',
-        confirm: false,
-      ),
-    );
-  }
 
   Future<void> _changeName() async {
     final ctrl = TextEditingController(text: VaultStore.current?.name ?? '');
@@ -97,48 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _changePin() async {
-    final oldPin = await _askPin('Current PIN');
-    if (oldPin == null) return;
-    // verify by a trial login
-    final c = VaultStore.current;
-    if (c == null) return;
-    if (VaultCrypto.hashPin(oldPin, c.salt) != c.verifier) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Current PIN is not correct')));
-      return;
-    }
-    final newPin = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => PinPad(
-        title: 'New PIN',
-        avatar: c.avatar,
-        subtitle: 'Type it twice',
-        confirm: true,
-      ),
-    );
-    if (newPin == null) return;
-    setState(() => _busy = true);
-    try {
-      await VaultStore.changePin(oldPin, newPin);
-      if (!mounted) return;
-      setState(() => _busy = false);
-      await showCelebration(context, title: 'PIN changed', subtitle: 'Your data is now sealed with the new PIN.', big: false);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
-  }
-
-  Future<void> _signOut() async {
-    await VaultStore.log('logout', 'Signed out from profile');
-    await VaultStore.logout();
-    widget.onSignedOut();
-  }
-
   String _time(int ms) {
     final d = DateTime.fromMillisecondsSinceEpoch(ms);
     return '${d.day}/${d.month} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
@@ -190,7 +133,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(p?.name ?? 'Guest', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
                     Text(
-                      p == null ? 'No profile — progress is shared on this phone' : '${p.loginCount} sign-ins • PIN protected',
+                      p == null
+                          ? 'One learner on this device'
+                          : 'One learner on this device • data stays here',
                       style: TextStyle(color: AppColors.muted, fontSize: 11.5),
                     ),
                     if (p != null)
@@ -206,29 +151,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: _action(Icons.password_rounded, 'Change PIN', _changePin, AppColors.amber),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _action(Icons.qr_code_2_rounded, 'Emoji backup',
-                    () => Navigator.of(context).push(PageTransition.route(VaultTransferScreen(onImported: () {}))), AppColors.teal),
-              ),
-            ]),
-            const SizedBox(height: 10),
             GlassCard(
-              onTap: () => Navigator.of(context)
-                  .push(PageTransition.route(const VaultSyncScreen())),
+              onTap: () => Navigator.of(context).push(PageTransition.route(
+                  VaultTransferScreen(onImported: () {}))),
               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
               child: Row(children: [
-                Icon(Icons.cloud_sync_rounded, size: 18, color: AppColors.violet),
+                Icon(Icons.qr_code_2_rounded, size: 18, color: AppColors.teal),
                 const SizedBox(width: 9),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Emoji cloud vault (free Nostr relays)',
+                    Text('Emoji backup',
                         style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12.5)),
-                    Text('Backup as emojis · restore · read the tables',
+                    Text('Copy your progress as an emoji code · restore it later',
                         style: TextStyle(color: AppColors.muted, fontSize: 10.5)),
                   ]),
                 ),
@@ -236,20 +170,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
             ),
             const SizedBox(height: 10),
-            Row(children: [
-              Expanded(
-                child: _action(Icons.add_circle_outline_rounded, 'Switch child',
-                    () => widget.onSignedOut(), AppColors.indigo),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _action(Icons.logout_rounded, 'Sign out', _signOut, AppColors.red),
-              ),
-            ]),
             const SectionTitle('Activity log'),
             if (logs.isEmpty)
               GlassCard(
-                child: Text('No activity yet. Classes, tests and sign-ins appear here — encrypted with your PIN.',
+                child: Text('No activity yet. Classes, tests and marks appear here — encrypted on this phone.',
                     style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5)),
               )
             else
@@ -278,8 +202,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Logs and marks are stored inside the emoji vault, sealed with a key derived from your PIN. '
-                    'They never leave this phone unless you export the emoji code.',
+                    'Logs and marks are sealed on this phone with a device key. '
+                    'They never leave it unless you export the emoji code.',
                     style: TextStyle(color: AppColors.muted, fontSize: 11, height: 1.5),
                   ),
                 ),

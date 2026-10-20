@@ -10,6 +10,7 @@ import '../store.dart';
 import '../study_stats.dart';
 import '../translate_service.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// Audio class ("podcast") for a textbook part — the same teaching as the
 /// live class, but ears-only: perfect for revision while walking or
@@ -30,8 +31,7 @@ class PodcastScreen extends StatefulWidget {
 }
 
 class _PodcastScreenState extends State<PodcastScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   int _partIdx = 0;
   List<LessonScene> _scenes = const [];
   final Map<int, String> _tr = {};

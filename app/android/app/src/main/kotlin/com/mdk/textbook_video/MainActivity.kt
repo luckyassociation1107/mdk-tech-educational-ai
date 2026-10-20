@@ -11,11 +11,12 @@ import java.util.Locale
 import java.util.concurrent.Executors
 
 /**
- * The app is 100% Flutter/Dart. This tiny native side only does the two
- * things Dart cannot do itself:
- *  - render textbook pages to PNGs (android.graphics.pdf.PdfRenderer)
- *  - check whether a device TTS voice exists for a language (flutter_tts
- *    then speaks with that same Android voice).
+ * The app is 100% Flutter/Dart. This tiny native side exists for one thing
+ * only: speaking with the *device* voice and reporting the spoken-word
+ * ranges, so the lesson player can highlight exactly the word being said.
+ *
+ * Page rendering moved to Dart in v0.24.0 (pdfx/PDFium), which means the
+ * same code path renders pages on Android and Windows.
  */
 class MainActivity : FlutterActivity() {
     private val channelName = "com.mdk.textbook_video/engine"
@@ -123,24 +124,7 @@ class MainActivity : FlutterActivity() {
                         try { tts?.stop() } catch (e: Exception) { /* ignore */ }
                         result.success(true)
                     }
-                    "renderPages" -> {
-                        val pdfPath = call.argument<String>("pdfPath")
-                        if (pdfPath == null) {
-                            result.error("no_pdf", "pdfPath missing", null)
-                        } else {
-                            io.execute {
-                                try {
-                                    val dir = File(filesDir, "classroom_pages/" +
-                                        Integer.toHexString(pdfPath.hashCode()).replace("-", "x"))
-                                    dir.mkdirs()
-                                    renderPdfPages(File(pdfPath), dir)
-                                    runOnUiThread { result.success(dir.absolutePath) }
-                                } catch (e: Exception) {
-                                    runOnUiThread { result.error("render_failed", e.message, null) }
-                                }
-                            }
-                        }
-                    }
+
                     else -> result.notImplemented()
                 }
             }
@@ -149,34 +133,6 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         tts?.shutdown()
         super.onDestroy()
-    }
-}
-
-private fun renderPdfPages(pdf: File, outDir: File) {
-    val pfd = android.os.ParcelFileDescriptor.open(pdf, android.os.ParcelFileDescriptor.MODE_READ_ONLY)
-    val renderer = android.graphics.pdf.PdfRenderer(pfd)
-    try {
-        for (i in 0 until renderer.pageCount) {
-            val out = File(outDir, "page_${i + 1}.png")
-            if (out.exists() && out.length() > 0) continue
-            val page = renderer.openPage(i)
-            try {
-                val scale = 2
-                val bmp = android.graphics.Bitmap.createBitmap(
-                    page.width * scale, page.height * scale, android.graphics.Bitmap.Config.ARGB_8888)
-                bmp.eraseColor(android.graphics.Color.WHITE)
-                page.render(bmp, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                FileOutputStream(out).use {
-                    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 90, it)
-                }
-                bmp.recycle()
-            } finally {
-                page.close()
-            }
-        }
-    } finally {
-        renderer.close()
-        pfd.close()
     }
 }
 

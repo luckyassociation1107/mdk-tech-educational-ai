@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../academic_models.dart';
 import '../dart_engine.dart';
@@ -11,6 +10,7 @@ import '../question_bank.dart';
 import '../store.dart';
 import '../study_stats.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// Fun, instant-feedback quiz built ONLY from the part's own key points.
 /// Every question shows its correct answer + the textbook line immediately,
@@ -30,8 +30,7 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   int _partIdx = 0;
   List<ExamQuestion> _qs = const [];
   int _i = 0;

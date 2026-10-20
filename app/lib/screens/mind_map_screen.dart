@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../dart_engine.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// Mind map for a part: the part is the centre, each key point a branch.
 /// Tap any node to read/hear the full textbook line. Built only from the
@@ -26,8 +26,7 @@ class MindMapScreen extends StatefulWidget {
 }
 
 class _MindMapScreenState extends State<MindMapScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   int _partIdx = 0;
   List<String> _points = const [];
   bool _loading = true;

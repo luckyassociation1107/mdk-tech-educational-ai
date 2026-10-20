@@ -9,7 +9,7 @@ import 'academic_models.dart';
 
 /// All exam history lives on this device (student chose fully-local mode).
 class ExamStore {
-  /// Whose marks these are. Set at login so every student has a private
+  /// Whose marks these are. Set at startup so every learner has a private
   /// report card on the shared device; teachers/principals read other
   /// scopes through [loadAllFor] without touching them.
   static String scopeUserId = 'guest';

@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../dart_engine.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// The Key Points Book: every part's own key points (plus the website
 /// brain's points when they exist) collected into one study booklet that
@@ -27,8 +27,7 @@ class KeyPointsScreen extends StatefulWidget {
 }
 
 class _KeyPointsScreenState extends State<KeyPointsScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   List<String> _brain = const [];
   final _search = TextEditingController();
   bool _loading = true;

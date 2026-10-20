@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../academic_models.dart';
 import '../dart_engine.dart';
@@ -7,8 +6,8 @@ import '../models.dart';
 import '../question_bank.dart';
 import '../store.dart';
 import '../study_stats.dart';
-import '../ui/premium_ui.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// Listening exam — the teacher's voice reads each question and its
 /// options; the student answers by tapping. Trains exam listening and is
@@ -28,8 +27,7 @@ class ListeningExamScreen extends StatefulWidget {
 }
 
 class _ListeningExamScreenState extends State<ListeningExamScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   List<ExamQuestion> _qs = const [];
   int _i = 0;
   int _right = 0;

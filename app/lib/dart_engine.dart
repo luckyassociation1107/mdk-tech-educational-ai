@@ -1,19 +1,29 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
 
+import 'ai/ai_exception.dart';
+import 'ai/ai_config.dart';
+import 'ai/script_designer.dart';
+import 'ai/textbook_extractor.dart';
+import 'lesson_content.dart';
+import 'pdf/pdf_raster.dart';
 import 'subject_engine.dart';
 
 /// The whole classroom engine, in Dart — no Python anywhere in the app.
 ///
-/// PDF text/structure comes from Syncfusion's Dart PDF parser, page
-/// pictures from Android PdfRenderer (one tiny platform method), page
-/// numbers are found by searching the extracted text (never invented),
-/// and lessons are played by the interactive Flutter lesson player.
+/// Since v0.25.0 the textbook is read by an AI — the free website mode by
+/// default, or the teacher's own key. The PDF is uploaded with a custom
+/// prompt and the model returns the page text and says where each figure
+/// is; nothing parses the PDF on the device any more. Page pictures and
+/// figure crops are rendered locally with PDFium (`pdfx`), which works on
+/// Android and Windows alike, and the lesson video is still painted, spoken
+/// and animated entirely on-device.
 class DartBlock {
   final String text;
   final List<double> bbox; // normalised [x0, y0, x1, y1]
@@ -27,15 +37,46 @@ class DartBlock {
       );
 }
 
+class DartFigure {
+  final String caption;
+
+  /// top / middle / bottom — what a text-only model can tell us.
+  final String where;
+
+  /// Exact box, when something could actually see the page.
+  final List<double>? bbox; // normalised [x0, y0, x1, y1], top-left origin
+
+  const DartFigure(this.caption, this.where, {this.bbox});
+
+  Map<String, dynamic> toJson() => {
+        'caption': caption,
+        if (where.isNotEmpty) 'where': where,
+        if (bbox != null) 'bbox': bbox,
+      };
+
+  factory DartFigure.fromJson(Map<String, dynamic> j) {
+    final b = (j['bbox'] as List?) ?? const [];
+    return DartFigure(
+      (j['caption'] ?? '').toString(),
+      (j['where'] ?? '').toString(),
+      bbox: b.length == 4 ? b.map((e) => (e as num).toDouble()).toList() : null,
+    );
+  }
+}
+
 class DartPage {
   final int page;
   final String text;
   final List<DartBlock> blocks;
-  const DartPage(this.page, this.text, this.blocks);
+
+  /// Figures the AI found on this page, with the box to crop them out.
+  final List<DartFigure> figures;
+  const DartPage(this.page, this.text, this.blocks, {this.figures = const []});
   Map<String, dynamic> toJson() => {
         'page': page,
         'text': text,
-        'blocks': blocks.map((b) => b.toJson()).toList()
+        'blocks': blocks.map((b) => b.toJson()).toList(),
+        'figures': figures.map((f) => f.toJson()).toList(),
       };
   factory DartPage.fromJson(Map<String, dynamic> j) => DartPage(
         (j['page'] as num?)?.toInt() ?? 0,
@@ -44,6 +85,11 @@ class DartPage {
             .whereType<Map>()
             .map((e) =>
                 DartBlock.fromJson(e.map((k, v) => MapEntry(k.toString(), v))))
+            .toList(),
+        figures: ((j['figures'] as List?) ?? const [])
+            .whereType<Map>()
+            .map((e) =>
+                DartFigure.fromJson(e.map((k, v) => MapEntry(k.toString(), v))))
             .toList(),
       );
 }
@@ -54,8 +100,16 @@ class DartPdfIndex {
   final List<DartPage> pages;
   const DartPdfIndex(this.title, this.pageCount, this.pages);
 
-  String pageText(int page) =>
-      (page >= 1 && page <= pageCount) ? pages[page - 1].text : '';
+  /// The AI may skip pages that carry no text at all, so look the page up by
+  /// its real number instead of trusting the list index.
+  DartPage? pageOf(int page) {
+    for (final p in pages) {
+      if (p.page == page) return p;
+    }
+    return null;
+  }
+
+  String pageText(int page) => pageOf(page)?.text ?? '';
 
   static const _stop = {
     'the',
@@ -107,7 +161,6 @@ class DartPdfIndex {
 
 class DartEngine {
   static const _ch = MethodChannel('com.mdk.textbook_video/engine');
-  static bool _syncfusionReady = false;
 
   static Future<Directory> _root() async {
     final docs = await getApplicationDocumentsDirectory();
@@ -260,134 +313,226 @@ class DartEngine {
     );
   }
 
-  /// Creates a session: copies the PDF into the app, extracts its text
-  /// with the Dart parser and asks Android to render page pictures.
+  /// Creates a session by **uploading the PDF to the teacher's own AI**.
+  ///
+  /// The model returns the page text and every figure box (see
+  /// [TextbookExtractor]); pages are then rendered locally with PDFium so
+  /// the reader and the figure zooms have pictures on Android and Windows.
   static Future<Map<String, dynamic>> createSession({
     required String pdfPath,
     required String language,
     int? grade,
     String brain = 'offline',
     String brainServerUrl = '',
+    void Function(int done, int total, String stage)? onProgress,
   }) async {
     final src = File(pdfPath);
     if (!await src.exists()) {
       throw StateError('PDF file not found. Please pick it again.');
     }
     final bytes = await src.readAsBytes();
-    DartPdfIndex index;
+    final fileName = src.uri.pathSegments.last;
+
+    final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
+    if (!cfg.ready) {
+      throw StateError(
+          'The free AI needs Android — this device has no WebView. Read the book on the Android app.');
+    }
+
+    final devicePageCount = await PdfRaster.pageCount(src.path);
+
+    onProgress?.call(0, 1, 'Uploading the PDF to the free classroom AI…');
+    final ExtractionResult extraction;
     try {
-      index = _extract(bytes, src.uri.pathSegments.last);
-    } catch (e) {
-      throw StateError('Could not read this PDF: $e');
+      extraction = await TextbookExtractor.extract(
+        pdfBytes: bytes,
+        filename: fileName,
+        pageCount: devicePageCount,
+        cfg: cfg,
+        onProgress: onProgress,
+      );
+    } on AiException catch (e) {
+      throw StateError(e.message);
     }
-    if (index.pageCount == 0) {
-      throw StateError('This PDF has no readable pages.');
-    }
+
     final id =
         'session_${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
     final dir = await _sessionDir(id);
     final bookFile = File('${dir.path}/book.pdf');
     await bookFile.writeAsBytes(bytes);
+
+    final pages = extraction.pages
+        .map((p) => DartPage(
+              p.page,
+              p.text,
+              const [],
+              figures: p.figures
+                  .map((f) => DartFigure(f.caption, f.where, bbox: f.bbox))
+                  .toList(),
+            ))
+        .toList();
+    final pageCount = pages.isEmpty ? 0 : pages.last.page;
+
     await File('${dir.path}/index.json').writeAsString(jsonEncode({
-      'title': index.title,
-      'page_count': index.pageCount,
-      'pages': index.pages.map((p) => p.toJson()).toList(),
+      'title': extraction.title,
+      'page_count': pageCount,
+      'source': 'ai',
+      'provider': extraction.provider,
+      'model': 'free',
+      'pages': pages.map((p) => p.toJson()).toList(),
     }));
 
-    String pageDir = '';
-    try {
-      pageDir = await _ch.invokeMethod<String>(
-              'renderPages', {'pdfPath': bookFile.path}) ??
-          '';
-    } catch (_) {
-      pageDir = ''; // lesson player shows text scenes if pictures are missing
-    }
-
     final subj = SubjectEngine.detect(
-        index.title, index.pages.map((p) => p.text).toList());
+        extraction.title, pages.map((p) => p.text).toList());
+
+    final pagesDir = Directory('${dir.path}/pages');
+    await pagesDir.create(recursive: true);
+
     final meta = <String, dynamic>{
       'session_id': id,
-      'title': index.title,
-      'page_count': index.pageCount,
+      'title': extraction.title,
+      'page_count': pageCount,
       'subject': subj.id,
       'subject_label': subj.label,
       'brain': brain,
       'language': language,
       'grade': grade,
       'state': 'active',
-      'page_dir': pageDir,
+      'page_dir': pagesDir.path,
+      'ai_provider': extraction.provider,
+      'figures': extraction.allFigures.length,
       'lessons': <dynamic>[],
       'completed_parts': <dynamic>[],
     };
     await _putMeta(meta);
+
+    // Page pictures are only needed when the reader opens: do it quietly.
+    unawaited(_renderAllPages(id, bookFile.path, pageCount));
+
     return {
       'session_id': id,
-      'title': index.title,
-      'page_count': index.pageCount,
+      'title': extraction.title,
+      'page_count': pageCount,
       'brain': brain,
-      'state': 'active'
+      'state': 'active',
+      'ai': extraction.provider,
+      'figures': extraction.allFigures.length,
     };
   }
 
-  static DartPdfIndex _extract(List<int> bytes, String fileName) {
-    if (!_syncfusionReady) {
-      _syncfusionReady = true;
+  /// Renders every page once, in the background, so the reader is instant
+  /// afterwards. Safe to call twice; already-rendered pages are skipped.
+  static Future<void> _renderAllPages(
+      String sessionId, String pdfPath, int pageCount) async {
+    if (PdfRaster.unavailable || pageCount <= 0) return;
+    final dir = await _sessionDir(sessionId);
+    for (var p = 1; p <= pageCount; p++) {
+      final out = File('${dir.path}/pages/page_$p.png');
+      if (await out.exists()) continue;
+      final ok = await PdfRaster.renderPage(
+          pdfPath: pdfPath, page: p, outPath: out.path, targetWidth: 1240);
+      if (ok == null) return; // rendering not available here; stop quietly
     }
-    final doc = PdfDocument(inputBytes: bytes);
+  }
+
+  /// Render one page on demand (reader, zoom scenes).
+  /// The uploaded book itself, so the free AI can be handed it again after a
+  /// restart (the website keeps its own copy only for one app session).
+  static Future<Uint8List?> bookBytes(String sessionId) async {
     try {
-      if (doc.pages.count == 0) return const DartPdfIndex('', 0, []);
-      final extractor = PdfTextExtractor(doc);
-      final title = (doc.documentInformation.title ?? '').trim().isNotEmpty
-          ? doc.documentInformation.title.trim()
-          : fileName.replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
-      final pages = <DartPage>[];
-      for (var i = 0; i < doc.pages.count; i++) {
-        final pageSize = doc.pages[i].size;
-        final text = extractor.extractText(startPageIndex: i, endPageIndex: i);
-        final blocks = <DartBlock>[];
-        try {
-          for (final line in extractor.extractTextLines(
-              startPageIndex: i, endPageIndex: i)) {
-            final t = line.text.trim();
-            if (t.length < 2) continue;
-            final b = line.bounds;
-            blocks.add(DartBlock(t, [
-              (b.left / pageSize.width).clamp(0.0, 1.0).toDouble(),
-              (b.top / pageSize.height).clamp(0.0, 1.0).toDouble(),
-              (b.right / pageSize.width).clamp(0.0, 1.0).toDouble(),
-              (b.bottom / pageSize.height).clamp(0.0, 1.0).toDouble(),
-            ]));
-          }
-        } catch (_) {
-          // text-only page: blocks fall back to paragraph bands below
-        }
-        if (blocks.isEmpty && text.trim().isNotEmpty) {
-          final paras = text
-              .split(RegExp(r'\n\s*\n|\n'))
-              .map((s) => s.trim())
-              .where((s) => s.length >= 2)
-              .toList();
-          final total = paras.fold<int>(0, (a, p) => a + p.length);
-          var y = 0.04;
-          for (final p in paras) {
-            final frac =
-                total == 0 ? 0.05 : math.max(0.03, p.length / total * 0.9);
-            final y2 = math.min(0.96, y + frac);
-            blocks.add(DartBlock(p, [
-              0.05,
-              double.parse(y.toStringAsFixed(3)),
-              0.95,
-              double.parse(y2.toStringAsFixed(3))
-            ]));
-            y = y2 + 0.012;
-          }
-        }
-        pages.add(DartPage(i + 1, text, blocks));
-      }
-      return DartPdfIndex(title, doc.pages.count, pages);
-    } finally {
-      doc.dispose();
+      final dir = await _sessionDir(sessionId);
+      final pdf = File('${dir.path}/book.pdf');
+      if (!await pdf.exists()) return null;
+      return pdf.readAsBytes();
+    } catch (_) {
+      return null;
     }
+  }
+
+  static Future<String?> ensurePageImage(String sessionId, int page) async {
+    final dir = await _sessionDir(sessionId);
+    final out = File('${dir.path}/pages/page_$page.png');
+    if (await out.exists()) return out.path;
+    final pdf = File('${dir.path}/book.pdf');
+    if (!await pdf.exists()) return null;
+    final ok = await PdfRaster.renderPage(
+        pdfPath: pdf.path, page: page, outPath: out.path, targetWidth: 1240);
+    return ok;
+  }
+
+  /// Resolve the figure a lesson wants: the AI says *which page* and roughly
+  /// *where* (top / middle / bottom); the exact box is measured from the
+  /// rendered page, so this works without any vision model and without a
+  /// key. A box returned by the model is used when it looks sane.
+  static Future<String?> figureFor(
+    String sessionId,
+    int page, {
+    List<double>? bbox,
+    String where = '',
+  }) async {
+    if (bbox != null && bbox.length == 4) {
+      final direct = await figurePath(sessionId, page, bbox);
+      if (direct != null) return direct;
+    }
+    final pagePng = await ensurePageImage(sessionId, page);
+    if (pagePng == null) return null;
+    final box = await PdfRaster.findFigureBox(pagePng,
+        where: where, hint: bbox);
+    if (box == null) return null;
+    return figurePath(sessionId, page, box);
+  }
+
+  /// Cut one figure out of the PDF using the AI's coordinates.
+  ///
+  /// The same page+box always maps to the same file, so a script can be
+  /// replayed without ever touching the PDF again.
+  static Future<String?> figurePath(
+      String sessionId, int page, List<double> bbox) async {
+    if (bbox.length != 4) return null;
+    final dir = await _sessionDir(sessionId);
+    final key = [page, ...bbox.map((n) => (n * 1000).round())].join('_');
+    final out = File('${dir.path}/figures/f_$key.png');
+    if (await out.exists()) return out.path;
+    final pdf = File('${dir.path}/book.pdf');
+    if (!await pdf.exists()) return null;
+    return PdfRaster.cropFigure(
+        pdfPath: pdf.path, page: page, bbox: bbox, outPath: out.path);
+  }
+
+  /// The AI-designed script for one part, if one was generated.
+  static Future<List<LessonScene>> loadScenes(
+      String sessionId, int part) async {
+    final meta = await _meta(sessionId);
+    final all = meta?['scenes'];
+    if (all is! Map) return const [];
+    final list = all['$part'];
+    if (list is! List) return const [];
+    final out = <LessonScene>[];
+    for (final item in list) {
+      if (item is Map) {
+        final s = LessonScene.fromJson(item.map((k, v) => MapEntry(k.toString(), v)));
+        if (s != null) out.add(s);
+      }
+    }
+    return out;
+  }
+
+  static Future<void> saveScenes(
+      String sessionId, int part, List<LessonScene>? scenes) async {
+    final meta = await _meta(sessionId);
+    if (meta == null) return;
+    final all = <String, dynamic>{};
+    final current = meta['scenes'];
+    if (current is Map) {
+      current.forEach((k, v) => all['$k'] = v);
+    }
+    if (scenes == null) {
+      all.remove('$part');
+    } else {
+      all['$part'] = scenes.map((s) => s.toJson()).toList();
+    }
+    meta['scenes'] = all;
+    await _putMeta(meta);
   }
 
   static List<String> _keyPointsFor(DartPdfIndex index, List<int> range) {
@@ -484,11 +629,57 @@ class DartEngine {
     required String question,
     required List<int>? pageRange,
     required String partLabel,
+    String language = 'en',
+    int? grade,
   }) async {
     final meta = await _meta(sessionId);
     if (meta == null) throw StateError('Textbook session not found.');
+    final index = await loadIndex(sessionId);
     final partNo =
-        RegExp(r'Part\s+(\d+)').firstMatch(partLabel)?.group(1) ?? '0';
+        int.tryParse(RegExp(r'Part\s+(\d+)').firstMatch(partLabel)?.group(1) ?? '') ??
+            0;
+    final pages = pageRange ??
+        (index == null
+            ? const <int>[]
+            : [for (var p = 1; p <= math.min(12, index.pageCount); p++) p]);
+
+    // Ask the AI to design the lesson script (scenes, narration, figures).
+    List<LessonScene>? scenes;
+    if (index != null) {
+      final cfg =
+          AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
+      if (cfg.ready) {
+        try {
+          scenes = await ScriptDesigner.design(
+            cfg: cfg,
+            title: (meta['title'] ?? 'Textbook').toString(),
+            subject: (meta['subject'] ?? 'general').toString(),
+            language: language,
+            grade: grade ?? (meta['grade'] as num?)?.toInt(),
+            partNumber: partNo,
+            pages: pages,
+            indexPages: index.pages
+                .map((p) => ExtractedPage(
+                      p.page,
+                      p.text,
+                      p.figures
+                          .map((f) => ExtractedFigure(p.page,
+                              f.caption.isEmpty ? 'figure' : f.caption,
+                              where: f.where, bbox: f.bbox))
+                          .toList(),
+                    ))
+                .toList(),
+            teacherNote: question,
+            crop: (page, bbox, where) =>
+                figureFor(sessionId, page, bbox: bbox, where: where),
+          );
+        } catch (_) {
+          scenes = null; // offline / quota → the on-device builder takes over
+        }
+      }
+    }
+    await saveScenes(sessionId, partNo, scenes);
+
     final url = 'lesson://$sessionId/$partNo';
     final lessons = ((meta['lessons'] as List?) ?? const []).toList();
     lessons.removeWhere((l) => l is Map && l['output'] == url);
@@ -498,11 +689,18 @@ class DartEngine {
       'status': 'ready',
       'file': null,
       'output': url,
-      'pages': pageRange ?? const [],
+      'pages': pages,
+      'script': scenes == null ? 'on-device' : 'ai',
+      'scenes': scenes?.length ?? 0,
     });
     meta['lessons'] = lessons;
     await _putMeta(meta);
-    return {'output': url, 'file': null, 'captions': null};
+    return {
+      'output': url,
+      'file': null,
+      'captions': null,
+      'script': scenes == null ? 'on-device' : 'ai',
+    };
   }
 
   static Future<List<dynamic>> sessionLessons(String sessionId) async {

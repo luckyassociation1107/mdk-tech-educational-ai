@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../ai/ai_config.dart';
 import '../engine_gateway.dart';
 import '../models.dart';
 import '../store.dart';
@@ -12,12 +13,11 @@ import '../vault/emoji_vault.dart';
 import '../widgets.dart';
 import 'exams_hub_screen.dart';
 import 'report_screen.dart';
-import 'child_gate_screen.dart';
 import 'daily_challenge_screen.dart';
 import 'revision_screen.dart';
 import 'brain_screen.dart';
 import 'profile_screen.dart';
-import 'theme_studio_screen.dart';
+import 'ai_settings_screen.dart';
 import 'settings_screen.dart';
 import 'textbook_screen.dart';
 
@@ -116,14 +116,53 @@ class _HomeScreenState extends State<HomeScreen> {
         .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
     final path = picked?.files.single.path;
     if (path == null) return;
+
+    // The PDF is read by the free website AI — that needs an Android WebView,
+    // so say it plainly instead of failing later.
+    final cfg = AiConfig.current;
+    if (!cfg.ready) {
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.card,
+          title: const Text('The free AI needs Android'),
+          content: Text(
+            'The app reads a textbook by driving the free PDF-teacher website '
+            'inside its own WebView, and that needs Android. This device cannot '
+            'open one, so a book cannot be read here.',
+            style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Not now')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Open AI settings')),
+          ],
+        ),
+      );
+      if (go == true && mounted) {
+        await Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => const AiSettingsScreen()));
+      }
+      return;
+    }
+
     setState(() => _adding = true);
+    _stage = ValueNotifier('Opening the free classroom AI…');
+    _showStageDialog();
     try {
       final s = await widget.gateway.createSession(
         pdfPath: path,
         language: widget.settings.language,
         brain: widget.settings.brain,
         brainServerUrl: widget.settings.brainServerUrl,
+        onProgress: (done, total, stage) {
+          _stage?.value = total > 1 ? '$stage  ($done/$total)' : stage;
+        },
       );
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
       final book = TextbookItem(
         sessionId: (s['session_id'] ?? '').toString(),
         title: (s['title'] ?? 'Textbook').toString(),
@@ -139,11 +178,54 @@ class _HomeScreenState extends State<HomeScreen> {
       ));
       _load();
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _adding = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() => _adding = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not add textbook: $e')));
+      }
+    } finally {
+      _stage = null;
     }
+  }
+
+  ValueNotifier<String>? _stage;
+
+  /// A blocking "the AI is reading your book" card — the upload can take a
+  /// few seconds per batch, so the teacher can see exactly what is happening.
+  void _showStageDialog() {
+    final stage = _stage;
+    if (stage == null) return;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        content: ValueListenableBuilder<String>(
+          valueListenable: stage,
+          builder: (_, value, __) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const LinearProgressIndicator(minHeight: 3),
+              const SizedBox(height: 16),
+              Text(value,
+                  style: TextStyle(
+                      color: AppColors.text,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(
+                'The PDF is read once. Figures are cut out of the book and the '
+                'lesson is built on this device — nothing is rendered elsewhere.',
+                style: TextStyle(
+                    color: AppColors.muted, fontSize: 11, height: 1.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   bool _celebrating = false;
@@ -282,30 +364,44 @@ class _HomeScreenState extends State<HomeScreen> {
           colors: [Color(0xFF0F766E), Color(0xFF1E1B4B)]),
       padding: const EdgeInsets.all(18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(99)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.local_fire_department_rounded,
-                  color: Color(0xFFFBBF24), size: 16),
-              const SizedBox(width: 4),
-              Text('$_streak day streak',
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(99)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.local_fire_department_rounded,
+                      color: Color(0xFFFBBF24), size: 16),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text('$_streak day streak',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12)),
+                  ),
+                ]),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text('Level $level • ${StudyStats.levelName(level)}',
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
-                      fontSize: 12)),
-            ]),
-          ),
-          const Spacer(),
-          Text('Level $level • ${StudyStats.levelName(level)}',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12.5)),
-        ]),
+                      fontSize: 12.5)),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
         Row(children: [
           SizedBox(
@@ -518,29 +614,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     radius: 14,
                     onTap: () async {
                       await Navigator.of(context).push(PageTransition.route(
-                        ProfileScreen(
-                          settings: widget.settings,
-                          onSignedOut: () {
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (_) => ChildGateScreen(
-                                  settings: widget.settings,
-                                  onLoggedIn: () {
-                                    Navigator.of(context).pushAndRemoveUntil(
-                                      MaterialPageRoute(
-                                          builder: (_) => HomeScreen(
-                                              gateway: widget.gateway,
-                                              settings: widget.settings)),
-                                      (_) => false,
-                                    );
-                                  },
-                                ),
-                              ),
-                              (_) => false,
-                            );
-                          },
-                        ),
-                      ));
+                          ProfileScreen(settings: widget.settings)));
                       if (mounted) setState(() {});
                     },
                     child: Padding(
@@ -653,7 +727,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.green.withOpacity(0.16),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Text('online',
+                              child: Text('free',
                                   style: TextStyle(
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.w900,

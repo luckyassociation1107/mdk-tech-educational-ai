@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../brain/ai_brain.dart';
+import '../ai/ai_brain.dart';
 import '../dart_engine.dart';
 import '../engine_gateway.dart';
 import '../models.dart';

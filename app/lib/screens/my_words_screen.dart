@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models.dart';
 import '../store.dart';
 import '../word_bank.dart';
 import '../widgets.dart';
+import '../speech/speech_channel.dart';
 
 /// My Words — every word tapped in Word help, with its textbook sentence
 /// and translation, searchable and usable as a personal dictionary.
@@ -18,8 +18,7 @@ class MyWordsScreen extends StatefulWidget {
 }
 
 class _MyWordsScreenState extends State<MyWordsScreen> {
-  static const MethodChannel _ttsCh =
-      MethodChannel('com.mdk.textbook_video/engine');
+  static const SpeechChannel _ttsCh = SpeechChannel();
   List<WordEntry> _all = const [];
   String _q = '';
   bool _loading = true;
