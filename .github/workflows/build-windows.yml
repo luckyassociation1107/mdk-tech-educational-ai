@@ -55,6 +55,16 @@ jobs:
           if (Test-Path test/widget_test.dart) { Remove-Item test/widget_test.dart }
           flutter test test/vault_unit_test.dart test/ui_smoke_test.dart test/ai_pipeline_test.dart
 
+      - name: NuGet for the WebView2 plugin
+        shell: pwsh
+        run: |
+          # flutter_inappwebview_windows pulls Microsoft.Web.WebView2 and
+          # Win2D/WIL from nuget.org at build time.
+          if (-not (Get-Command nuget -ErrorAction SilentlyContinue)) {
+            choco install nuget.commandline --no-progress -y
+          }
+          nuget help | Select-Object -First 2
+
       - name: Build Windows release
         run: flutter build windows --release
 
@@ -67,6 +77,18 @@ jobs:
           Copy-Item "$rel/*" "../dist/windows_app/" -Recurse -Force
           Get-ChildItem "../dist/windows_app" | Select-Object Name
 
+      - name: Fetch WebView2 bootstrapper (installed only if missing)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "../dist" | Out-Null
+          try {
+            Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" `
+              -OutFile "../dist/MicrosoftEdgeWebview2Setup.exe" -UseBasicParsing
+            Get-Item "../dist/MicrosoftEdgeWebview2Setup.exe" | Select-Object Name,Length
+          } catch {
+            Write-Warning "WebView2 bootstrapper not downloaded: $_"
+          }
+
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
@@ -77,7 +99,11 @@ jobs:
           $src = (Resolve-Path "../dist/windows_app").Path
           $out = (Resolve-Path "../dist").Path
           $iss = (Resolve-Path "../installer/AI_Textbook_Classroom.iss").Path
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DSourceDir=$src" "/DOutputDir=$out" $iss
+          $ver = (Select-String -Path "pubspec.yaml" -Pattern '^version:\s*([0-9.]+)' |
+                  Select-Object -First 1).Matches[0].Groups[1].Value
+          if (-not $ver) { $ver = "0.0.0" }
+          Write-Host "installer version: $ver"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DSourceDir=$src" "/DOutputDir=$out" "/DAppVersion=$ver" $iss
           Get-ChildItem $out
 
       - name: Upload Windows installer

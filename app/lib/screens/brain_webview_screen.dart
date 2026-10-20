@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../engine_gateway.dart';
 import '../store.dart';
@@ -43,7 +42,7 @@ class BrainWebViewScreen extends StatefulWidget {
 }
 
 class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
-  WebViewController? _web;
+  InAppWebViewController? _web;
   final _log = <String>[];
   final _questionCtrl = TextEditingController();
   String _pdfPath = '';
@@ -56,7 +55,7 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
   List<Map<String, dynamic>> _qa = [];
   String _lastQuestion = '';
 
-  bool get _supported => Platform.isAndroid;
+  bool get _supported => Platform.isAndroid || Platform.isWindows;
 
   @override
   void initState() {
@@ -93,39 +92,59 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
     if (_supported && exists) _initWeb();
   }
 
+  // The WebView widget itself creates the controller (onWebViewCreated) and
+  // loads the site; nothing to build here any more.
   void _initWeb() {
-    final controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageFinished: (_) {
-          _pageReady = true;
-          _say('Website brain loaded. Tap “Upload & Summarize”.');
-        },
-      ));
-    if (controller.platform is AndroidWebViewController) {
-      (controller.platform as AndroidWebViewController)
-          .setOnShowFileSelector((params) async {
-        // The website asks for a file: hand it THIS student's textbook
-        // PDF straight from the app's private session folder.
-        return [Uri.file(_pdfPath).toString()];
-      });
-    }
-    _web = controller;
-    controller.loadRequest(Uri.parse(BrainWebViewScreen.brainUrl));
+    if (mounted) setState(() {});
   }
 
   // ---------- JS helpers ----------
 
   Future<String> _js(String code) async {
-    final r = await _web!.runJavaScriptReturningResult(code);
+    final c = _web;
+    if (c == null) return '';
+    final r = await c.evaluateJavascript(source: code);
     if (r == null) return '';
-    final s = r.toString();
-    if (s.startsWith('"')) {
+    var s = r.toString();
+    if (s.length >= 2 && s.startsWith('"') && s.endsWith('"')) {
       try {
-        return jsonDecode(s).toString();
+        s = jsonDecode(s).toString();
       } catch (_) {}
     }
     return s;
+  }
+
+  /// Hands the site this student's textbook without opening the native file
+  /// picker: the PDF bytes go into a `File` in the page, exactly as the free
+  /// AI engine does it. Works on the phone and on Windows the same way.
+  Future<void> _uploadPdf() async {
+    final bytes = await File(_pdfPath).readAsBytes();
+    final b64 = base64Encode(bytes);
+    const chunk = 900000;
+    await _js('window.__mdkPdf = []; "reset"');
+    for (var i = 0; i < b64.length; i += chunk) {
+      final part = b64.substring(i, (i + chunk).clamp(0, b64.length));
+      await _js('window.__mdkPdf.push("$part"); ${i ~/ chunk}');
+    }
+    final res = await _js("""(() => {
+      const input = document.querySelector('input[type=file]');
+      if (!input) return 'no-input';
+      const b64 = (window.__mdkPdf || []).join('');
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      const f = new File([arr], 'textbook.pdf', {type: 'application/pdf'});
+      const dt = new DataTransfer();
+      dt.items.add(f);
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change', {bubbles: true}));
+      window.__mdkPdf = [];
+      return 'ok';
+    })()""");
+    if (res != 'ok') {
+      throw StateError('Upload box not found on the page yet ($res). '
+          'Wait for it to load, then try again.');
+    }
   }
 
   Future<String> _pageText() async {
@@ -210,11 +229,7 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
         await _waitFor(() async => _pageReady, seconds: 60);
       }
       _say('Uploading your textbook PDF (stays your copy, on your device)…');
-      final clicked = await _js(
-          "(() => { const i = document.querySelector('input[type=file]'); if (!i) return 'no-input'; i.click(); return 'clicked'; })()");
-      if (clicked != 'clicked')
-        throw StateError(
-            'Upload box not found on the page yet. Wait for it to load, then try again.');
+      await _uploadPdf();
       final hasSlider = await _waitFor(() async {
         final r = await _js(
             "document.querySelector('input[type=range]') ? 'yes' : 'no'");
@@ -374,14 +389,31 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
               ],
             ]),
           ),
-          if (_web != null) ...[
+          if (_supported) ...[
             const SectionTitle('Website (automated)'),
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
               child: Container(
                 height: 380,
                 color: Colors.white,
-                child: WebViewWidget(controller: _web!),
+                child: InAppWebView(
+                  initialUrlRequest:
+                      URLRequest(url: WebUri(BrainWebViewScreen.brainUrl)),
+                  initialSettings: InAppWebViewSettings(
+                    javaScriptEnabled: true,
+                    useShouldOverrideUrlLoading: false,
+                  ),
+                  onWebViewCreated: (c) {
+                    _web = c;
+                    if (mounted) setState(() {});
+                  },
+                  onLoadStop: (c, url) {
+                    if (!_pageReady) {
+                      setState(() => _pageReady = true);
+                      _say('Website brain loaded. Tap “Upload & Summarize”.');
+                    }
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 8),

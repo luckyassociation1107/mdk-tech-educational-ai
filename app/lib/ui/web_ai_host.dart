@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import '../ai/web_ai_engine.dart';
 import '../widgets.dart';
 
-/// Hosts the single WebView that the free AI mode drives.
+/// Shows what the free AI is doing.
 ///
-/// It lives above the navigator so the website session survives screen
-/// changes (the PDF stays uploaded between the extraction and every lesson
-/// script). While the site works, a small panel shows the live page and what
-/// is happening — the teacher can see the automation, and it can be closed
-/// with the stop button.
+/// The website itself runs in a headless WebView (Android WebView / Windows
+/// WebView2), so it needs no screen space. While a request is running this
+/// small panel appears above the app with the live stage — "Uploading the
+/// PDF… 40%", "The free AI is answering… 620 chars" — and can be dismissed.
 class WebAiHost extends StatefulWidget {
   const WebAiHost({super.key, required this.child});
   final Widget child;
@@ -20,20 +18,13 @@ class WebAiHost extends StatefulWidget {
 }
 
 class _WebAiHostState extends State<WebAiHost> {
-  WebViewController? _controller;
   bool _expanded = false;
 
   @override
   void initState() {
     super.initState();
-    // Created up-front so switching the mode in Settings works without a
-    // restart; nothing is loaded until the free mode is actually used.
-    if (WebAiEngine.instance.supported) {
-      final c = WebViewController();
-      WebAiEngine.instance.attach(c);
-      _controller = c;
-    }
     WebAiEngine.instance.busy.addListener(_onBusy);
+    _expanded = WebAiEngine.instance.busy.value;
   }
 
   void _onBusy() {
@@ -49,25 +40,20 @@ class _WebAiHostState extends State<WebAiHost> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = _controller;
     return Stack(children: [
       widget.child,
-      if (controller != null && _expanded)
+      if (_expanded)
         Positioned(
           right: 12,
           bottom: 12,
-          child: _Panel(
-            controller: controller,
-            onHide: () => setState(() => _expanded = false),
-          ),
+          child: _Panel(onHide: () => setState(() => _expanded = false)),
         ),
     ]);
   }
 }
 
 class _Panel extends StatelessWidget {
-  const _Panel({required this.controller, required this.onHide});
-  final WebViewController controller;
+  const _Panel({required this.onHide});
   final VoidCallback onHide;
 
   @override
@@ -89,7 +75,7 @@ class _Panel extends StatelessWidget {
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 6, 6),
+            padding: const EdgeInsets.fromLTRB(12, 8, 6, 4),
             child: Row(children: [
               Icon(Icons.public_rounded, size: 15, color: AppColors.teal),
               const SizedBox(width: 6),
@@ -110,7 +96,7 @@ class _Panel extends StatelessWidget {
           ValueListenableBuilder<String>(
             valueListenable: WebAiEngine.instance.stage,
             builder: (_, stage, __) => Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
               child: Text(
                 stage.isEmpty ? 'Working…' : stage,
                 maxLines: 2,
@@ -120,14 +106,24 @@ class _Panel extends StatelessWidget {
               ),
             ),
           ),
-          ClipRRect(
-            borderRadius:
-                const BorderRadius.vertical(bottom: Radius.circular(15)),
-            child: SizedBox(
-              height: 150,
-              width: double.infinity,
-              child: WebViewWidget(controller: controller),
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            child: Row(children: [
+              SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: AppColors.teal),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Running in the background — the book stays on this device.',
+                  style: TextStyle(
+                      color: AppColors.muted, fontSize: 10, height: 1.35),
+                ),
+              ),
+            ]),
           ),
         ]),
       ),

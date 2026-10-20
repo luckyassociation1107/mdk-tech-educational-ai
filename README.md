@@ -25,7 +25,7 @@ straight out of your book, quick questions, exams and a report card. Works on
 | | |
 |---|---|
 | 📚 **Add a textbook** | Pick any PDF. It is uploaded once to the free AI, read page by page, and cached so the book works offline afterwards. |
-| 🆓 **Free AI — the only mode** | The public PDF-teacher site is automated in the app's WebView: the PDF is uploaded through the page's own file input, the prompts are typed into its chat, the answers are read back. No key, no account, no cost — there is nothing to buy. |
+| 🆓 **Free AI — the only mode** | The public PDF-teacher site is automated in the app's WebView: the PDF is uploaded through the page's own file input, the prompts are typed into its chat, the answers are read back. One plugin, both platforms — `flutter_inappwebview` (Android WebView / Edge WebView2). No key, no account, no cost. |
 | 🧠 **AI extraction** | Custom prompt → `{title, subject, pages[{page, text, figures[{caption, where}]}]}`. Batched for big books (12 pages per call, 40 for very large ones). |
 | ✂️ **Figures: AI says where, the app measures** | The model can describe a figure and say it is at the top/middle/bottom of a page. The app renders that page and finds the exact box from the pixels (`FigureFinder`), then crops it out of the PDF with PDFium. No vision model, no invented coordinates. |
 | 🎬 **AI-designed lessons** | A second custom prompt asks the AI how the video should run: scene order, narration, board text and which figure to show. The result is validated scene by scene. |
@@ -66,7 +66,7 @@ choose, because nothing is billed:
 |---|---|
 | Cost | **nothing** — no key, no account, no subscription |
 | Setup | **none** — install and add a book |
-| Platforms | reading a book: **Android** (it needs a WebView); playing a book already read: Android **+ Windows** |
+| Platforms | **Android 8+ and Windows 10/11** — reading a book needs a WebView, and Windows has Edge WebView2 |
 | Sees page images | no — which is why the figure box is measured on the device |
 
 **How it works:** the WebView opens the public PDF-teacher site, feeds the PDF to
@@ -132,7 +132,8 @@ brain and UI. `flutter analyze` reports **0 errors**.
 
 - **The app depends on somebody else's website.** It is free because the public
   PDF-teacher site pays for the model. It can change or disappear, and it is
-  driven through an Android WebView.
+  driven through `flutter_inappwebview` — Android WebView, or Edge WebView2
+  on Windows.
 - **It cannot see the pages**, so figure boxes come from the local pixel finder —
   accurate for charts, photos and boxed diagrams, weaker for a small sketch in a
   corner.
@@ -140,7 +141,8 @@ brain and UI. `flutter analyze` reports **0 errors**.
   just photos of pages will not work.
 - **Reading a book needs Android.** Windows can open and play books that were
   already read (the index, figures and lessons are cached on the device).
-- Windows needs `dart run pdfx:install_windows` once before building.
+- Windows needs `dart run pdfx:install_windows` once before building, and
+  `nuget` on PATH for the WebView2 plugin (CI does both).
 - Backup is manual: copy the emoji code (or the file) somewhere safe. There is
   no cloud sync — nothing leaves the phone on its own.
 

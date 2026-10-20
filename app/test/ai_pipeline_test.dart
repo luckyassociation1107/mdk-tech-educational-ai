@@ -9,6 +9,7 @@ import 'package:textbook_video_classroom/ai/ai_exception.dart';
 import 'package:textbook_video_classroom/ai/ai_service.dart';
 import 'package:textbook_video_classroom/ai/json_utils.dart';
 import 'package:textbook_video_classroom/ai/script_designer.dart';
+import 'package:textbook_video_classroom/ai/web_ai_engine.dart';
 import 'package:textbook_video_classroom/ai/textbook_extractor.dart';
 import 'package:textbook_video_classroom/lesson_content.dart';
 
@@ -298,6 +299,31 @@ void main() {
         teacherNote: '',
       );
       expect(scenes, isNull);
+    });
+  });
+
+  group('free AI site errors', () {
+    test('a scan says so in plain words', () {
+      final m = WebAiEngine.friendlySiteError(
+          'Errors Your file appears to be a scan, image-based, or has no text. '
+          'Please try a different file. OK Close');
+      expect(m, contains('photos of pages'));
+      expect(m, contains('real text'));
+      expect(m.toLowerCase(), isNot(contains('errors your file')));
+    });
+
+    test('a huge PDF asks for smaller chapters', () {
+      final m = WebAiEngine.friendlySiteError(
+          'Errors File is too large. OK Close');
+      expect(m, contains('too large'));
+      expect(m, contains('smaller'));
+    });
+
+    test('an unknown message keeps the site\'s own words', () {
+      final m = WebAiEngine.friendlySiteError(
+          'Errors Something odd happened. OK Close');
+      expect(m, contains('Something odd happened.'));
+      expect(m.startsWith('Errors'), isFalse);
     });
   });
 

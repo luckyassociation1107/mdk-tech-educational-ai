@@ -1,3 +1,42 @@
+## v0.29.0 — one WebView plugin, books can be read on Windows too
+
+The free AI used `webview_flutter`, which only has an Android implementation,
+so a Windows laptop could play a book that was already read but could not read
+a new one. The automation now runs on **`flutter_inappwebview ^6.1.5`**, which
+drives the Android system WebView and Microsoft Edge WebView2 through the same
+Dart code — so the PDF upload, the prompts and the answer reading work
+identically on both platforms.
+
+### Changed
+
+- `lib/ai/web_ai_engine.dart` — rewritten on `flutter_inappwebview`:
+  - the page runs in a **headless** WebView (`HeadlessInAppWebView`, 1080×1600),
+    so the site needs no screen space and keeps one long-lived conversation;
+  - `runJavaScriptReturningResult` → `evaluateJavascript`, with one parser that
+    accepts a Map (Android), a JSON string (Windows) or a double-encoded string;
+  - `supported` is now **Android + Windows**; the Settings card shows which
+    engine is in use (“Android WebView” / “Microsoft Edge WebView2”);
+  - a missing WebView2 runtime is reported as one plain sentence that says what
+    to install, instead of a platform exception.
+- `lib/ui/web_ai_host.dart` — the mini panel now shows the live stage text and a
+  spinner instead of a 260×150 copy of the page (there is no page view any
+  more — the site runs in the background).
+- `lib/screens/brain_webview_screen.dart` — migrated to `InAppWebView`; the PDF
+  is handed to the site by the same JS `DataTransfer` trick as the engine, so
+  it no longer depends on Android's file-picker hook and works on Windows.
+- `installer/AI_Textbook_Classroom.iss` — version comes from `pubspec.yaml`
+  (`/DAppVersion`), and the installer now installs the Microsoft Edge WebView2
+  runtime when the PC does not have it.
+- `build-windows.yml` — installs `nuget` (needed by the WebView2 plugin),
+  downloads the WebView2 bootstrapper, and passes the version to Inno Setup.
+
+### Removed
+
+- `webview_flutter` and `webview_flutter_android` dependencies.
+
+Tests: **45** (unchanged — the WebView itself is not exercised in unit tests;
+CI proves the Windows build compiles and links WebView2).
+
 # Changelog
 
 Everything below is the project's own running log, newest first.

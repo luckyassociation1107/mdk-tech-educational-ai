@@ -79,7 +79,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     if (!WebAiEngine.instance.supported) {
       setState(() {
         _testOk = false;
-        _testResult = 'The free AI needs Android — this device has no WebView.';
+        _testResult =
+            'The free AI needs a WebView — the Android or the Windows app.';
       });
       return;
     }
@@ -179,8 +180,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                         Expanded(
                           child: Text(
                             WebAiEngine.instance.supported
-                                ? 'Free AI ready · Android WebView'
-                                : 'Free AI needs Android',
+                                ? 'Free AI ready · ${WebAiEngine.instance.engineName}'
+                                : 'Free AI needs Android or Windows',
                             style: TextStyle(
                                 color: AppColors.text,
                                 fontWeight: FontWeight.w900,
@@ -191,10 +192,13 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                       const SizedBox(height: 6),
                       Text(
                         WebAiEngine.instance.supported
-                            ? 'Everything below is free. The same prompts are used for '
-                                'the PDF, the video script and Ask PDF.'
-                            : 'This device has no WebView, so the free AI cannot run here. '
-                                'Read the textbook on the Android app.',
+                            ? 'Everything below is free. The website is driven inside '
+                                'this app (${WebAiEngine.instance.engineName}), so a '
+                                'textbook PDF can be read on this device. The same '
+                                'prompts are used for the PDF, the video script and '
+                                'Ask PDF.'
+                            : 'This device has no WebView, so the free AI cannot run '
+                                'here. Read the textbook in the Android or the Windows app.',
                         style: TextStyle(
                             color: AppColors.muted, fontSize: 11.5, height: 1.45),
                       ),
