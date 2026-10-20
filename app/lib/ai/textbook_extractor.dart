@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'ai_client.dart';
 import 'ai_config.dart';
+import 'ai_exception.dart';
 import 'ai_service.dart';
 import 'ai_prompts.dart';
 import 'json_utils.dart';
@@ -39,23 +39,23 @@ class ExtractionResult {
   final String title;
   final String subject;
   final List<ExtractedPage> pages;
-  final String provider;
-  final String model;
+
+  /// Always 'free' — the website mode has no provider or model to report.
+  String get provider => 'free';
+
   const ExtractionResult({
     required this.title,
     required this.subject,
     required this.pages,
-    required this.provider,
-    required this.model,
   });
 
   List<ExtractedFigure> get allFigures =>
       pages.expand((p) => p.figures).toList();
 }
 
-/// Reads a textbook by **uploading the PDF to the teacher's own AI** and
-/// asking the questions in [AiConfig.extractPrompt] — there is no PDF text
-/// parser on the device any more.
+/// Reads a textbook by **uploading the PDF to the free AI** and asking the
+/// questions in [AiConfig.extractPrompt] — there is no PDF text parser on the
+/// device, and no key to paste either.
 ///
 /// Big books are read in page batches, because one answer can only hold so
 /// much text; each batch is merged into a single index that is cached in the
@@ -80,14 +80,8 @@ class TextbookExtractor {
     required String filename,
     required int pageCount,
     required AiConfig cfg,
-    AiClient? client,
     void Function(int done, int total, String stage)? onProgress,
   }) async {
-    if (!cfg.ready) {
-      throw AiException(
-          'Add your AI key first (Settings → AI & Prompts). The PDF is read by the AI, so the key is required.');
-    }
-    final ai = client ?? AiClient();
     final batches = batchesFor(pageCount);
     final effective = batches.isEmpty
         ? [
@@ -112,13 +106,9 @@ class TextbookExtractor {
       String raw;
       try {
         raw = await AiService.generate(
-          cfg,
           prompt: prompt,
           pdf: pdfBytes,
           pdfName: filename,
-          json: true,
-          maxTokens: 8192,
-          client: client,
         );
       } on AiException catch (e) {
         throw AiException('Reading $label failed: ${e.message}');
@@ -172,7 +162,8 @@ class TextbookExtractor {
 
     if (pages.isEmpty) {
       throw AiException(
-          'The AI could not read any page. Check that this PDF has text (a scanned book may need a vision model such as Gemini or GPT-4.1).');
+          'The AI could not read any page. The free mode reads text only, so a '
+        'scanned book (photos of pages) cannot be read.');
     }
 
     final ordered = pages.values.toList()..sort((a, b) => a.page.compareTo(b.page));
@@ -180,8 +171,6 @@ class TextbookExtractor {
       title: title.isEmpty ? _titleFromFile(filename) : title,
       subject: subject,
       pages: ordered,
-      provider: cfg.provider.name,
-      model: cfg.model,
     );
   }
 

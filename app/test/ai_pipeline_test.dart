@@ -4,160 +4,41 @@ import 'dart:ui' show Rect;
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:textbook_video_classroom/ai/ai_client.dart';
 import 'package:textbook_video_classroom/ai/ai_config.dart';
+import 'package:textbook_video_classroom/ai/ai_exception.dart';
+import 'package:textbook_video_classroom/ai/ai_service.dart';
 import 'package:textbook_video_classroom/ai/json_utils.dart';
 import 'package:textbook_video_classroom/ai/script_designer.dart';
 import 'package:textbook_video_classroom/ai/textbook_extractor.dart';
 import 'package:textbook_video_classroom/lesson_content.dart';
 
-/// A fake transport: the request builders and response parsers are pure, so
-/// the whole AI pipeline can be tested without a key or a network.
-class FakeAi extends AiClient {
-  FakeAi(this.reply);
+/// Stands in for the free website: the pipeline above [AiService] is pure, so
+/// it can be tested end to end without a WebView, a network or a key.
+class FakeFree {
+  FakeFree(this.reply);
   final String reply;
-  final List<AiCall> seen = [];
+  final List<String> prompts = [];
+  final List<Uint8List?> pdfs = [];
 
-  @override
-  Future<String> generate(
-    AiConfig cfg, {
-    required List<AiPart> parts,
-    bool json = false,
-    int maxTokens = 4096,
-    Duration timeout = const Duration(minutes: 4),
-  }) async {
-    seen.add(AiClient.build(cfg, parts: parts, json: json, maxTokens: maxTokens));
-    return reply;
-  }
+  void install() => AiService.debugTransport = (
+        String prompt,
+        Uint8List? pdf,
+        String name,
+      ) async {
+        prompts.add(prompt);
+        pdfs.add(pdf);
+        return reply;
+      };
+
+  String get lastPrompt => prompts.isEmpty ? '' : prompts.last;
 }
 
-AiConfig cfgFor(AiProvider p, {String key = 'test-key', String? script}) =>
-    AiConfig(
-        mode: AiMode.api,
-        provider: p,
-        apiKey: key,
-        model: '',
-        scriptPrompt: script);
+AiConfig cfgFor({String? script}) => AiConfig(scriptPrompt: script);
 
 final Uint8List fakePdf = Uint8List.fromList(utf8.encode('%PDF-1.4 fake'));
 
 void main() {
-  group('request builders', () {
-    test('OpenAI uploads the PDF as input_file on /v1/responses', () {
-      final call = AiClient.build(cfgFor(AiProvider.openai), parts: [
-        AiPart.text('extract this'),
-        AiPart.pdf(fakePdf, 'book.pdf'),
-      ], json: true);
-      expect(call.url.toString(), 'https://api.openai.com/v1/responses');
-      expect(call.headers['authorization'], 'Bearer test-key');
-      final content = (call.body['input'] as List).first['content'] as List;
-      expect(content.first['type'], 'input_text');
-      expect(content.last['type'], 'input_file');
-      expect(content.last['file_data'],
-          startsWith('data:application/pdf;base64,'));
-      expect((call.body['text'] as Map)['format']['type'], 'json_object');
-    });
-
-    test('Gemini sends inline_data and the key in the query', () {
-      final call = AiClient.build(cfgFor(AiProvider.gemini), parts: [
-        AiPart.text('read'),
-        AiPart.pdf(fakePdf, 'book.pdf'),
-      ], json: true);
-      expect(call.url.toString(),
-          contains('/v1beta/models/gemini-2.5-flash:generateContent'));
-      expect(call.url.queryParameters['key'], 'test-key');
-      final parts = (call.body['contents'] as List).first['parts'] as List;
-      expect(parts.first['text'], 'read');
-      expect(parts.last['inline_data']['mime_type'], 'application/pdf');
-      expect((call.body['generationConfig'] as Map)['responseMimeType'],
-          'application/json');
-    });
-
-    test('Claude sends a base64 document block', () {
-      final call = AiClient.build(cfgFor(AiProvider.anthropic), parts: [
-        AiPart.text('read'),
-        AiPart.pdf(fakePdf, 'book.pdf'),
-      ]);
-      expect(call.url.toString(), 'https://api.anthropic.com/v1/messages');
-      expect(call.headers['x-api-key'], 'test-key');
-      expect(call.headers['anthropic-version'], isNotEmpty);
-      final content = (call.body['messages'] as List).first['content'] as List;
-      expect(content.last['type'], 'document');
-      expect(content.last['source']['media_type'], 'application/pdf');
-    });
-
-    test('a custom endpoint cannot receive a PDF', () {
-      expect(
-        () => AiClient.build(cfgFor(AiProvider.custom), parts: [
-          AiPart.pdf(fakePdf, 'book.pdf'),
-        ]),
-        throwsA(isA<AiException>()),
-      );
-    });
-
-    test('an oversized PDF is refused before the request', () {
-      final big = Uint8List(AiClient.maxPdfBytes + 1);
-      expect(
-        () => AiClient.build(cfgFor(AiProvider.openai), parts: [
-          AiPart.pdf(big, 'big.pdf'),
-        ]),
-        throwsA(isA<AiException>()),
-      );
-    });
-  });
-
-  group('response parsing', () {
-    test('OpenAI output_text', () {
-      final body = jsonEncode({
-        'output': [
-          {
-            'type': 'message',
-            'content': [
-              {'type': 'output_text', 'text': 'hello '},
-              {'type': 'output_text', 'text': 'world'},
-            ],
-          }
-        ],
-      });
-      expect(AiClient.parseResponse(AiProvider.openai, body), 'hello world');
-    });
-
-    test('Gemini candidates', () {
-      final body = jsonEncode({
-        'candidates': [
-          {
-            'content': {
-              'parts': [
-                {'text': 'hello '},
-                {'text': 'gemini'},
-              ]
-            }
-          }
-        ]
-      });
-      expect(AiClient.parseResponse(AiProvider.gemini, body), 'hello gemini');
-    });
-
-    test('Claude content blocks', () {
-      final body = jsonEncode({
-        'content': [
-          {'type': 'text', 'text': 'hello '},
-          {'type': 'text', 'text': 'claude'},
-        ]
-      });
-      expect(AiClient.parseResponse(AiProvider.anthropic, body), 'hello claude');
-    });
-
-    test('provider error messages are surfaced', () {
-      final body = jsonEncode({
-        'error': {'message': 'Incorrect API key provided'}
-      });
-      expect(
-        () => AiClient.parseResponse(AiProvider.openai, body),
-        throwsA(predicate((e) => '$e'.contains('Incorrect API key'))),
-      );
-    });
-  });
+  tearDown(() => AiService.debugTransport = null);
 
   group('json repair', () {
     test('reads an object out of a fenced reply with prose around it', () {
@@ -216,7 +97,7 @@ void main() {
     });
 
     test('merges pages from every batch with their figures', () async {
-      final fake = FakeAi(jsonEncode({
+      final fake = FakeFree(jsonEncode({
         'title': 'Our Science',
         'subject': 'science',
         'pages': [
@@ -229,32 +110,52 @@ void main() {
           }
         ]
       }));
+      fake.install();
       final res = await TextbookExtractor.extract(
         pdfBytes: fakePdf,
         filename: 'science.pdf',
         pageCount: 1,
-        cfg: cfgFor(AiProvider.gemini),
-        client: fake,
+        cfg: cfgFor(),
       );
       expect(res.title, 'Our Science');
       expect(res.subject, 'science');
       expect(res.pages.single.text, 'Plants make food.');
       expect(res.pages.single.figures.single.bbox, [0.2, 0.3, 0.8, 0.6]);
       expect(res.allFigures.length, 1);
-      expect(fake.seen.single.bodyJson, contains('inline_data'));
+      expect(fake.pdfs.single, isNotNull);
+      expect(fake.lastPrompt, contains('Pages to return: 1 to 1 of 1'));
     });
 
-    test('refuses to run without a key', () async {
+    test('a reply that is not JSON is reported as a readable error', () async {
+      FakeFree('I could not read that book, sorry.').install();
       expect(
         () => TextbookExtractor.extract(
           pdfBytes: fakePdf,
           filename: 'x.pdf',
           pageCount: 3,
-          cfg: cfgFor(AiProvider.gemini, key: ''),
-          client: FakeAi('{}'),
+          cfg: cfgFor(),
         ),
-        throwsA(isA<AiException>()),
+        throwsA(predicate((e) =>
+            e is AiException && e.message.contains('not JSON'))),
       );
+    });
+
+    test('reads a big book in batches and asks for every range', () async {
+      final fake = FakeFree(jsonEncode({
+        'title': 'Big',
+        'pages': [
+          {'page': 1, 'text': 'first', 'figures': <dynamic>[]}
+        ]
+      }));
+      fake.install();
+      await TextbookExtractor.extract(
+        pdfBytes: fakePdf,
+        filename: 'big.pdf',
+        pageCount: 25,
+        cfg: cfgFor(),
+      );
+      expect(fake.prompts.length, 3);
+      expect(fake.lastPrompt, contains('Pages to return: 25 to 25 of 25'));
     });
   });
 
@@ -267,7 +168,7 @@ void main() {
     ];
 
     test('maps AI scenes into playable scenes and crops figures', () async {
-      final fake = FakeAi(jsonEncode({
+      final fake = FakeFree(jsonEncode({
         'scenes': [
           {'kind': 'title', 'heading': 'Photosynthesis', 'narration': 'Today we learn how plants make their own food, step by step.'},
           {'kind': 'board', 'heading': 'Three things needed', 'boardText': 'Sunlight\nWater\nAir', 'narration': 'Plants need sunlight, water and air to prepare food.'},
@@ -276,8 +177,9 @@ void main() {
           {'kind': 'summary', 'heading': 'What we learnt', 'boardText': 'Plants make food\nSunlight + water + air', 'narration': 'We finished photosynthesis. Revise these three lines tonight.'},
         ]
       }));
+      fake.install();
       final scenes = await ScriptDesigner.design(
-        cfg: cfgFor(AiProvider.openai),
+        cfg: cfgFor(),
         title: 'Science',
         subject: 'science',
         language: 'en',
@@ -285,7 +187,6 @@ void main() {
         pages: [1],
         indexPages: pages,
         teacherNote: 'Explain simply',
-        client: fake,
         crop: (page, bbox, where) async =>
             '/tmp/f_${page}_${bbox == null ? where : bbox.first}.png',
       );
@@ -299,11 +200,11 @@ void main() {
       expect(quick.options.length, 3);
       expect(quick.answer, 'Sunlight');
       // The figure catalogue must reach the model.
-      expect(fake.seen.single.bodyJson, contains('Leaf cross section'));
+      expect(fake.lastPrompt, contains('Leaf cross section'));
     });
 
     test('takes a board given as a list of lines, as free models do', () async {
-      final fake = FakeAi(jsonEncode({
+      final fake = FakeFree(jsonEncode({
         'scenes': [
           {'kind': 'title', 'heading': 'Photosynthesis', 'narration': 'Today we learn how plants make their own food, step by step.'},
           {'kind': 'board', 'heading': 'What is it?', 'boardText': ['Plants make food.', 'They need sunlight.', 'Chlorophyll helps.'], 'narration': 'Photosynthesis is how a plant makes its own food from light.'},
@@ -311,8 +212,9 @@ void main() {
           {'kind': 'summary', 'heading': 'What we learnt', 'boardText': ['Plants make food.', 'Sunlight + water + air'], 'narration': 'We finished photosynthesis. Revise these lines tonight.'},
         ]
       }));
+      fake.install();
       final scenes = await ScriptDesigner.design(
-        cfg: cfgFor(AiProvider.openai),
+        cfg: cfgFor(),
         title: 'Science',
         subject: 'science',
         language: 'en',
@@ -320,7 +222,6 @@ void main() {
         pages: [1],
         indexPages: pages,
         teacherNote: '',
-        client: fake,
       );
       expect(scenes, isNotNull);
       final board = scenes!.firstWhere((s) => s.kind == 'board');
@@ -329,7 +230,7 @@ void main() {
     });
 
     test('lettered options lose their letter and the right one stays right', () async {
-      final fake = FakeAi(jsonEncode({
+      final fake = FakeFree(jsonEncode({
         'scenes': [
           {'kind': 'title', 'heading': 'Light', 'narration': 'Today we learn how plants use light to make their own food.'},
           {'kind': 'quick', 'heading': 'Quick check', 'question': 'What do plants need?', 'options': ['a) Sunlight', 'b) Moonlight', 'c) Starlight'], 'answer': 'a', 'narration': 'Try this quick question before we continue the lesson.'},
@@ -337,8 +238,9 @@ void main() {
           {'kind': 'summary', 'heading': 'What we learnt', 'boardText': 'Plants need light', 'narration': 'We finished the lesson. Revise the board once before the test.'},
         ]
       }));
+      fake.install();
       final scenes = await ScriptDesigner.design(
-        cfg: cfgFor(AiProvider.openai),
+        cfg: cfgFor(),
         title: 'Science',
         subject: 'science',
         language: 'en',
@@ -346,7 +248,6 @@ void main() {
         pages: [1],
         indexPages: pages,
         teacherNote: '',
-        client: fake,
       );
       final quick = scenes!.firstWhere((s) => s.kind == 'quick');
       expect(quick.options, ['Sunlight', 'Moonlight', 'Starlight']);
@@ -354,7 +255,7 @@ void main() {
     });
 
     test('drops scenes whose figure could not be cropped', () async {
-      final fake = FakeAi(jsonEncode({
+      final fake = FakeFree(jsonEncode({
         'scenes': [
           {'kind': 'title', 'heading': 'T', 'narration': 'A lesson that starts with a single short sentence.'},
           {'kind': 'figure', 'heading': 'F', 'page': 1, 'bbox': [0.1, 0.2, 0.9, 0.6], 'narration': 'This figure could not be cut out of the PDF.'},
@@ -363,8 +264,9 @@ void main() {
           {'kind': 'summary', 'heading': 'S', 'narration': 'We reached the end of this very short test lesson.'},
         ]
       }));
+      fake.install();
       final scenes = await ScriptDesigner.design(
-        cfg: cfgFor(AiProvider.openai),
+        cfg: cfgFor(),
         title: 'T',
         subject: 'general',
         language: 'en',
@@ -372,7 +274,6 @@ void main() {
         pages: [1],
         indexPages: pages,
         teacherNote: '',
-        client: fake,
         crop: (p, b, w) async => null,
       );
       expect(scenes, isNotNull);
@@ -380,13 +281,14 @@ void main() {
     });
 
     test('gives up (null) when the AI sends too little', () async {
-      final fake = FakeAi(jsonEncode({
+      final fake = FakeFree(jsonEncode({
         'scenes': [
           {'kind': 'title', 'heading': 'T', 'narration': 'Only one scene came back from the model.'},
         ]
       }));
+      fake.install();
       final scenes = await ScriptDesigner.design(
-        cfg: cfgFor(AiProvider.openai),
+        cfg: cfgFor(),
         title: 'T',
         subject: 'general',
         language: 'en',
@@ -394,7 +296,6 @@ void main() {
         pages: [1],
         indexPages: pages,
         teacherNote: '',
-        client: fake,
       );
       expect(scenes, isNull);
     });

@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'ai/ai_client.dart';
+import 'ai/ai_exception.dart';
 import 'ai/ai_config.dart';
 import 'ai/script_designer.dart';
 import 'ai/textbook_extractor.dart';
@@ -334,19 +335,13 @@ class DartEngine {
 
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
-      throw StateError(cfg.mode == AiMode.webview
-          ? 'The free website mode runs on Android. On this device, add your own API key in Settings → AI & Prompts.'
-          : 'Add your AI key first — Settings → AI & Prompts. The PDF is read by the AI now, not on the device.');
+      throw StateError(
+          'The free AI needs Android — this device has no WebView. Read the book on the Android app.');
     }
 
     final devicePageCount = await PdfRaster.pageCount(src.path);
 
-    onProgress?.call(
-        0,
-        1,
-        cfg.mode == AiMode.webview
-            ? 'Uploading the PDF to the free classroom AI…'
-            : 'Uploading the PDF to ${cfg.provider.label}…');
+    onProgress?.call(0, 1, 'Uploading the PDF to the free classroom AI…');
     final ExtractionResult extraction;
     try {
       extraction = await TextbookExtractor.extract(
@@ -383,7 +378,7 @@ class DartEngine {
       'page_count': pageCount,
       'source': 'ai',
       'provider': extraction.provider,
-      'model': extraction.model,
+      'model': 'free',
       'pages': pages.map((p) => p.toJson()).toList(),
     }));
 
@@ -405,7 +400,6 @@ class DartEngine {
       'state': 'active',
       'page_dir': pagesDir.path,
       'ai_provider': extraction.provider,
-      'ai_model': extraction.model,
       'figures': extraction.allFigures.length,
       'lessons': <dynamic>[],
       'completed_parts': <dynamic>[],
@@ -422,7 +416,6 @@ class DartEngine {
       'brain': brain,
       'state': 'active',
       'ai': extraction.provider,
-      'ai_model': extraction.model,
       'figures': extraction.allFigures.length,
     };
   }
@@ -443,6 +436,19 @@ class DartEngine {
   }
 
   /// Render one page on demand (reader, zoom scenes).
+  /// The uploaded book itself, so the free AI can be handed it again after a
+  /// restart (the website keeps its own copy only for one app session).
+  static Future<Uint8List?> bookBytes(String sessionId) async {
+    try {
+      final dir = await _sessionDir(sessionId);
+      final pdf = File('${dir.path}/book.pdf');
+      if (!await pdf.exists()) return null;
+      return pdf.readAsBytes();
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<String?> ensurePageImage(String sessionId, int page) async {
     final dir = await _sessionDir(sessionId);
     final out = File('${dir.path}/pages/page_$page.png');

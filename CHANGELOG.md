@@ -3,6 +3,41 @@
 Everything below is the project's own running log, newest first.
 The current architecture is described in README.md.
 
+## v0.26.0 — the paid option is gone; the app is free, full stop
+
+There is no API key, no provider, no model and no billing code left in the app.
+**Reading a textbook is free**: the public PDF-teacher website is driven inside
+the app's own WebView, with the same editable prompts.
+
+### Removed
+
+- `lib/ai/ai_client.dart` — the whole paid API client (OpenAI / Gemini /
+  Anthropic / custom endpoint, request builders, response parsers, retries,
+  18 MB upload cap, key storage in the keystore).
+- `AiProvider`, `AiMode`, `apiKey`, `model`, `baseUrl` from `AiConfig`; the
+  mode switch, provider dropdown, key field, model field and base-URL field
+  from **Settings → AI & Prompts**. That screen is now: status + prompts.
+- The "add your key" dialogs and every "switch to an API key" hint in errors,
+  docs and tests.
+
+### Changed
+
+- `AiConfig` is now just the three prompts (+ platform readiness).
+- `AiService` has one engine: `WebAiEngine`. A test seam (`debugTransport`)
+  replaces the old injectable client, so the pipeline is still tested without
+  a network.
+- `AiBrain` (summaries, Ask PDF) re-sends the book to the free AI when the app
+  session is new, so doubts work after a restart.
+- Settings → AI & Prompts shows a free-mode status card: *Free AI ready ·
+  Android WebView*, with **Test the free AI**.
+- Tests: **51** (all paid-API tests removed; extraction, script and figure
+  coverage kept through the stub).
+
+### Unchanged
+
+- The lesson video is still produced on the device (PDFium pages, measured
+  figure crops, Flutter board, system TTS).
+
 ## v0.25.0 — free website AI by default, local figure finding, APK/EXE verified
 
 **The app now reads PDFs for free.** The public PDF-teacher website is driven

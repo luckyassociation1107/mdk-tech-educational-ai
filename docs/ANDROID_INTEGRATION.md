@@ -1,17 +1,17 @@
 # Platform notes — Android & Windows
 
 Everything the classroom needs is either Dart or a plugin that supports both
-platforms. No Chaquopy, no Python, no Kotlin PDF code (removed in v0.24.0).
+platforms. No Chaquopy, no Python, no Kotlin PDF code.
 
 | Job | Android | Windows |
 |---|---|---|
-| Read the PDF | AI (uploaded file) | AI (uploaded file) |
+| Read the PDF | free AI — the website, driven in the app's WebView | not available (books already read still play) |
 | Render pages / crop figures | `pdfx` (PDFium) | `pdfx` + `dart run pdfx:install_windows` |
 | Speak | native bridge `com.mdk.textbook_video/engine` (word ranges) | `flutter_tts` (SAPI) |
 | Pick a PDF | `file_picker` | `file_picker` |
 | Save files | app documents dir | app documents dir |
 | Open update link | MethodChannel → Intent | (no-op: open the Releases page manually) |
-| Key storage | EncryptedSharedPreferences via `flutter_secure_storage` | DPAPI via `flutter_secure_storage` |
+| Vault / exam seals | EncryptedSharedPreferences via `flutter_secure_storage` | DPAPI via `flutter_secure_storage` |
 
 ## Android specifics
 
@@ -19,6 +19,10 @@ platforms. No Chaquopy, no Python, no Kotlin PDF code (removed in v0.24.0).
 and the `ttsRange` / `ttsDone` callbacks that drive word-level highlighting.
 
 ## What is not platform-parity
+
+- **Reading a new textbook is Android-only** — it needs a WebView to drive the
+  free AI. On Windows, a book that was already read (index, figures, lessons in
+  the session folder) opens and plays normally.
 
 - Word-level highlighting is Android-only (Windows speech has no range callbacks).
 - The in-app "open update" button is Android-only.

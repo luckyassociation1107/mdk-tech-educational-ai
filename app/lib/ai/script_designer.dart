@@ -1,8 +1,8 @@
 import 'dart:ui' show Rect;
 
 import '../lesson_content.dart';
-import 'ai_client.dart';
 import 'ai_config.dart';
+import 'ai_exception.dart';
 import 'ai_service.dart';
 import 'ai_prompts.dart';
 import 'json_utils.dart';
@@ -28,10 +28,8 @@ class ScriptDesigner {
     required List<int> pages,
     required List<ExtractedPage> indexPages,
     required String teacherNote,
-    AiClient? client,
     Future<String?> Function(int page, List<double>? bbox, String where)? crop,
   }) async {
-    if (!cfg.ready) return null;
     final wanted = pages.isEmpty
         ? indexPages.take(12).map((p) => p.page).toSet()
         : pages.toSet();
@@ -77,13 +75,12 @@ class ScriptDesigner {
       'figures': figCatalog,
     });
 
-    final raw = await AiService.generate(
-      cfg,
-      prompt: prompt,
-      json: true,
-      maxTokens: 6144,
-      client: client,
-    );
+    final String raw;
+    try {
+      raw = await AiService.generate(prompt: prompt);
+    } on AiException catch (e) {
+      throw AiException('Designing the lesson failed: ${e.message}');
+    }
     final obj = JsonUtils.object(raw);
     if (obj == null) return null;
     final list = obj['scenes'];

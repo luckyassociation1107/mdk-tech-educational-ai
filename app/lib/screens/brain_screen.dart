@@ -137,9 +137,11 @@ class _BrainScreenState extends State<BrainScreen> {
       _status = 'Asking the brain for a summary…';
     });
     try {
+      final book = await DartEngine.bookBytes(widget.sessionId);
       final result = await AiBrain.summarize(
         _bookText,
         level: _level,
+        pdf: book,
         cancel: cancel,
         onChunk: (c) {
           if (!mounted) return;
@@ -190,10 +192,12 @@ class _BrainScreenState extends State<BrainScreen> {
       _status = 'Asking: “$q”';
     });
     try {
+      final book = await DartEngine.bookBytes(widget.sessionId);
       final answer = await AiBrain.ask(
         pdfText: _bookText,
         question: q,
         summary: _summary.isEmpty ? null : _summary,
+        pdf: book,
         cancel: cancel,
         onChunk: (c) {
           if (!mounted) return;

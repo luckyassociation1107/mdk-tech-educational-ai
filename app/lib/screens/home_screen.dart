@@ -118,26 +118,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final path = picked?.files.single.path;
     if (path == null) return;
 
-    // The PDF is read by the teacher's own AI now — without a key there is
-    // nothing to read it with, so say that plainly instead of failing later.
+    // The PDF is read by the free website AI — that needs an Android WebView,
+    // so say it plainly instead of failing later.
     final cfg = AiConfig.current;
     if (!cfg.ready) {
       final go = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.card,
-          title: Text(cfg.mode == AiMode.webview
-              ? 'Free mode needs Android'
-              : 'Add your AI key first'),
+          title: const Text('The free AI needs Android'),
           content: Text(
-            cfg.mode == AiMode.webview
-                ? 'The free mode drives the classroom website inside the app, and '
-                    'that needs Android WebView. On this device, switch to your own '
-                    'API key in AI & Prompts.'
-                : 'This app no longer reads PDFs on the device. The book is sent to '
-                    'your own AI account, which extracts the text, says where the '
-                    'figures are and designs the lesson. Paste a key once in '
-                    'AI & Prompts — it is kept in the device keystore.',
+            'The app reads a textbook by driving the free PDF-teacher website '
+            'inside its own WebView, and that needs Android. This device cannot '
+            'open one, so a book cannot be read here.',
             style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
           ),
           actions: [
@@ -158,9 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() => _adding = true);
-    _stage = ValueNotifier(cfg.mode == AiMode.webview
-        ? 'Opening the free classroom AI…'
-        : 'Uploading the PDF to ${cfg.provider.label}…');
+    _stage = ValueNotifier('Opening the free classroom AI…');
     _showStageDialog();
     try {
       final s = await widget.gateway.createSession(
@@ -745,10 +736,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.green.withOpacity(0.16),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Text(
-                                  AiConfig.current.mode == AiMode.webview
-                                      ? 'free'
-                                      : 'online',
+                              child: Text('free',
                                   style: TextStyle(
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.w900,

@@ -1,9 +1,11 @@
-import 'ai_client.dart';
+import 'dart:typed_data';
+
 import 'ai_config.dart';
+import 'ai_exception.dart';
 import 'ai_prompts.dart';
 import 'ai_service.dart';
 
-/// Raised for anything the teacher can fix (key, quota, internet).
+/// Raised for anything the teacher can fix (internet, the website, the PDF).
 class BrainException implements Exception {
   final String message;
   BrainException(this.message);
@@ -17,12 +19,11 @@ class BrainCancel {
   void cancel() => cancelled = true;
 }
 
-/// Summary and doubt-clearing on top of [AiClient].
+/// Summary and doubt-clearing on top of the free website AI.
 ///
-/// v0.23 called a free endpoint that belonged to somebody else's website.
-/// Since v0.24 every call goes to the teacher's own account — the same key,
-/// provider and prompts that read the PDF — so there is nothing borrowed,
-/// nothing spoofed and nothing that can disappear overnight.
+/// Every call goes through [AiService], which drives the public PDF-teacher
+/// website inside the app's WebView — the same session, the same prompts and
+/// the same book that read the PDF. No key, no cost.
 class AiBrain {
   /// Trim huge books so a summary request stays inside the context window.
   static const int maxTextChars = 45000;
@@ -51,7 +52,8 @@ class AiBrain {
     return lastStop > maxTextChars * 0.7 ? cut.substring(0, lastStop + 1) : cut;
   }
 
-  /// True when a key is configured — the UI says "online" only then.
+  /// True when this device can host the free mode — the UI says "online"
+  /// only then.
   static Future<bool> reachable() async {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     return cfg.ready;
@@ -60,6 +62,8 @@ class AiBrain {
   static Future<String> summarize(
     String pdfText, {
     int level = 1,
+    Uint8List? pdf,
+    String pdfName = 'textbook.pdf',
     void Function(String chunk)? onChunk,
     BrainCancel? cancel,
   }) async {
@@ -70,14 +74,14 @@ class AiBrain {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
       throw BrainException(
-          'The AI is not set up yet. Open Settings → AI & Prompts.');
+          'The free AI needs Android — this device has no WebView.');
     }
     final prompt = '${levelInstruction(level)}\n\n$classroomHint\n\n'
         'Summarise ONLY the textbook text below. Do not add outside facts.\n'
         'Reply with the summary only.\n\n'
         '---8<---\n${clip(pdfText)}\n---8<---';
     try {
-      final out = await AiService.generate(cfg, prompt: prompt, maxTokens: 3000);
+      final out = await AiService.generate(prompt: prompt, pdf: pdf, pdfName: pdfName);
       if (cancel?.cancelled == true) return '';
       onChunk?.call(out);
       return out.trim();
@@ -90,6 +94,8 @@ class AiBrain {
     required String pdfText,
     required String question,
     String? summary,
+    Uint8List? pdf,
+    String pdfName = 'textbook.pdf',
     void Function(String chunk)? onChunk,
     BrainCancel? cancel,
   }) async {
@@ -99,7 +105,7 @@ class AiBrain {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
       throw BrainException(
-          'The AI is not set up yet. Open Settings → AI & Prompts.');
+          'The free AI needs Android — this device has no WebView.');
     }
     final prompt = AiPrompts.fill(cfg.askPrompt, {
       'title': 'this textbook',
@@ -111,7 +117,7 @@ class AiBrain {
           'Textbook text:\n$pdfText'),
     });
     try {
-      final out = await AiService.generate(cfg, prompt: prompt, maxTokens: 2000);
+      final out = await AiService.generate(prompt: prompt, pdf: pdf, pdfName: pdfName);
       if (cancel?.cancelled == true) return '';
       onChunk?.call(out);
       return out.trim();

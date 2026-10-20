@@ -1,4 +1,4 @@
-# Architecture (v0.24.0)
+# Architecture (v0.26.0 — free only)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -6,17 +6,14 @@
 │  Home · Lesson player · Reader · Exams · Vault · Theme Studio         │
 └───────────────┬──────────────────────────────────────────────────────┘
                 │
-      ┌─────────▼─────────┐
-      │ AiService         │  picks the mode from AiConfig
-      ├───────────────────┼──────────────────────────────────────────┐
-      │ AiMode.webview    │ AiMode.api                               │
-      │ WebAiEngine       │ AiClient (OpenAI/Gemini/Claude/custom)   │
-      │ drives the public │ PDF as a file, JSON mode, retries        │
-      │ site in a WebView │                                          │
-      └─────────┬─────────┴───────────────┬──────────────────────────┘
-                │                         │
-                └──────────┬──────────────┘
-                           ▼
+                      ┌───────────────────────┐
+                      │ AiService (free only) │
+                      │ WebAiEngine: drives   │
+                      │ the public PDF-teacher│
+                      │ site in the app's own │
+                      │ Android WebView       │
+                      └───────────┬───────────┘
+                                  ▼
              ┌───────────────────────────┐   ┌────────────────────────┐
              │ TextbookExtractor         │   │ PdfRaster (PDFium)     │
              │ page text + caption/where │   │ page PNG, box → crop   │
@@ -54,9 +51,9 @@
 5. **Everything is cached per session.** `book.pdf`, `index.json`,
    `scenes[part]`, `pages/*.png`, `figures/*.png` — a generated lesson replays
    offline, byte for byte.
-6. **Two doors, one pipeline.** `AiService` is the only way AI is reached:
-   the free WebView automation or the teacher's key. No endpoint, key or model
-   name is hardcoded anywhere else.
+6. **One door, one free engine.** `AiService` is the only way AI is reached,
+   and behind it there is exactly one engine: the free WebView automation. No
+   endpoint, key, provider or model name exists anywhere in the codebase.
 7. **Failures degrade, never block.** No AI script → the on-device scene builder
    composes a lesson from the AI-extracted text. No crop → the board explains
    the figure instead. No TTS → captions.
@@ -75,13 +72,15 @@
 
 Session metadata lives in `classroom/sessions.json` (single index file).
 
-## Providers
+## The free engine
 
-| Provider | Endpoint | PDF payload |
-|---|---|---|
-| OpenAI | `POST /v1/responses` | `input_file` with base64 `file_data` |
-| Gemini | `POST /v1beta/models/{model}:generateContent` | `inline_data` (`application/pdf`) |
-| Anthropic | `POST /v1/messages` | `document` block, base64 |
-| Custom | `POST /v1/chat/completions` | not supported (text only) |
+| Step | What happens |
+|---|---|
+| open | `WebViewController` loads the public PDF-teacher site once per app run |
+| upload | the PDF is built into a `File` and pushed into `input[type=file]` with a `DataTransfer` + `change` event — no native picker |
+| transfer | base64 in 900 KB chunks into `window.__mdkPdf`; prompts over 120 KB in 120 KB chunks — a 20 MB book cannot blow up `evaluateJavascript` |
+| ask | the prompt goes into `textarea[placeholder="Ask PDF"]` through the native value setter, then the send button is clicked (retried while React enables it) |
+| read | the answer is the last `.prose-sm/.prose-neutral` block; it is considered finished after two stable polls (~2 s) |
+| recovery | `<dialog class="modal">` popups are closed before every step; a different book reloads the site; 4-minute timeout per call |
 
-18 MB upload cap, one retry on 429/5xx, friendly errors for 401/402/403/404/413.
+There is no API, no endpoint and no model name in the app — only this page.

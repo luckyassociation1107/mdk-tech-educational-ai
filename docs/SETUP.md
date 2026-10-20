@@ -1,25 +1,17 @@
 # Setup
 
-## 1. Choose the AI
+## 1. Nothing to configure
 
-**Free (default)** — nothing to configure. The app drives the public
-PDF-teacher website inside its own WebView; the PDF is uploaded there and the
-prompts are typed into its chat. Android only.
+There is **no key, no account and no payment** anywhere in this app. Reading a
+textbook is done by the public PDF-teacher website, driven inside the app's own
+WebView: the PDF is uploaded there and the prompts are typed into its chat.
 
-**Your own key** — needed on Windows, and better for scans (a vision model can
-see the page images). Reading a textbook then requires a model that accepts a
-PDF file.
+Open **Settings → AI & Prompts → Test the free AI**. It should say the site is
+up and waiting for a PDF. Everything on that screen is free.
 
-| Provider | Where to get a key | Suggested model |
-|---|---|---|
-| Google Gemini | aistudio.google.com → API key | `gemini-2.5-flash` |
-| OpenAI | platform.openai.com → API keys | `gpt-4.1-mini` |
-| Anthropic | console.anthropic.com | `claude-sonnet-4-5` |
-| Custom | your own OpenAI-compatible server | any text model (no PDF upload) |
-
-In the app: **Settings → AI & Prompts → How to reach the AI → My own API key →
-paste key → Test connection → Save.** In free mode just press **Test
-connection** — it should answer `READY`.
+Reading a book needs **Android** (a WebView). Windows can open and play books
+that were already read on the phone/emulator — index, figures and lessons are
+cached on the device.
 
 ## 2. Run on Android
 
@@ -49,7 +41,7 @@ bundled PDFium matches the plugin. Without it, page rendering fails on Windows
 ```bash
 cd app
 flutter analyze      # 0 errors
-flutter test         # 59 tests
+flutter test         # 51 tests
 ```
 
 The AI tests use a fake transport — no key or network is needed.

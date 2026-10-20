@@ -6,7 +6,7 @@ import 'package:flutter/material.dart' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-import 'ai_client.dart';
+import 'ai_exception.dart';
 
 /// Free mode: drives the public PDF-teacher website inside the app's own
 /// WebView — no account, no API key, no cost.
@@ -44,11 +44,20 @@ class WebAiEngine {
 
   bool get supported => !kIsWeb && Platform.isAndroid;
 
+  /// Throws a teacher-readable error on a platform that cannot host the
+  /// free mode (Windows, web, tests).
+  void assertSupported() {
+    if (supported) return;
+    throw AiException(
+        'The free AI needs Android — this device has no WebView. Use the '
+        'Android app to read a textbook.');
+  }
+
   WebViewController get controller {
     final c = _controller;
     if (c == null) {
       throw AiException(
-          'The free website mode needs the WebView panel. Open Settings → AI & Prompts and try again.');
+          'The free AI needs the WebView panel. Open Settings → AI & Prompts and try again.');
     }
     return c;
   }
@@ -86,10 +95,7 @@ class WebAiEngine {
     required String pdfName,
     required Duration timeout,
   }) async {
-    if (!supported) {
-      throw AiException(
-          'The free website mode runs on Android. On Windows, add your own API key instead.');
-    }
+    assertSupported();
     busy.value = true;
     try {
       await _openSite();
@@ -119,7 +125,7 @@ class WebAiEngine {
     if (!ok) {
       _loaded = false;
       throw AiException(
-          'The free website did not load. Check your internet (or use your own API key in Settings).');
+          'The free website did not load. Check your internet and try again.');
     }
   }
 
@@ -188,7 +194,7 @@ class WebAiEngine {
 
     if (res.toString() != 'ok') {
       throw AiException(
-          'The free website did not accept the PDF (${res.toString()}). Try again, or use your own API key.');
+          'The free website did not accept the PDF (${res.toString()}). Try again.');
     }
 
     // The site extracts the text in the browser itself; the "Ask PDF" box
@@ -201,7 +207,8 @@ class WebAiEngine {
     });
     if (!ready) {
       throw AiException(
-          'The free website is still reading this PDF. If it is a scan, it may not be able to. Try a text PDF or your own API key.');
+          'The free website is still reading this PDF. If it is a scan, it may '
+          'take longer — wait and try again.');
     }
     _pdfSent = true;
     _pdfFingerprint = fingerprint;
@@ -263,7 +270,7 @@ class WebAiEngine {
     }
     if (sent != 'sent') {
       throw AiException(
-          'The free website did not enable its send button. Try again, or use your own API key.');
+          'The free website did not enable its send button. Try again.');
     }
 
     // Wait for a new answer, then for it to stop growing.
@@ -289,7 +296,7 @@ class WebAiEngine {
     }
     if (sawNew && last.isNotEmpty) return last;
     throw AiException(
-        'The free AI did not answer in time. Try again, or add your own API key in Settings.');
+        'The free AI did not answer in time. Try again.');
   }
 
   // ----------------------------------------------------------------- utils
@@ -336,7 +343,7 @@ class WebAiEngine {
       }
       return r;
     } catch (e) {
-      throw AiException('The free website could not be driven ($e). Use your own API key instead.');
+      throw AiException('The free website could not be driven ($e). Try again.');
     }
   }
 
@@ -372,10 +379,7 @@ class WebAiEngine {
   /// its Ask box once a book is in), so the check is "the site is up and
   /// waiting for a PDF".
   Future<String> selfTest() async {
-    if (!supported) {
-      throw AiException(
-          'Free website mode runs on Android only. On Windows, switch to your own API key.');
-    }
+    assertSupported();
     busy.value = true;
     stage.value = 'Checking the free website…';
     try {
@@ -383,7 +387,8 @@ class WebAiEngine {
       final s = await _state();
       if (!s.hasFile && !s.hasAsk) {
         throw AiException(
-            'The free website opened but its upload box is missing. It may have changed — use your own API key.');
+            'The free website opened but its upload box is missing. It may have '
+            'changed; try again later.');
       }
       return 'READY';
     } finally {
