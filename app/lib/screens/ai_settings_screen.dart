@@ -194,6 +194,10 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                     'No key, no account, no cost. Drives the public PDF-teacher '
                         'website inside the app (Android).',
                     Icons.credit_card_off_rounded,
+                    note: WebAiEngine.instance.supported
+                        ? null
+                        : 'Not available on this device — Windows has no '
+                            'WebView. Use an API key here.',
                   ),
                   const SizedBox(height: 8),
                   _modeTile(
@@ -345,7 +349,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     );
   }
 
-  Widget _modeTile(AiMode mode, String title, String help, IconData icon) {
+  Widget _modeTile(AiMode mode, String title, String help, IconData icon,
+      {String? note}) {
     final on = _cfg.mode == mode;
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -378,6 +383,15 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
               Text(help,
                   style: TextStyle(
                       color: AppColors.muted, fontSize: 11, height: 1.4)),
+              if (note != null) ...[
+                const SizedBox(height: 5),
+                Text(note,
+                    style: TextStyle(
+                        color: AppColors.amber,
+                        fontSize: 10.5,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700)),
+              ],
             ]),
           ),
           if (on)

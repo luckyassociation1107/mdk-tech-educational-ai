@@ -302,6 +302,57 @@ void main() {
       expect(fake.seen.single.bodyJson, contains('Leaf cross section'));
     });
 
+    test('takes a board given as a list of lines, as free models do', () async {
+      final fake = FakeAi(jsonEncode({
+        'scenes': [
+          {'kind': 'title', 'heading': 'Photosynthesis', 'narration': 'Today we learn how plants make their own food, step by step.'},
+          {'kind': 'board', 'heading': 'What is it?', 'boardText': ['Plants make food.', 'They need sunlight.', 'Chlorophyll helps.'], 'narration': 'Photosynthesis is how a plant makes its own food from light.'},
+          {'kind': 'daily', 'heading': 'In daily life', 'narration': 'Every tree outside your window is doing this right now, all day long.'},
+          {'kind': 'summary', 'heading': 'What we learnt', 'boardText': ['Plants make food.', 'Sunlight + water + air'], 'narration': 'We finished photosynthesis. Revise these lines tonight.'},
+        ]
+      }));
+      final scenes = await ScriptDesigner.design(
+        cfg: cfgFor(AiProvider.openai),
+        title: 'Science',
+        subject: 'science',
+        language: 'en',
+        partNumber: 1,
+        pages: [1],
+        indexPages: pages,
+        teacherNote: '',
+        client: fake,
+      );
+      expect(scenes, isNotNull);
+      final board = scenes!.firstWhere((s) => s.kind == 'board');
+      expect(board.boardText, 'Plants make food.\nThey need sunlight.\nChlorophyll helps.');
+      expect(board.boardText, isNot(contains('[')));
+    });
+
+    test('lettered options lose their letter and the right one stays right', () async {
+      final fake = FakeAi(jsonEncode({
+        'scenes': [
+          {'kind': 'title', 'heading': 'Light', 'narration': 'Today we learn how plants use light to make their own food.'},
+          {'kind': 'quick', 'heading': 'Quick check', 'question': 'What do plants need?', 'options': ['a) Sunlight', 'b) Moonlight', 'c) Starlight'], 'answer': 'a', 'narration': 'Try this quick question before we continue the lesson.'},
+          {'kind': 'board', 'heading': 'Light', 'boardText': 'Plants need light', 'narration': 'Light is the fuel. Without it the plant cannot make its food.'},
+          {'kind': 'summary', 'heading': 'What we learnt', 'boardText': 'Plants need light', 'narration': 'We finished the lesson. Revise the board once before the test.'},
+        ]
+      }));
+      final scenes = await ScriptDesigner.design(
+        cfg: cfgFor(AiProvider.openai),
+        title: 'Science',
+        subject: 'science',
+        language: 'en',
+        partNumber: 1,
+        pages: [1],
+        indexPages: pages,
+        teacherNote: '',
+        client: fake,
+      );
+      final quick = scenes!.firstWhere((s) => s.kind == 'quick');
+      expect(quick.options, ['Sunlight', 'Moonlight', 'Starlight']);
+      expect(quick.answer, 'Sunlight');
+    });
+
     test('drops scenes whose figure could not be cropped', () async {
       final fake = FakeAi(jsonEncode({
         'scenes': [

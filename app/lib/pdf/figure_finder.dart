@@ -8,7 +8,11 @@ class FigureBox {
   final double top;
   final double right;
   final double bottom;
-  const FigureBox(this.left, this.top, this.right, this.bottom);
+  /// True when the blob carries colour — a chart or photo rather than a
+  /// column of grey text that happened to look dense.
+  final bool coloured;
+  const FigureBox(this.left, this.top, this.right, this.bottom,
+      {this.coloured = false});
 
   double get width => right - left;
   double get height => bottom - top;
@@ -144,7 +148,8 @@ class FigureFinder {
       final top = miny / rows;
       final right = (maxx + 1) / cols;
       final bottom = (maxy + 1) / rows;
-      final box = FigureBox(left, top, right, bottom);
+      final box = FigureBox(left, top, right, bottom,
+          coloured: count > 0 && colourCells > count * 0.12);
 
       // Reject text bands: wide, thin, mostly empty.
       final fill = count / (cols * rows);
@@ -153,6 +158,7 @@ class FigureFinder {
       if (box.width > 0.98 && box.height < 0.08) continue; // header/footer rule
       if (fill < 0.055) continue; // scattered artefacts
       if (colourCells == 0 && box.height < 0.10) continue; // a bold title
+      if (colourCells == 0 && box.area > 0.5) continue; // a grey text column
       boxes.add(box);
     }
 
@@ -170,8 +176,14 @@ class FigureFinder {
     if (boxes.isEmpty) return null;
     final band = _bandFor(where);
     if (band != null) {
-      final inBand = boxes.where((b) => b.centerY >= band.$1 && b.centerY <= band.$2).toList()
-        ..sort((a, b) => b.area.compareTo(a.area));
+      final inBand = boxes
+          .where((b) => b.centerY >= band.$1 && b.centerY <= band.$2)
+          .toList()
+        ..sort((a, b) {
+          // A coloured blob beats a grey one; then the bigger one wins.
+          if (a.coloured != b.coloured) return a.coloured ? -1 : 1;
+          return b.area.compareTo(a.area);
+        });
       if (inBand.isNotEmpty) return inBand.first;
     }
     if (hint != null && hint.length == 4) {

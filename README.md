@@ -102,7 +102,7 @@ git clone https://github.com/luckyassociation1107/mdk-tech-educational-ai
 cd mdk-tech-educational-ai/app
 flutter pub get
 flutter analyze        # 0 errors
-flutter test           # 56 tests
+flutter test           # 59 tests
 flutter run            # Android phone / emulator
 ```
 
@@ -135,10 +135,10 @@ docs/            architecture, setup, platforms, troubleshooting
 
 ## Testing
 
-`flutter test` runs 56 tests: 24 for the AI pipeline (request bodies for all
+`flutter test` runs 59 tests: 26 for the AI pipeline (request bodies for all
 four providers, response parsing, JSON repair, bbox normalisation, batched
-extraction, script validation, crop fallbacks) and 8 for the local figure
-finder (synthetic pages with text lines, coloured figures and line drawings).
+extraction, script validation, crop fallbacks) and 9 for the local figure
+finder (synthetic pages with text lines, coloured figures, line drawings, and a text column that must lose to a coloured figure).
 `flutter analyze` reports **0 errors**.
 
 ## Honest limits

@@ -70,6 +70,19 @@ class JsonUtils {
 
   static String str(dynamic v, {String fallback = ''}) {
     if (v == null) return fallback;
+    // Free models often return a board as a list of lines instead of one
+    // string; joining keeps it readable instead of printing the brackets.
+    if (v is List) {
+      final lines = v
+          .map((e) => e is String ? e : e is Map ? e.values.join(' ') : '$e')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty);
+      return lines.join('\n').trim();
+    }
+    if (v is Map) {
+      final inner = v['text'] ?? v['value'] ?? v['lines'];
+      if (inner != null) return str(inner);
+    }
     final s = v is String ? v : '$v';
     return s.trim();
   }

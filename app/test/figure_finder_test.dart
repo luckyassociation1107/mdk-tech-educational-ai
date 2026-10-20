@@ -121,6 +121,36 @@ void main() {
       expect(FigureFinder.choose(const []), isNull);
     });
 
+    test('a coloured figure beats a big grey text column in the same band', () {
+      // A page dense with dark text on the left half, one green figure on the
+      // right — the column is bigger, the figure is what the AI meant.
+      final w = 300, h = 420;
+      final px = page(figX0: 0, figY0: 0, figX1: 0, figY1: 0);
+      for (var y = 100; y < 330; y++) {
+        for (var x = 20; x < 150; x++) {
+          if ((y ~/ 6) % 3 != 0) {
+            final i = (y * w + x) * 4;
+            px[i] = 35;
+            px[i + 1] = 35;
+            px[i + 2] = 35;
+          }
+        }
+      }
+      for (var y = 140; y < 290; y++) {
+        for (var x = 175; x < 285; x++) {
+          final i = (y * w + x) * 4;
+          px[i] = 40;
+          px[i + 1] = 150;
+          px[i + 2] = 70;
+        }
+      }
+      final boxes = FigureFinder.detect(px, w, h);
+      expect(boxes, isNotEmpty);
+      final chosen = FigureFinder.choose(boxes, where: 'middle')!;
+      expect(chosen.coloured, isTrue);
+      expect(chosen.left, greaterThan(0.5));
+    });
+
     test('padding stays inside the page', () {
       final p = FigureFinder.pad(const FigureBox(0.0, 0.02, 0.99, 0.98));
       expect(p.left, greaterThanOrEqualTo(0.0));

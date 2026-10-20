@@ -116,6 +116,40 @@ class ScriptDesigner {
     return scenes;
   }
 
+  /// Quick-check options come back in several shapes from real models:
+  /// plain `["Sunlight", …]` with `answer: "Sunlight"`, or lettered
+  /// `["a) Sunlight", "b) Moonlight"]` with `answer: "a"`. Neither should
+  /// show the letter twice or mark the wrong chip right.
+  static ({List<String> options, String answer}) _answerFor(
+      String answer, List<String> options) {
+    final prefix = RegExp(r'^\(?([a-dA-D1-4])\s*[.):\-]\s+');
+    var opts = options;
+    var key = answer.trim();
+
+    if (opts.every((o) => prefix.hasMatch(o))) {
+      final keys = opts
+          .map((o) => prefix.firstMatch(o)!.group(1)!.toLowerCase())
+          .toList();
+      final wanted = key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+      final at = keys.indexOf(wanted);
+      opts = opts.map((o) => o.replaceFirst(prefix, '').trim()).toList();
+      if (at >= 0) return (options: opts, answer: opts[at]);
+    }
+
+    if (opts.contains(key)) return (options: opts, answer: key);
+
+    final lower = key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    if (lower.isNotEmpty) {
+      for (final o in opts) {
+        final ol = o.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+        if (ol == lower || ol.contains(lower)) {
+          return (options: opts, answer: o);
+        }
+      }
+    }
+    return (options: opts, answer: opts.first);
+  }
+
   static Future<LessonScene?> _scene(
     Map raw,
     Future<String?> Function(int page, List<double>? bbox, String where)? crop,
@@ -148,14 +182,16 @@ class ScriptDesigner {
             explain: narration);
 
       case 'quick':
-        final options = ((raw['options'] as List?) ?? const [])
+        var options = ((raw['options'] as List?) ?? const [])
             .map((o) => JsonUtils.str(o))
             .where((o) => o.isNotEmpty)
             .take(4)
             .toList();
         if (options.length < 2) return null;
         var answer = JsonUtils.str(raw['answer']);
-        if (!options.contains(answer)) answer = options.first;
+        final fixed = _answerFor(answer, options);
+        options = fixed.options;
+        answer = fixed.answer;
         return LessonScene('quick', heading.isEmpty ? 'Quick check' : heading,
             narration,
             options: options,

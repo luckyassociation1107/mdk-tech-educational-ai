@@ -123,20 +123,37 @@ class WebAiEngine {
     }
   }
 
+  /// The site keeps an "Errors" modal in the DOM as a `<dialog class="modal">`
+  /// and opens it when something goes wrong; while it is open it covers the
+  /// page and swallows clicks, so every step starts by closing it.
   Future<void> _dismissDialogs() async {
-    await _js("""(() => {
-      const ok = [...document.querySelectorAll('[role=dialog] button')]
-        .find(b => /ok|close/i.test((b.innerText||'').trim()));
-      if (ok) { ok.click(); return 'closed'; }
-      return 'none';
+    await _js(r"""(() => {
+      let closed = 0;
+      for (const d of document.querySelectorAll('dialog')) {
+        const shown = d.open || getComputedStyle(d).opacity !== '0';
+        if (!shown) continue;
+        const btn = [...d.querySelectorAll('button')]
+          .find(b => /^(ok|close|got it|dismiss)$/i.test((b.innerText || '').trim()));
+        if (btn) btn.click();
+        try { d.close(); } catch (e) {}
+        closed++;
+      }
+      return closed;
     })()""");
   }
 
   // ---------------------------------------------------------------- upload
 
   Future<void> _upload(List<int> bytes, String name) async {
-    final fingerprint = '${bytes.length}:$name';
+    final fingerprint = '${bytes.length}:${_hash(bytes)}:$name';
     if (_pdfSent && _pdfFingerprint == fingerprint) return;
+    if (_pdfSent) {
+      // A different book: the old conversation must not leak into it.
+      _loaded = false;
+      _pdfSent = false;
+      _pdfFingerprint = '';
+      await _openSite();
+    }
 
     stage.value = 'Uploading the PDF to the free AI…';
     await _dismissDialogs();
@@ -174,8 +191,11 @@ class WebAiEngine {
           'The free website did not accept the PDF (${res.toString()}). Try again, or use your own API key.');
     }
 
-    // The site extracts the text in the browser; wait for the Ask box.
-    final ready = await _waitFor(const Duration(seconds: 90), () async {
+    // The site extracts the text in the browser itself; the "Ask PDF" box
+    // only exists once that is done, so it is the ready signal.
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    await _dismissDialogs();
+    final ready = await _waitFor(const Duration(seconds: 120), () async {
       final s = await _state();
       return s.hasAsk;
     });
@@ -223,17 +243,26 @@ class WebAiEngine {
       })()""");
     }
 
-    final sent = await _js("""(() => {
-      const ta = document.querySelector('textarea[placeholder="Ask PDF"]');
-      const box = ta.closest('div');
-      let btns = [...box.querySelectorAll('button.btn-square')].filter(b => !b.disabled);
-      if (!btns.length) btns = [...document.querySelectorAll('button.btn-square')].filter(b => !b.disabled);
-      if (!btns.length) return 'no-send';
-      btns[btns.length - 1].click();
-      return 'sent';
-    })()""");
-    if (sent.toString() == 'no-send') {
-      throw AiException('The free website did not enable its send button.');
+    // React flips the send button from disabled to enabled one frame after the
+    // input event, so give it a few tries instead of racing it.
+    var sent = 'no-send';
+    for (var i = 0; i < 12; i++) {
+      sent = (await _js("""(() => {
+        const ta = document.querySelector('textarea[placeholder="Ask PDF"]');
+        if (!ta) return 'no-send';
+        const box = ta.closest('div');
+        let btns = [...box.querySelectorAll('button.btn-square')].filter(b => !b.disabled);
+        if (!btns.length) btns = [...document.querySelectorAll('button.btn-square')].filter(b => !b.disabled);
+        if (!btns.length) return 'no-send';
+        btns[btns.length - 1].click();
+        return 'sent';
+      })()""")).toString();
+      if (sent == 'sent') break;
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+    if (sent != 'sent') {
+      throw AiException(
+          'The free website did not enable its send button. Try again, or use your own API key.');
     }
 
     // Wait for a new answer, then for it to stop growing.
@@ -244,7 +273,7 @@ class WebAiEngine {
     while (DateTime.now().isBefore(deadline)) {
       await Future<void>.delayed(const Duration(milliseconds: 900));
       final s = await _state();
-      if (s.answers > before.answers) sawNew = true;
+      if (s.answers > before.answers || s.last != before.last) sawNew = true;
       final text = s.last.replaceAll('\r', '').trim();
       if (sawNew && text.isNotEmpty) {
         if (text == last) {
@@ -257,7 +286,7 @@ class WebAiEngine {
         stage.value = 'The free AI is answering… ${text.length} chars';
       }
     }
-    if (last.isNotEmpty) return last;
+    if (sawNew && last.isNotEmpty) return last;
     throw AiException(
         'The free AI did not answer in time. Try again, or add your own API key in Settings.');
   }
@@ -308,6 +337,23 @@ class WebAiEngine {
     } catch (e) {
       throw AiException('The free website could not be driven ($e). Use your own API key instead.');
     }
+  }
+
+  static int _hash(List<int> bytes) {
+    var h = 0x811c9dc5;
+    void mix(int b) {
+      h ^= b;
+      h = (h * 0x01000193) & 0xffffffff;
+    }
+
+    mix(bytes.length & 0xff);
+    mix((bytes.length >> 8) & 0xff);
+    mix((bytes.length >> 16) & 0xff);
+    final step = bytes.length <= 4096 ? 1 : bytes.length ~/ 4096;
+    for (var i = 0; i < bytes.length; i += step) {
+      mix(bytes[i]);
+    }
+    return h;
   }
 
   Future<bool> _waitFor(Duration limit, Future<bool> Function() check) async {

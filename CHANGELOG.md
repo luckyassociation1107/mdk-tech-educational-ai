@@ -26,7 +26,7 @@ key, no account, no cost.
   WebView.
 - **Scene parser hardened** for what the free model actually returns (mangled
   keys, missing `kind`, prose around JSON, trailing commas).
-- Tests: **56** (24 AI pipeline + 8 figure finder + vault + UI), `flutter
+- Tests: **59** (26 AI pipeline + 9 figure finder + vault + UI), `flutter
   analyze` **0 errors**; Android APK and Windows EXE built green in CI.
 
 ### What v0.24.0 also removed
