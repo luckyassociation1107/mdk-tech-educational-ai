@@ -376,7 +376,7 @@ class _BrainWebViewScreenState extends State<BrainWebViewScreen> {
               if (!_supported) ...[
                 const SizedBox(height: 10),
                 Text(
-                    'The website brain runs in the Android app. On Windows, keep using the on-device brain.',
+                    'The website brain needs an in-app browser (Android WebView / Edge WebView2). This device has none — use the on-device brain.',
                     style: TextStyle(
                         color: AppColors.amber, fontSize: 12.5, height: 1.45)),
               ],

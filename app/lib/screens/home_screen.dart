@@ -117,19 +117,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final path = picked?.files.single.path;
     if (path == null) return;
 
-    // The PDF is read by the free website AI — that needs an Android WebView,
-    // so say it plainly instead of failing later.
+    // The PDF is read by the free website AI — that needs an in-app browser
+    // (Android WebView / Edge WebView2), so say it plainly instead of failing
+    // later. On Android and Windows this never fires.
     final cfg = AiConfig.current;
     if (!cfg.ready) {
       final go = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.card,
-          title: const Text('The free AI needs Android'),
+          title: const Text('The free AI needs a WebView'),
           content: Text(
             'The app reads a textbook by driving the free PDF-teacher website '
-            'inside its own WebView, and that needs Android. This device cannot '
-            'open one, so a book cannot be read here.',
+            'inside its own in-app browser — Android WebView, or Microsoft Edge '
+            'WebView2 on Windows. This device has neither, so a book cannot be '
+            'read here.',
             style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
           ),
           actions: [

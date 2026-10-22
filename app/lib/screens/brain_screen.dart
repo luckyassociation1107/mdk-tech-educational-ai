@@ -268,7 +268,7 @@ class _BrainScreenState extends State<BrainScreen> {
             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
         actions: [
           IconButton(
-            tooltip: 'Website mode (Android)',
+            tooltip: 'Website mode (Android / Windows)',
             onPressed: _loading
                 ? null
                 : () async {

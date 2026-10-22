@@ -74,7 +74,8 @@ class AiBrain {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
       throw BrainException(
-          'The free AI needs Android — this device has no WebView.');
+          'The free AI needs an in-app browser (Android WebView / Edge '
+          'WebView2). This device has none.');
     }
     final prompt = '${levelInstruction(level)}\n\n$classroomHint\n\n'
         'Summarise ONLY the textbook text below. Do not add outside facts.\n'
@@ -105,7 +106,8 @@ class AiBrain {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
       throw BrainException(
-          'The free AI needs Android — this device has no WebView.');
+          'The free AI needs an in-app browser (Android WebView / Edge '
+          'WebView2). This device has none.');
     }
     final prompt = AiPrompts.fill(cfg.askPrompt, {
       'title': 'this textbook',

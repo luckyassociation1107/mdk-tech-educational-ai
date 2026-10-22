@@ -336,7 +336,8 @@ class DartEngine {
     final cfg = AiConfig.current.ready ? AiConfig.current : await AiConfig.load();
     if (!cfg.ready) {
       throw StateError(
-          'The free AI needs Android — this device has no WebView. Read the book on the Android app.');
+          'The free AI needs an in-app browser (Android WebView / Edge WebView2). '
+          'This device has none, so a book cannot be read here.');
     }
 
     final devicePageCount = await PdfRaster.pageCount(src.path);

@@ -1,3 +1,36 @@
+## v0.29.1 — Windows can actually read a book now
+
+v0.29.0 moved the free AI onto `flutter_inappwebview`, and the **Settings →
+AI & Prompts → Test free AI** check already said
+*“Free AI ready · Microsoft Edge WebView2 … the free website is up and waiting
+for a PDF”* on a real Windows PC. But tapping **Add textbook** on that same PC
+still opened a dialog saying *“The free AI needs Android”* — the rest of the app
+was still asking an older question.
+
+### Fixed
+
+`AiConfig.ready` was `!kIsWeb && Platform.isAndroid`, and the home screen, the
+lesson pipeline and the old brain all gated on that one getter. It now asks the
+engine itself (`WebAiEngine.instance.supported`), so there is exactly one place
+in the app that decides whether a book can be read — and it already knew Windows
+works.
+
+- `lib/ai/ai_config.dart` — `ready` → `WebAiEngine.instance.supported`;
+  `summary` names the engine (“Android WebView” / “Microsoft Edge WebView2”);
+  unused `dart:io` / `foundation` imports dropped.
+- `lib/screens/home_screen.dart` — the “Add textbook” dialog is now
+  **“The free AI needs a WebView”** and only appears on a device with neither
+  WebView nor WebView2 (never on Android or Windows).
+- `lib/dart_engine.dart`, `lib/ai/ai_brain.dart` — same message in the two
+  remaining error paths.
+- `lib/screens/brain_webview_screen.dart`, `lib/screens/brain_screen.dart`,
+  `lib/screens/settings_screen.dart` — text that still said “Android app only”
+  now says Android **and** Windows.
+
+Verified on the user's Windows PC: Settings test passed before this change
+(WebView2 runtime present, site reachable) — the only thing missing was this
+gate.
+
 ## v0.29.0 — one WebView plugin, books can be read on Windows too
 
 The free AI used `webview_flutter`, which only has an Android implementation,

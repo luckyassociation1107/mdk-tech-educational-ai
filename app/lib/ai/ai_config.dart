@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai_prompts.dart';
+import 'web_ai_engine.dart';
 
 /// Settings for the **free** AI mode.
 ///
@@ -25,14 +24,16 @@ class AiConfig {
         scriptPrompt = scriptPrompt ?? AiPrompts.script,
         askPrompt = askPrompt ?? AiPrompts.ask;
 
-  /// The free mode needs an Android WebView. Nothing else is required —
-  /// no key, no account, no login.
-  bool get ready => !kIsWeb && Platform.isAndroid;
+  /// The free mode needs an in-app browser: Android's system WebView, or
+  /// Microsoft Edge WebView2 on Windows. Nothing else is required — no key,
+  /// no account, no login. The engine is the only place that decides this,
+  /// so every screen agrees with it.
+  bool get ready => WebAiEngine.instance.supported;
 
   /// Shown in the UI so a teacher can see what the app is about to use.
   String get summary => ready
-      ? 'Free website AI · no key, no cost'
-      : 'Free AI needs Android — this device has no WebView';
+      ? 'Free website AI · ${WebAiEngine.instance.engineName} · no key, no cost'
+      : 'Free AI needs a WebView — the Android or the Windows app';
 
   AiConfig copyWith({
     String? extractPrompt,
