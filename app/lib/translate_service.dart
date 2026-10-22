@@ -199,6 +199,36 @@ class TranslateService {
     return t.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  /// Google's dictionary client — the endpoint that actually answers from
+  /// phones, school Wi-Fi and hosting IPs alike. This is the primary engine.
+  static Future<String?> _clients5(String text, String lang) async {
+    final body = await _http(
+      Uri.parse('https://clients5.google.com/translate_a/t'
+          '?client=dict-chrome-ex&sl=en&tl=$lang'),
+      body: {'q': text},
+      timeout: const Duration(seconds: 10),
+    );
+    if (body == null) return null;
+    try {
+      final data = jsonDecode(body);
+      if (data is String) return data.trim().isEmpty ? null : data.trim();
+      if (data is List) {
+        final parts = <String>[];
+        for (final e in data) {
+          if (e is String) parts.add(e);
+          if (e is List) {
+            for (final x in e) {
+              if (x is String) parts.add(x);
+            }
+          }
+        }
+        final out = parts.join(' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+        return out.isEmpty ? null : out;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   static Future<String?> _google(String text, String lang) async {
     final url = Uri.parse('https://translate.googleapis.com/translate_a/single'
         '?client=gtx&sl=en&tl=$lang&dt=t&q=${Uri.encodeQueryComponent(text)}');
@@ -219,18 +249,43 @@ class TranslateService {
   }
 
   static Future<String?> _myMemory(String text, String lang) async {
-    final url = Uri.parse('https://api.mymemory.translated.net/get'
-        '?q=${Uri.encodeQueryComponent(text)}&langpair=en|$lang');
-    final body = await _get(url, timeout: const Duration(seconds: 9));
-    if (body == null) return null;
-    try {
-      final data = jsonDecode(body);
-      final out = '${data['responseData']?['translatedText'] ?? ''}'.trim();
-      if (out.isEmpty || out.toUpperCase().contains('MYMEMORY WARNING'))
+    // The free tier refuses anything over ~500 characters, so long lines are
+    // sent sentence by sentence and joined back.
+    final pieces = text.length <= 450 ? [text] : _splitLong(text, 400);
+    final out = <String>[];
+    for (final piece in pieces) {
+      final url = Uri.parse('https://api.mymemory.translated.net/get'
+          '?q=${Uri.encodeQueryComponent(piece)}&langpair=en|$lang');
+      final body = await _get(url, timeout: const Duration(seconds: 9));
+      if (body == null) return null;
+      try {
+        final data = jsonDecode(body);
+        final t = '${data['responseData']?['translatedText'] ?? ''}'.trim();
+        if (t.isEmpty || t.toUpperCase().contains('MYMEMORY WARNING')) {
+          return null;
+        }
+        out.add(t);
+      } catch (_) {
         return null;
-      return out;
-    } catch (_) {}
-    return null;
+      }
+    }
+    return out.join(' ').trim();
+  }
+
+  /// Splits on sentence ends, then on spaces, keeping pieces under [max].
+  static List<String> _splitLong(String text, int max) {
+    final out = <String>[];
+    final buf = StringBuffer();
+    for (final word in text.split(' ')) {
+      if (buf.length + word.length + 1 > max && buf.isNotEmpty) {
+        out.add(buf.toString().trim());
+        buf.clear();
+      }
+      buf.write(word);
+      buf.write(' ');
+    }
+    if (buf.toString().trim().isNotEmpty) out.add(buf.toString().trim());
+    return out;
   }
 
   static Future<String?> _lingva(String text, String lang) async {
@@ -240,9 +295,52 @@ class TranslateService {
     if (body == null) return null;
     try {
       final out = '${jsonDecode(body)['translation'] ?? ''}'.trim();
-      return out.isEmpty ? null : out;
+      if (out.isEmpty) return null;
+      // lingva often answers with the English text unchanged — that is a
+      // silent failure, not a translation.
+      if (out.toLowerCase() == text.toLowerCase()) return null;
+      return out;
     } catch (_) {}
     return null;
+  }
+
+  static Future<String?> _http(Uri url,
+      {Map<String, String>? body,
+      required Duration timeout}) async {
+    HttpClient? client;
+    try {
+      client = HttpClient()..connectionTimeout = timeout;
+      final req = body == null
+          ? await client.getUrl(url).timeout(timeout)
+          : await client.postUrl(url).timeout(timeout);
+      req.headers
+          .set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+              'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+      if (body != null) {
+        req.headers.set('Content-Type',
+            'application/x-www-form-urlencoded;charset=UTF-8');
+        req.write(body.entries
+            .map((e) =>
+                '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+            .join('&'));
+      }
+      final res = await req.close().timeout(timeout);
+      if (res.statusCode != 200) return null;
+      return await res.transform(utf8.decoder).join().timeout(timeout);
+    } catch (_) {
+      return null;
+    } finally {
+      client?.close(force: true);
+    }
+  }
+
+  /// True when [out] really is a translation of [input] into [lang].
+  static bool _plausible(String input, String out, String lang) {
+    final a = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), '').trim();
+    final b = out.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), '').trim();
+    if (out.trim().isEmpty) return false;
+    if (lang != 'en' && a.isNotEmpty && a == b) return false;
+    return true;
   }
 
   static Future<String?> _get(Uri url, {required Duration timeout}) async {
@@ -274,15 +372,7 @@ class TranslateService {
 
     final store = <String>[];
     final protectedText = _protect(clean, keyTerms(clean, knownTerms), store);
-    String? out;
-    for (final engine in [_google, _myMemory, _lingva]) {
-      try {
-        out = await engine(protectedText, lang);
-      } catch (_) {
-        out = null;
-      }
-      if (out != null && out.trim().isNotEmpty) break;
-    }
+    final out = await _chain(protectedText, clean, lang);
     if (out == null) return null;
     final restored = _restore(out, store);
     final finalOut = restored.isEmpty ? null : restored;
@@ -291,6 +381,44 @@ class TranslateService {
       unawaited(_saveCache());
     }
     return finalOut;
+  }
+
+  /// Tries every engine until one really returns a translation of [text].
+  ///
+  /// Order matters: the Google dictionary client answers almost always, the
+  /// memory API is the backup, the rest are last resorts. Each engine gets two
+  /// tries because a single 429 / timeout is common on school Wi-Fi.
+  static Future<String?> _chain(
+      String protectedText, String text, String lang) async {
+    for (final engine in [_clients5, _myMemory, _google, _lingva]) {
+      for (var attempt = 0; attempt < 2; attempt++) {
+        String? out;
+        try {
+          out = await engine(protectedText, lang);
+        } catch (_) {
+          out = null;
+        }
+        if (out != null && _plausible(text, out, lang)) return out;
+        if (attempt == 0) {
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+        }
+      }
+    }
+    return null;
+  }
+
+  /// One-off translation that skips the on-device cache. Used by the settings
+  /// self-check and by the tests, so a teacher can see plainly whether
+  /// translation works right now.
+  static Future<String?> quick(String text, String lang) async {
+    final clean = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (clean.isEmpty) return clean;
+    if (lang == 'en') return clean;
+    final store = <String>[];
+    final protectedText = _protect(clean, keyTerms(clean), store);
+    final out = await _chain(protectedText, clean, lang);
+    if (out == null) return null;
+    return _restore(out, store);
   }
 
   /// Translate a whole list of explanations in parallel (max 4 at once).

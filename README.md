@@ -29,8 +29,9 @@ straight out of your book, quick questions, exams and a report card. Works on
 | 🧠 **AI extraction** | Custom prompt → `{title, subject, pages[{page, text, figures[{caption, where}]}]}`. Batched for big books (12 pages per call, 40 for very large ones). |
 | ✂️ **Figures: AI says where, the app measures** | The model can describe a figure and say it is at the top/middle/bottom of a page. The app renders that page and finds the exact box from the pixels (`FigureFinder`), then crops it out of the PDF with PDFium. No vision model, no invented coordinates. |
 | 🎬 **AI-designed lessons** | A second custom prompt asks the AI how the class should run: three acts (hook → journey → payoff), scene order, narration, board text and which figure to show. The result is validated scene by scene. |
-| 📺 **On-device video** | The lesson is *rendered on the device*: Flutter paints the board, the system voice narrates with word-level highlighting (Android), figures and pages are local files. |
-| 🗣️ **Speech on both platforms** | Android keeps the native bridge (real word ranges); Windows uses `flutter_tts`. |
+| 📺 **On-device video** | The lesson is *rendered on the device*: Flutter paints the board, the voice narrates, figures and pages are local files. The page is drawn at its true aspect ratio — never stretched to fill the card. |
+| 🗣️ **Neural voice, male or female** | A real neural reader speaks every scene in 45 languages (Telugu, Hindi, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Urdu, Nepali, Sinhala and the world languages), with a male and a female voice each. No key, no account, no cost. It falls back to the free Google voice and then to the device voice, so a class never goes silent. Clips are cached per scene. |
+| 🌐 **Translation that lands** | Explanations are translated into 50 languages by a chain of free engines with two tries each; a reply that comes back unchanged is rejected instead of shown. |
 | 🧪 **Exams, flashcards, revision** | Question bank, listening exam, daily challenge, SRS flashcards, report card and a completion certificate. |
 | 🔐 **No sign-up, no login** | The app opens straight to the classroom. Progress is sealed on the device and can be backed up as an emoji code (copy, file, or paste on a new phone). |
 | 🎨 **Themes** | Six built-in themes plus a custom theme studio with export/import. |
@@ -51,7 +52,7 @@ straight out of your book, quick questions, exams and a report card. Works on
                    │
                    ▼
    ON THIS DEVICE:  PDFium renders pages → bbox crops the figures →
-                    Flutter paints the board → system TTS narrates →
+                    Flutter paints the board → neural voice narrates →
                     word-synced highlighting, diagrams, XP
 ```
 
@@ -114,7 +115,9 @@ app/lib/
                  designer (12 scene kinds + T01-T60 look hints), brain,
                  JSON repair
   pdf/           pdf_raster — pages + figure crops (PDFium, Android & Windows)
-  speech/        speech_channel — Android bridge / flutter_tts everywhere else
+  speech/        neural_tts — the free neural reader (WebSocket, MP3)
+               online_voice — neural → Google voice → device voice, cached
+               speech_channel — Android bridge / flutter_tts everywhere else
   engine         dart_engine, engine_gateway, subject_engine, lesson_content
   screens/       30 screens (home, lesson player, reader, exams, backup, …)
   vault/         PBKDF2 + HMAC sealing, emoji codec
@@ -152,5 +155,5 @@ brain and UI. `flutter analyze` reports **0 errors**.
 ## License
 
 No license file is included yet; all rights reserved by the author.
-Third-party notices: **pdfx** (MIT), **flutter_tts** (MIT), Syncfusion is no
+Third-party notices: **pdfx** (MIT), **flutter_tts** (MIT), **audioplayers** (MIT), Syncfusion is no
 longer used.

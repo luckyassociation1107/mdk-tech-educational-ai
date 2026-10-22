@@ -1,3 +1,65 @@
+## v0.31.0 — real neural voices, translation that lands, and a page that is never stretched
+
+Three things the last class got wrong, fixed at the root.
+
+### Voice — the teacher now sounds like a person
+
+- **Real neural speech, built into the app.** Each scene is synthesised by the
+  free neural reader that also powers the browser's Read Aloud, and played from
+  the app itself (`audioplayers`). No key, no account, nothing paid — the same
+  rule as the AI.
+- **A male and a female voice for 45 languages** — Telugu `Shruti`/`Mohan`,
+  Hindi `Swara`/`Madhur`, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati,
+  Urdu, Nepali, Sinhala, and the world languages. Pick the one you like in
+  **Voice Studio**; it is remembered per learner.
+- **Speed and pitch are applied to the neural voice**, not only to the system
+  one — a slower read for a hard chapter still sounds natural.
+- **Three engines, in order, so a class never goes silent**: neural voice →
+  free Google speech (45 languages, sentence by sentence) → the device voice.
+  If the online voice is unreachable the lesson continues and says so once.
+- **Voices are cached per scene** in the app's own folder, so a lesson that was
+  played once replays with no waiting and no internet. The next scene is
+  downloaded while the current one is still being read.
+- **The board now writes in step with the real voice**: the length of the clip
+  is read back from the player, so the reveal follows the teacher instead of a
+  guess.
+- Odia and Assamese have no online voice in either engine; those two honestly
+  use the device voice, and Voice Studio says so instead of pretending.
+
+### Translation — every language actually translates
+
+- **New primary engine** (Google's dictionary client). It answered for all 50
+  languages in testing, including the ones that were silently failing before:
+  Odia, Sanskrit, Sindhi, Chinese, Arabic.
+- **A silent failure is no longer accepted.** One fallback engine used to reply
+  with the English text unchanged; that is now detected and rejected, so the
+  app moves on to an engine that really translates.
+- **Two tries per engine, four engines**: 429s, timeouts and school Wi-Fi
+  blips no longer leave a line in English.
+- **Long lines are split** for the provider with a 500-character limit, so a
+  full explanation still arrives translated.
+- The "stayed in English" snackbar now appears only when it is true.
+
+### Video — the page keeps its shape
+
+- **No more stretching.** The page is drawn at its real aspect ratio (read
+  from the PNG header) and letterboxed inside the card, as white paper with a
+  shadow — it looks like a page, not a full-bleed image.
+- **Zoom to a figure is a transform over the fitted page**, clamped so the page
+  can never be dragged off the card or blown up into blur.
+- A scene with no cropped figure now shows the whole page with a `PAGE n`
+  pill and its caption, instead of a squashed crop.
+
+### Tests
+
+- 17 new unit tests (`test/voice_test.dart`): page geometry (tall page in a
+  wide card, wide picture in a tall card, PNG header, zoom clamps), the neural
+  security token against a known value, request-id shape, SSML escaping, the
+  voice table for all 50 languages, sentence chunking (including Telugu danda),
+  cache keys and the speech URL.
+- 3 live probes (`test/live_voice_test.dart`, run with `LIVE=1`): translation in
+  9 scripts, neural audio in 4 languages, voice coverage for every language.
+
 ## v0.30.0 — VISTA inside the app: cinematic scenes, template ids, 12 kinds
 
 The lesson designer now works the way the VISTA master prompt describes — three

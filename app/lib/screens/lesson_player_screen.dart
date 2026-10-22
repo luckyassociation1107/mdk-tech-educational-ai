@@ -15,6 +15,8 @@ import '../vault/emoji_vault.dart';
 import '../word_bank.dart';
 import '../widgets.dart';
 import 'voice_studio_screen.dart';
+import '../speech/online_voice.dart';
+import '../ui/media_fit.dart';
 import '../speech/speech_channel.dart';
 
 const _boards = <String, ({Color bg, Color fg, Color accent})>{
@@ -95,6 +97,11 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
   int _spoken = 0;
   bool _rangeSeen = false;
   bool _ttsDone = false;
+  /// Set when the online voice is chosen but failed once on this screen, so
+  /// the rest of the class keeps speaking with the offline voice.
+  bool _onlineOff = false;
+  /// Real length of the spoken clip, when the online voice reported one.
+  double? _voiceSeconds;
   bool _advancing = false;
   DateTime _sceneStart = DateTime.now();
   int _tick = 0;
@@ -236,7 +243,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
   // ---------- playback engine (voice-driven) ----------
 
   double _estSeconds(String text) =>
-      (text.length / 13.5).clamp(2.5, 60.0).toDouble();
+      _voiceSeconds ?? (text.length / 13.5).clamp(2.5, 60.0).toDouble();
 
   String get _voiceText {
     if (_scenes.isEmpty) return '';
@@ -278,19 +285,66 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
         _picked = null;
         _pickedRight = null;
       }
+      _voiceSeconds = null;
     });
     final locale =
         _tr.containsKey(i) ? xLang(_lang).tts : bookVoiceLocale(text);
-    _ttsCh.invokeMethod('speak', {
-      'text': text,
-      'language': locale,
-      'rate': slow ? 0.62 : widget.settings.speechRate,
-      'pitch': widget.settings.speechPitch,
-      'voice': widget.settings.voiceName,
-    }).catchError((_) {
-      _ttsDone = true;
-      return null;
-    });
+    final rate = slow ? 0.62 : widget.settings.speechRate;
+    // A translated scene is read by the explanation-language voice; an
+    // untranslated scene is our own English line, so an English voice reads it.
+    final wantedLang = _tr.containsKey(i) ? xLang(_lang).code : 'en';
+    final online = widget.settings.voiceEngine == 'online' &&
+        !_onlineOff &&
+        !_rangeSeen &&
+        OnlineVoice.hasVoice(wantedLang);
+    if (online) {
+      // The natural voice: one MP3 per sentence, cached, played by the app.
+      // Any failure drops this screen back to the offline voice — a lesson
+      // never stops because the network blinked.
+      OnlineVoice.instance
+          .speak(
+            text: text,
+            lang: wantedLang,
+            rate: rate,
+            pitch: widget.settings.speechPitch,
+            neuralVoice: widget.settings.neuralVoice.isEmpty
+                ? null
+                : widget.settings.neuralVoice,
+            onReady: (d) {
+              if (!mounted) return;
+              setState(() {
+                // Real length of the voice: the board now writes in step with
+                // it instead of guessing from the character count.
+                _voiceSeconds = d == null ? null : d.inMilliseconds / 1000.0;
+                _sceneStart = DateTime.now();
+              });
+            },
+          )
+          .then((_) {
+        if (!mounted) return;
+        setState(() => _ttsDone = true);
+      }).catchError((_) {
+        if (!mounted) return;
+        setState(() => _onlineOff = true);
+        _sayOnlineFallback();
+        _speakDevice(text, locale, rate);
+        return null;
+      });
+    } else {
+      _speakDevice(text, locale, rate);
+    }
+    // Warm the next scene's voice while this one is being read.
+    if (i + 1 < _scenes.length) {
+      OnlineVoice.instance.prefetch(
+        _voiceOf(i + 1),
+        lang: _tr.containsKey(i + 1) ? xLang(_lang).code : 'en',
+        rate: rate,
+        pitch: widget.settings.speechPitch,
+        neuralVoice: widget.settings.neuralVoice.isEmpty
+            ? null
+            : widget.settings.neuralVoice,
+      );
+    }
     _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
       if (!mounted) {
         t.cancel();
@@ -314,6 +368,29 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     });
   }
 
+  void _speakDevice(String text, String locale, double rate) {
+    _ttsCh.invokeMethod('speak', {
+      'text': text,
+      'language': locale,
+      'rate': rate,
+      'pitch': widget.settings.speechPitch,
+      'voice': widget.settings.voiceName,
+    }).catchError((_) {
+      _ttsDone = true;
+      return null;
+    });
+  }
+
+  bool _fallbackSaid = false;
+
+  void _sayOnlineFallback() {
+    if (_fallbackSaid || !mounted) return;
+    _fallbackSaid = true;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Online voice is not reachable — this class continues '
+            'with the device voice.')));
+  }
+
   void _next({bool auto = false}) {
     if (_scene >= _scenes.length - 1) {
       _finish();
@@ -331,6 +408,9 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
       _timer?.cancel();
       try {
         await _ttsCh.invokeMethod('stopTts');
+      } catch (_) {}
+      try {
+        await OnlineVoice.instance.stop();
       } catch (_) {}
       setState(() => _playing = false);
     } else {
@@ -366,6 +446,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
   Future<void> _finish() async {
     _timer?.cancel();
     _ttsCh.invokeMethod('stopTts').catchError((_) => null);
+    OnlineVoice.instance.stop().catchError((_) {});
     await ProgressStore.addXp(widget.sessionId, 20);
     await StudyStats.recordClassFinished();
     await VaultStore.log('class', 'Finished part ${widget.partNumber} — ${widget.title}');
@@ -379,6 +460,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     _xpTimer?.cancel();
     _pulse.dispose();
     _ttsCh.invokeMethod('stopTts').catchError((_) => null);
+    OnlineVoice.instance.stop().catchError((_) {});
     super.dispose();
   }
 
@@ -930,6 +1012,33 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     );
   }
 
+  static final Map<String, Size> _pngSizes = {};
+
+  /// PNG width/height straight from the IHDR header (24 bytes). The page
+  /// renders are our own files, so this is exact — and it is why the page can
+  /// be shown at its real shape instead of being squashed into the card.
+  static Size? _pngSizeOf(File f) {
+    final hit = _pngSizes[f.path];
+    if (hit != null) return hit;
+    try {
+      final raf = f.openSync();
+      final head = raf.readSync(24);
+      raf.close();
+      final ar = MediaFit.pngAspect(head);
+      if (ar != null) {
+        final size = Size(1000 * ar, 1000);
+        _pngSizes[f.path] = size;
+        return size;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// The rendered textbook page, always at its true aspect ratio.
+  ///
+  /// [zone] is a rectangle in page fractions; when it is present the page is
+  /// gently zoomed towards it (0 → not at all, 1 → tight) — the zoom is a
+  /// transform over the fitted image, so nothing is ever stretched.
   Widget _pageImage(LessonScene s, {Rect? zone, double zoomT = 0}) {
     final img = File('$_pageDir/page_${s.page}.png');
     if (!img.existsSync()) {
@@ -947,24 +1056,53 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     return LayoutBuilder(builder: (context, box) {
       final w = box.maxWidth;
       final h = box.maxHeight;
-      Widget image = Image.file(img, fit: BoxFit.fill, width: w, height: h);
-      if (zone != null) {
-        final target =
-            math.min(4.2, 0.92 / math.max(0.15, zone.width)).toDouble();
-        final scale = 1 + (target - 1) * zoomT;
-        final cx = zone.left + zone.width / 2;
-        final cy = zone.top + zone.height / 2;
-        var tx = (0.5 - cx) * w * scale;
-        var ty = (0.5 - cy) * h * scale;
-        tx = tx.clamp(-(scale - 1) * w / 2, (scale - 1) * w / 2).toDouble();
-        ty = ty.clamp(-(scale - 1) * h / 2, (scale - 1) * h / 2).toDouble();
-        image = Transform(
+      final size = _pngSizeOf(img);
+      // A4 fallback only for the first frame, before the header is read.
+      final ar =
+          (size == null || size.height == 0) ? MediaFit.a4 : size.width / size.height;
+      final fitted = MediaFit.fitInside(Size(w, h), ar);
+      final dispW = fitted.width;
+      final dispH = fitted.height;
+
+      var scale = 1.0;
+      var dx = 0.0;
+      var dy = 0.0;
+      if (zone != null && zoomT > 0) {
+        final target = MediaFit.zoomFor(zone.width);
+        scale = 1 + (target - 1) * zoomT;
+        // Where the zone centre sits on screen before the zoom.
+        final cx = (w - dispW) / 2 + zone.center.dx * dispW;
+        final cy = (h - dispH) / 2 + zone.center.dy * dispH;
+        dx = -(cx - w / 2) * scale;
+        dy = -(cy - h / 2) * scale;
+        dx = MediaFit.clampPan(dx, dispW, scale, w);
+        dy = MediaFit.clampPan(dy, dispH, scale, h);
+      }
+
+      Widget page = Container(
+        width: dispW,
+        height: dispH,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.45),
+                blurRadius: 18,
+                spreadRadius: 1,
+                offset: const Offset(0, 6)),
+          ],
+        ),
+        child: Image.file(img, fit: BoxFit.fill),
+      );
+
+      if (zone != null && zoomT > 0) {
+        page = Transform(
           alignment: Alignment.center,
-          transform: Matrix4.translationValues(tx, ty, 0)..scale(scale),
-          child: image,
+          transform: Matrix4.translationValues(dx, dy, 0)..scale(scale),
+          child: page,
         );
       }
-      return ClipRect(child: image);
+      return ClipRect(child: Center(child: page));
     });
   }
 
@@ -973,8 +1111,52 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
   Widget _figureView(LessonScene s) {
     final path = s.imagePath;
     final file = path == null ? null : File(path);
+    final caption =
+        s.labels.isNotEmpty ? s.labels.first.trim() : '';
     if (file == null || !file.existsSync()) {
-      return _pageImage(s, zone: s.zone);
+      // No crop for this scene: show the page itself, honestly labelled, at
+      // its true shape and gently zoomed to the figure if we know where it is.
+      return Container(
+        decoration: BoxDecoration(
+            color: const Color(0xFF0B1220),
+            borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.all(10),
+        child: Stack(children: [
+          Positioned.fill(
+            child: _pageImage(s,
+                zone: s.zone,
+                zoomT: s.zone == null ? 0 : 0.85),
+          ),
+          Positioned(
+            left: 10,
+            top: 10,
+            child: _pill(
+                icon: Icons.menu_book_rounded,
+                text: s.page == null ? 'PAGE' : 'PAGE ${s.page}'),
+          ),
+          if (caption.isNotEmpty)
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 10,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.78),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Text(caption,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600)),
+              ),
+            ),
+        ]),
+      );
     }
     return Container(
       decoration: BoxDecoration(
@@ -988,30 +1170,58 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
             child: InteractiveViewer(
               minScale: 1,
               maxScale: 5,
-              child: Image.file(file, fit: BoxFit.contain),
+              // contain, never fill: a figure keeps its shape.
+              child: Center(
+                child: Image.file(file, fit: BoxFit.contain),
+              ),
             ),
           ),
         ),
         Positioned(
           left: 10,
           top: 10,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.66),
-                borderRadius: BorderRadius.circular(99)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.crop_free_rounded, size: 14, color: Colors.white),
-              SizedBox(width: 5),
-              Text('FIGURE • FROM YOUR BOOK',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1)),
-            ]),
-          ),
+          child: _pill(
+              icon: Icons.crop_free_rounded, text: 'FIGURE • FROM YOUR BOOK'),
         ),
+        if (caption.isNotEmpty)
+          Positioned(
+            left: 10,
+            right: 10,
+            bottom: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.78),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Text(caption,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      height: 1.35,
+                      fontWeight: FontWeight.w600)),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _pill({required IconData icon, required String text}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.66),
+          borderRadius: BorderRadius.circular(99)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 14, color: Colors.white),
+        const SizedBox(width: 5),
+        Text(text,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1)),
       ]),
     );
   }

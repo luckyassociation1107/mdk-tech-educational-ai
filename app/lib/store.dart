@@ -7,6 +7,8 @@ class AppSettings {
   String
       explainLanguage; // ISO code: explanation is translated into this language
   String voiceName; // chosen Android TTS voice ('' = system default)
+  String voiceEngine; // device (offline, system TTS) | online (neural)
+  String neuralVoice; // exact neural voice name, '' = best voice for the language
   double speechRate; // 0.5 .. 1.5
   double speechPitch; // 0.7 .. 1.3
   int dailyGoal; // scenes per day
@@ -20,6 +22,8 @@ class AppSettings {
     this.language = 'en-IN',
     this.explainLanguage = 'en',
     this.voiceName = '',
+    this.voiceEngine = 'online',
+    this.neuralVoice = '',
     this.speechRate = 0.92,
     this.speechPitch = 1.0,
     this.dailyGoal = 12,
@@ -36,6 +40,8 @@ class AppSettings {
       language: p.getString('set_language') ?? 'en-IN',
       explainLanguage: p.getString('set_explain_language') ?? 'en',
       voiceName: p.getString('set_voice_name') ?? '',
+      voiceEngine: p.getString('set_voice_engine') ?? 'online',
+      neuralVoice: p.getString('set_neural_voice') ?? '',
       speechRate: p.getDouble('set_speech_rate') ?? 0.92,
       speechPitch: p.getDouble('set_speech_pitch') ?? 1.0,
       dailyGoal: p.getInt('set_daily_goal') ?? 12,
@@ -52,6 +58,8 @@ class AppSettings {
     await p.setString('set_language', language);
     await p.setString('set_explain_language', explainLanguage);
     await p.setString('set_voice_name', voiceName);
+    await p.setString('set_voice_engine', voiceEngine);
+    await p.setString('set_neural_voice', neuralVoice);
     await p.setDouble('set_speech_rate', speechRate);
     await p.setDouble('set_speech_pitch', speechPitch);
     await p.setInt('set_daily_goal', dailyGoal);
