@@ -12,6 +12,7 @@ import 'package:textbook_video_classroom/ai/script_designer.dart';
 import 'package:textbook_video_classroom/ai/web_ai_engine.dart';
 import 'package:textbook_video_classroom/ai/textbook_extractor.dart';
 import 'package:textbook_video_classroom/lesson_content.dart';
+import 'package:textbook_video_classroom/ai/ai_prompts.dart';
 
 /// Stands in for the free website: the pipeline above [AiService] is pure, so
 /// it can be tested end to end without a WebView, a network or a key.
@@ -299,6 +300,80 @@ void main() {
         teacherNote: '',
       );
       expect(scenes, isNull);
+    });
+  });
+
+  group('vista scenes', () {
+    LessonScene parse(Map<String, dynamic> raw) =>
+        LessonScene.fromJson({...raw, 'narration': raw['narration'] ?? 'spoken line'})!;
+
+    test('a template id is kept, cleaned and bounded', () {
+      expect(SceneTemplate.clean('t23'), 'T23');
+      expect(SceneTemplate.clean('T7'), 'T07');
+      expect(SceneTemplate.clean('T99'), '');
+      expect(SceneTemplate.clean('glow'), '');
+      expect(SceneTemplate.clean(''), '');
+    });
+
+    test('numbered and bulleted templates are recognised', () {
+      expect(SceneTemplate.list('T26'), 'numbered');
+      expect(SceneTemplate.list('T31'), 'numbered');
+      expect(SceneTemplate.list('T37'), 'bullets');
+      expect(SceneTemplate.list('T07'), '');
+      expect(SceneTemplate.heading('T12'), 'glow');
+      expect(SceneTemplate.heading('T13'), 'marker');
+      expect(SceneTemplate.cinematic('T03'), isTrue);
+      expect(SceneTemplate.cinematic('T45'), isFalse);
+    });
+
+    test('a compare scene keeps its two columns', () {
+      final s = parse({
+        'kind': 'compare',
+        'template': 'T51',
+        'heading': 'Mitosis vs Meiosis',
+        'boardText': 'Mitosis | Meiosis\nOne division | Two divisions\nBody cells | Sex cells',
+      });
+      expect(s.kind, 'compare');
+      expect(s.template, 'T51');
+      expect(s.boardText!.split('\n').first.split('|').length, 2);
+    });
+
+    test('quote keeps the author in extra', () {
+      final s = parse({
+        'kind': 'quote',
+        'template': 'T58',
+        'heading': 'Remember',
+        'boardText': 'Energy is never destroyed, only changed.',
+        'extra': 'Newton',
+      });
+      expect(s.kind, 'quote');
+      expect(s.extra, 'Newton');
+    });
+
+    test('every new kind survives a json round-trip with its template', () {
+      for (final kind in [
+        'title', 'board', 'daily', 'steps', 'timeline',
+        'compare', 'vocab', 'formula', 'quote', 'summary',
+      ]) {
+        final s = LessonScene(kind, 'H', 'narration text', boardText: 'a\nb',
+            template: 'T26');
+        final back = LessonScene.fromJson(s.toJson())!;
+        expect(back.kind, kind);
+        expect(back.template, 'T26');
+        expect(back.boardText, 'a\nb');
+      }
+    });
+
+    test('the default script prompt still carries the textbook placeholders', () {
+      final p = AiPrompts.script;
+      for (final k in ['{content}', '{figures}', '{teacher_note}', '{language}']) {
+        expect(p.contains(k), isTrue, reason: 'missing $k');
+      }
+      for (final kind in ['"kind": "title"', '"kind": "compare"', '"template"']) {
+        expect(p.contains(kind), isTrue, reason: 'missing $kind');
+      }
+      // The whole-class audio script the free model cannot afford must stay gone.
+      expect(p.contains('full_audio_script'), isFalse);
     });
   });
 

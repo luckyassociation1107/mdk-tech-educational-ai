@@ -384,6 +384,28 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
 
   // ---------- views ----------
 
+  /// Numbered (T26-T32) and bulleted (T33-T38) cards: the model sends plain
+  /// lines, the player draws the markers so the board looks like a slide.
+  String _listify(LessonScene s, String text) {
+    final style = SceneTemplate.list(s.template);
+    if (style.isEmpty) return text;
+    final lines = text
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.length < 2) return text;
+    if (style == 'numbered') {
+      return [
+        for (var i = 0; i < lines.length; i++)
+          '${i + 1}.  ${lines[i].replaceFirst(RegExp(r'^[·•\-–]\s*'), '')}'
+      ].join('\n');
+    }
+    return [
+      for (final l in lines) '•  ${l.replaceFirst(RegExp(r'^[·•\-–]\s*'), '')}'
+    ].join('\n');
+  }
+
   String _boardDisplay(LessonScene s) {
     var t = s.boardFor(_trOf(_scenes.indexOf(s)));
     if (s.kind == 'practice' && s.extra != null && _progress < 0.55) {
@@ -391,7 +413,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     } else if (s.kind == 'practice' && s.extra != null) {
       t = t.replaceAll(s.extra!, '[ ${s.extra} ]');
     }
-    return t;
+    return _listify(s, t);
   }
 
   String _currentSentence() {
@@ -435,6 +457,317 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
     );
   }
 
+  /// T01-T06 — a title card, not a paragraph on a board. The voice speaks the
+  /// narration; the screen shows the class name and one subtitle line.
+  Widget _titleView(LessonScene s) {
+    final c = _boards[s.boardTheme] ?? _boards['green']!;
+    final cinematic = s.template.isEmpty || SceneTemplate.cinematic(s.template);
+    final sub = (s.boardText ?? '').trim();
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withOpacity(0.35), width: 6),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: cinematic
+              ? [c.bg, Color.lerp(c.bg, c.accent, 0.32)!]
+              : [c.bg, c.bg],
+        ),
+      ),
+      padding: const EdgeInsets.all(22),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (cinematic)
+                Icon(Icons.auto_awesome_rounded,
+                    color: c.accent, size: 26),
+              const SizedBox(height: 10),
+              Text(
+                s.heading,
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: c.fg,
+                  fontWeight: FontWeight.w900,
+                  height: 1.15,
+                  fontSize: s.heading.length > 42
+                      ? 24
+                      : s.heading.length > 24
+                          ? 30
+                          : 36,
+                ),
+              ),
+              if (sub.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Container(width: 54, height: 3, color: c.accent),
+                const SizedBox(height: 12),
+                Text(sub,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: c.fg.withOpacity(0.86),
+                        fontSize: 14,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// T51-T54 — two columns. The model sends "Left | Right" lines; the first
+  /// line that has a "|" is the pair of column titles.
+  Widget _compareView(LessonScene s) {
+    final c = _boards[s.boardTheme] ?? _boards['green']!;
+    final rows = <(String, String)>[];
+    for (final line in _boardDisplay(s).split('\n')) {
+      if (!line.contains('|')) continue;
+      final parts = line.split('|');
+      rows.add((parts.first.trim(), parts.skip(1).join('|').trim()));
+    }
+    if (rows.length < 2) return _boardView(s);
+    final head = rows.first;
+    final body = rows.skip(1).toList();
+    Widget col(String title, List<String> items, Color tint) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+            decoration: BoxDecoration(
+                color: tint.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: tint.withOpacity(0.5))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title.toUpperCase(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: c.fg,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.5,
+                      letterSpacing: 0.8)),
+              const SizedBox(height: 8),
+              for (final it in items)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('•  $it',
+                      style: TextStyle(
+                          color: c.fg.withOpacity(0.94),
+                          fontSize: 13,
+                          height: 1.35)),
+                ),
+            ]),
+          ),
+        );
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withOpacity(0.35), width: 6),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(s.heading.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                color: c.accent,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.3,
+                fontSize: 12.5)),
+        const SizedBox(height: 12),
+        Expanded(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            col(head.$1, [for (final r in body) r.$1], c.accent),
+            const SizedBox(width: 10),
+            col(head.$2, [for (final r in body) r.$2], c.fg),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  /// T26-T32 / T30-T31 — numbered steps joined by a line.
+  Widget _stepsView(LessonScene s) {
+    final c = _boards[s.boardTheme] ?? _boards['green']!;
+    final lines = _boardDisplay(s)
+        .split('\n')
+        .map((l) => l.trim().replaceFirst(RegExp(r'^\d+[.)]\s*'), ''))
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.length < 2) return _boardView(s);
+    final timeline = s.kind == 'timeline' ||
+        SceneTemplate.list(s.template) == 'numbered' && s.kind == 'timeline';
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withOpacity(0.35), width: 6),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(s.heading.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                color: c.accent,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.3,
+                fontSize: 12.5)),
+        const SizedBox(height: 12),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              for (var i = 0; i < lines.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                                color: timeline
+                                    ? c.accent.withOpacity(0.2)
+                                    : c.accent,
+                                shape: BoxShape.circle,
+                                border: timeline
+                                    ? Border.all(color: c.accent, width: 2)
+                                    : null),
+                            child: Text('${i + 1}',
+                                style: TextStyle(
+                                    color: timeline ? c.accent : c.bg,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 12)),
+                          ),
+                          if (i != lines.length - 1)
+                            Container(
+                                width: 2,
+                                height: 22,
+                                color: c.accent.withOpacity(0.35)),
+                        ]),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Text(lines[i],
+                                style: TextStyle(
+                                    color: c.fg,
+                                    fontSize: 14,
+                                    height: 1.38,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ]),
+                ),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  /// T58 — a quote card. `extra` carries the author.
+  Widget _quoteView(LessonScene s) {
+    final c = _boards[s.boardTheme] ?? _boards['green']!;
+    final body = _boardDisplay(s);
+    final author = (s.extra ?? '').trim();
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withOpacity(0.35), width: 6),
+      ),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Container(width: 5, color: c.accent),
+        const SizedBox(width: 14),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.format_quote_rounded,
+                      color: c.accent.withOpacity(0.8), size: 30),
+                  const SizedBox(height: 4),
+                  Text(body,
+                      style: TextStyle(
+                          color: c.fg,
+                          fontStyle: FontStyle.italic,
+                          fontSize: 18,
+                          height: 1.45,
+                          fontWeight: FontWeight.w700)),
+                  if (author.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text('— $author',
+                        style: TextStyle(
+                            color: c.accent,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13)),
+                  ],
+                ]),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  /// T57 / T15 — a term and its meaning, like a dictionary card.
+  Widget _vocabView(LessonScene s) {
+    final c = _boards[s.boardTheme] ?? _boards['green']!;
+    final meaning = _boardDisplay(s);
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withOpacity(0.35), width: 6),
+      ),
+      padding: const EdgeInsets.all(18),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                  color: c.accent.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(99)),
+              child: Text('KEY WORD',
+                  style: TextStyle(
+                      color: c.accent,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                      letterSpacing: 1.2)),
+            ),
+            const SizedBox(height: 10),
+            Text(s.heading,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: c.fg,
+                    fontWeight: FontWeight.w900,
+                    fontSize: s.heading.length > 26 ? 24 : 30)),
+            const SizedBox(height: 12),
+            Text(meaning,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: c.fg.withOpacity(0.9),
+                    fontSize: 15,
+                    height: 1.5,
+                    fontWeight: FontWeight.w600)),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Widget _boardView(LessonScene s) {
     final c = _boards[s.boardTheme] ?? _boards['green']!;
     final len = _voiceText.length;
@@ -463,6 +796,25 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
+              if (SceneTemplate.heading(s.template) == 'marker')
+                Flexible(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: c.accent.withOpacity(0.28),
+                        borderRadius: BorderRadius.circular(5)),
+                    child: Text(s.heading.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: c.fg,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.1,
+                            fontSize: 12.5)),
+                  ),
+                )
+              else
               Text(s.heading.toUpperCase(),
                   style: TextStyle(
                       color: c.accent,
@@ -470,6 +822,13 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
                       letterSpacing: 1.4,
                       fontSize: 12.5)),
               const Spacer(),
+              if (SceneTemplate.heading(s.template) == 'underline')
+                Container(
+                  width: 44,
+                  height: 3,
+                  margin: const EdgeInsets.only(right: 10),
+                  color: c.accent,
+                ),
               if (s.explain != null)
                 Container(
                   padding:
@@ -1150,7 +1509,7 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
                                   position: slide, child: child));
                         },
                         child: KeyedSubtree(
-                          key: ValueKey('$_scene-${s.kind}'),
+                          key: ValueKey('$_scene-${s.kind}-${s.template}'),
                           child: s.kind == 'reading'
                               ? _readingView(s)
                               : s.kind == 'zoom'
@@ -1159,7 +1518,18 @@ class _LessonPlayerScreenState extends State<LessonPlayerScreen>
                                       ? _figureView(s)
                                       : s.kind == 'diagram'
                                           ? _diagramView(s)
-                                          : _boardView(s),
+                                          : s.kind == 'title'
+                                              ? _titleView(s)
+                                              : s.kind == 'compare'
+                                                  ? _compareView(s)
+                                                  : (s.kind == 'steps' ||
+                                                          s.kind == 'timeline')
+                                                      ? _stepsView(s)
+                                                      : s.kind == 'quote'
+                                                          ? _quoteView(s)
+                                                          : s.kind == 'vocab'
+                                                              ? _vocabView(s)
+                                                              : _boardView(s),
                         ),
                       ),
                     ),

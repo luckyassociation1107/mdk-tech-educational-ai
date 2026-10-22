@@ -24,6 +24,12 @@ class LessonScene {
   final String? imagePath; // cropped figure PNG written by the AI pipeline
   final String boardTheme;
   final bool formula;
+
+  /// Optional VISTA template hint ("T23", "T41", …). It never changes the
+  /// lesson's content — only how the card is painted (glow, marker,
+  /// numbered list, cinematic title). Empty for lessons made before v0.30.
+  final String template;
+
   const LessonScene(this.kind, this.heading, this.narration,
       {this.boardText,
       this.explain,
@@ -36,7 +42,8 @@ class LessonScene {
       this.zone,
       this.imagePath,
       this.boardTheme = 'green',
-      this.formula = false});
+      this.formula = false,
+      this.template = ''});
 
   LessonScene copyWith({String? narration}) =>
       LessonScene(kind, heading, narration ?? this.narration,
@@ -51,7 +58,8 @@ class LessonScene {
           zone: zone,
           imagePath: imagePath,
           boardTheme: boardTheme,
-          formula: formula);
+          formula: formula,
+          template: template);
 
   /// What the board shows. When an explanation was translated, only the
   /// explanation changes — the textbook excerpt stays in the book's language.
@@ -84,6 +92,7 @@ class LessonScene {
         if (imagePath != null) 'imagePath': imagePath,
         'boardTheme': boardTheme,
         'formula': formula,
+        if (template.isNotEmpty) 'template': template,
       };
 
   static LessonScene? fromJson(Map<String, dynamic> j) {
@@ -110,7 +119,52 @@ class LessonScene {
       imagePath: j['imagePath']?.toString(),
       boardTheme: (j['boardTheme'] ?? 'green').toString(),
       formula: j['formula'] == true,
+      template: SceneTemplate.clean((j['template'] ?? '').toString()),
     );
+  }
+}
+
+/// Maps the VISTA template ids (T01-T60) onto the paint the player has.
+///
+/// The id is a *hint*: the scene's kind still decides the content. When the
+/// model sends no id (or an id we do not know), the kind picks a sensible
+/// default, so old lessons keep looking exactly as they did.
+class SceneTemplate {
+  static String clean(String raw) {
+    final t = raw.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (!RegExp(r'^T\d{1,2}$').hasMatch(t)) return '';
+    final n = int.parse(t.substring(1));
+    return (n >= 1 && n <= 60) ? 'T${n.toString().padLeft(2, '0')}' : '';
+  }
+
+  /// T01-T06 (intros) and T59/T60 (transitions) → big, centred, cinematic.
+  static bool cinematic(String t) {
+    final n = _num(t);
+    return n >= 1 && n <= 6;
+  }
+
+  /// T12 neon, T13 marker, T07/T10/T17 underline-ish headings.
+  static String heading(String t) {
+    final n = _num(t);
+    if (n == 12) return 'glow';
+    if (n == 13) return 'marker';
+    if (n == 7 || n == 10 || n == 11 || n == 18) return 'underline';
+    if (n == 15) return 'bracket';
+    return '';
+  }
+
+  /// T26-T32 key points, T33-T38 bullets, T30/T31 timelines.
+  static String list(String t) {
+    final n = _num(t);
+    if (n >= 26 && n <= 32) return 'numbered';
+    if (n >= 33 && n <= 38) return 'bullets';
+    return '';
+  }
+
+  static int _num(String t) {
+    final c = clean(t);
+    if (c.isEmpty) return 0;
+    return int.tryParse(c.substring(1)) ?? 0;
   }
 }
 

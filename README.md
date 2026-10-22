@@ -28,7 +28,7 @@ straight out of your book, quick questions, exams and a report card. Works on
 | 🆓 **Free AI — the only mode** | The public PDF-teacher site is automated in the app's WebView: the PDF is uploaded through the page's own file input, the prompts are typed into its chat, the answers are read back. One plugin, both platforms — `flutter_inappwebview` (Android WebView / Edge WebView2). No key, no account, no cost. |
 | 🧠 **AI extraction** | Custom prompt → `{title, subject, pages[{page, text, figures[{caption, where}]}]}`. Batched for big books (12 pages per call, 40 for very large ones). |
 | ✂️ **Figures: AI says where, the app measures** | The model can describe a figure and say it is at the top/middle/bottom of a page. The app renders that page and finds the exact box from the pixels (`FigureFinder`), then crops it out of the PDF with PDFium. No vision model, no invented coordinates. |
-| 🎬 **AI-designed lessons** | A second custom prompt asks the AI how the video should run: scene order, narration, board text and which figure to show. The result is validated scene by scene. |
+| 🎬 **AI-designed lessons** | A second custom prompt asks the AI how the class should run: three acts (hook → journey → payoff), scene order, narration, board text and which figure to show. The result is validated scene by scene. |
 | 📺 **On-device video** | The lesson is *rendered on the device*: Flutter paints the board, the system voice narrates with word-level highlighting (Android), figures and pages are local files. |
 | 🗣️ **Speech on both platforms** | Android keeps the native bridge (real word ranges); Windows uses `flutter_tts`. |
 | 🧪 **Exams, flashcards, revision** | Question bank, listening exam, daily challenge, SRS flashcards, report card and a completion certificate. |
@@ -46,7 +46,8 @@ straight out of your book, quick questions, exams and a report card. Works on
                    │
                    │  ② script prompt (+ teacher's own note for this part)
                    ▼
-     { scenes: [ title, board, figure(page,bbox), quick, daily, summary ] }
+     { scenes: [ title, board, daily, steps, timeline, compare,
+                 vocab, formula, quote, figure(page,bbox), quick, summary ] }
                    │
                    ▼
    ON THIS DEVICE:  PDFium renders pages → bbox crops the figures →
@@ -109,7 +110,9 @@ Releases page — APK + Inno Setup installer, install-over updates).
 ```
 app/lib/
   ai/            ai_service + web_ai_engine (the free AI), ai_config (prompts),
-                 prompts, extractor, script designer, brain, JSON repair
+                 prompts (VISTA-style lesson prompt), extractor, script
+                 designer (12 scene kinds + T01-T60 look hints), brain,
+                 JSON repair
   pdf/           pdf_raster — pages + figure crops (PDFium, Android & Windows)
   speech/        speech_channel — Android bridge / flutter_tts everywhere else
   engine         dart_engine, engine_gateway, subject_engine, lesson_content

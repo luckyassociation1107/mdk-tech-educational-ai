@@ -171,12 +171,16 @@ class ScriptDesigner {
     final heading = JsonUtils.str(raw['heading']);
     final narration = JsonUtils.speech(JsonUtils.str(raw['narration']));
     if (narration.length < 20 || narration.length > 1200) return null;
+    // Optional VISTA hint ("T23"). Unknown or absent ids stay empty.
+    final tpl = SceneTemplate.clean(JsonUtils.str(raw['template']));
 
     switch (kind) {
       case 'title':
         return LessonScene('title', heading.isEmpty ? 'Lesson' : heading,
             narration,
-            explain: narration);
+            boardText: JsonUtils.str(raw['boardText']),
+            explain: narration,
+            template: tpl);
 
       case 'quick':
         var options = ((raw['options'] as List?) ?? const [])
@@ -191,9 +195,11 @@ class ScriptDesigner {
         answer = fixed.answer;
         return LessonScene('quick', heading.isEmpty ? 'Quick check' : heading,
             narration,
+            boardText: JsonUtils.str(raw['boardText']),
             options: options,
             answer: answer,
-            explain: narration);
+            explain: narration,
+            template: tpl);
 
       case 'figure':
         final page = JsonUtils.integer(raw['page']);
@@ -216,19 +222,41 @@ class ScriptDesigner {
                 ? null
                 : Rect.fromLTRB(box[0], box[1], box[2], box[3]),
             imagePath: imagePath,
-            explain: narration);
+            explain: narration,
+            template: tpl);
 
       case 'daily':
         return LessonScene('daily', heading.isEmpty ? 'In daily life' : heading,
             narration,
-            explain: narration);
+            boardText: JsonUtils.str(raw['boardText']),
+            explain: narration,
+            template: tpl);
 
       case 'summary':
         final board = JsonUtils.str(raw['boardText']);
         return LessonScene('summary', heading.isEmpty ? 'What we learnt' : heading,
             narration,
             boardText: board.isEmpty ? null : board,
-            explain: narration);
+            explain: narration,
+            template: tpl);
+
+      // ---- VISTA-style kinds the player already knows how to paint ----
+      case 'steps':
+      case 'timeline':
+      case 'compare':
+      case 'vocab':
+      case 'quote':
+      case 'formula':
+      case 'practice':
+        final board = JsonUtils.str(raw['boardText']);
+        if (board.trim().isEmpty && kind != 'practice') return null;
+        return LessonScene(kind, heading.isEmpty ? kind : heading, narration,
+            boardText: board.trim().isEmpty ? null : board,
+            boardTheme: 'green',
+            formula: kind == 'formula',
+            extra: JsonUtils.str(raw['extra']),
+            explain: narration,
+            template: tpl);
 
       case 'board':
       default:
@@ -236,7 +264,8 @@ class ScriptDesigner {
         return LessonScene('board', heading.isEmpty ? 'Lesson' : heading, narration,
             boardText: board.isEmpty ? null : board,
             boardTheme: 'green',
-            explain: narration);
+            explain: narration,
+            template: tpl);
     }
   }
 }

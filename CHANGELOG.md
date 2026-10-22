@@ -1,3 +1,48 @@
+## v0.30.0 — VISTA inside the app: cinematic scenes, template ids, 12 kinds
+
+The lesson designer now works the way the VISTA master prompt describes — three
+acts, a hook that comes back at the end, a screen that changes every few
+seconds — but written into the JSON this player can actually paint.
+
+### New
+
+- **`template` on every scene** (`T01`–`T60`, optional). It is only a look
+  hint; the kind still decides the content. Unknown ids are dropped, so a free
+  model cannot break a lesson with `T99`.
+- **Six new scene kinds** the player already knew how to draw but the AI was
+  never allowed to send: `steps`, `timeline`, `compare`, `vocab`, `quote`,
+  `formula`.
+- **New views**
+  - `title` — a real title card (gradient, centred, auto-sized) instead of the
+    narration written on a board
+  - `compare` — two columns from `Left | Right` lines (VISTA T51–T54)
+  - `steps` / `timeline` — numbered chips joined by a connector (T26–T32)
+  - `quote` — a quote with a bar and an author (T58)
+  - `vocab` — KEY WORD card: the term and its meaning (T57)
+- **Board accents from the template**: T07/T10/T11/T18 underline the heading,
+  T12 glows, T13 marks it with a highlighter, T26–T32 number the lines,
+  T33–T38 turn them into bullets.
+- **New default lesson-script prompt** — the VISTA ideas (hook, journey,
+  payoff; "answer the question you opened with"; one memory hook per idea;
+  Telugu with English technical terms) written to this app's schema, with
+  `{content}` and `{figures}` so the lesson still comes only from the book.
+  It also bans `full_audio_script` and per-scene timings, which the free model
+  cannot afford and the player ignores.
+
+### Kept
+
+- `8 to 14 scenes`, first `title`, last `summary`, at least one `quick`,
+  figures only from the book's own catalogue.
+- Lessons designed before v0.30.0 still load and look identical (no template →
+  the kind picks the default paint).
+
+### Tests
+
+**54** (6 new: template cleaning/bounds, list+heading mapping, compare columns,
+quote author, JSON round-trip of every new kind, and a guard that the default
+prompt keeps `{content}`/`{figures}` and never comes back with
+`full_audio_script`).
+
 ## v0.29.1 — Windows can actually read a book now
 
 v0.29.0 moved the free AI onto `flutter_inappwebview`, and the **Settings →
